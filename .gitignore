@@ -1,0 +1,56 @@
+# ── 비밀정보 (절대 커밋 금지) ──────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk*.json
+
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+dist/
+build/
+*.egg-info/
+
+# ── Node ──────────────────────────────────────────────
+node_modules/
+.vite/
+webapp/dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# ── Capacitor / Android / iOS ─────────────────────────
+mobile/android/local.properties
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/app/release/
+mobile/ios/App/Pods/
+mobile/ios/App/build/
+mobile/ios/App/App/public/
+mobile/android/app/src/main/assets/public/
+DerivedData/
+*.xcuserstate
+
+# ── 업로드 · 로컬 데이터 ───────────────────────────────
+uploads/
+pgdata/
+
+# ── 에디터 · OS ───────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,23 @@
+# 운영 서버 오버레이.  기본 파일과 함께 사용한다.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# 대상 서버는 사이트 100여 개가 함께 도는 공용 호스트다.
+#  - 업로드는 named volume 대신 hubfamily 유저의 홈 디렉터리를 쓴다 (아파치 Alias 대상).
+#  - 컨테이너 포트는 여전히 127.0.0.1 바인딩만 유지한다.
+
+services:
+  db:
+    restart: always
+
+  redis:
+    restart: always
+
+  api:
+    restart: always
+    volumes:
+      - /home/hubfamily/uploads:/data/uploads
+
+  worker:
+    restart: always
+    volumes:
+      - /home/hubfamily/uploads:/data/uploads

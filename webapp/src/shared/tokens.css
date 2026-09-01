@@ -1,0 +1,75 @@
+/* 고령자 친화 UX 토큰 — 계획서 9장의 수용 기준을 그대로 값으로 고정한다.
+   디자인 취향이 아니라 지켜야 하는 기준이다. 임의로 낮추지 말 것. */
+
+:root {
+  /* 글자 크기 — 본문 최소 18px, 주요 숫자·버튼 24px 이상.
+     --font-scale 은 설정(화면 9)에서 1 / 1.25 / 1.5 로 바뀐다. */
+  --font-scale: 1;
+  --text-body: calc(18px * var(--font-scale));
+  --text-label: calc(20px * var(--font-scale));
+  --text-action: calc(24px * var(--font-scale));
+  --text-title: calc(28px * var(--font-scale));
+  --text-hero: calc(40px * var(--font-scale));
+
+  /* 터치 타깃 최소 56px, 버튼 간격 12px 이상 */
+  --touch-min: 56px;
+  --gap-tight: 12px;
+  --gap: 16px;
+  --gap-loose: 24px;
+  --radius: 12px;
+
+  /* 색 — 상태를 색에만 의존하지 않는다. 항상 아이콘·텍스트를 함께 쓴다.
+     대비는 WCAG AA 4.5:1 이상을 만족하는 값으로 고른다. */
+  --ground: #f7f8f5;
+  --surface: #ffffff;
+  --ink: #15201b;
+  --ink-2: #46534c;
+  --line: #dfe5db;
+
+  --ok: #1c6b52;          /* 완료 · 정상 */
+  --ok-soft: #dcece4;
+  --warn: #8a5a10;        /* 주의 */
+  --warn-soft: #f6ebd8;
+  --danger: #a83526;      /* 이상 징후 */
+  --danger-soft: #f8e3df;
+  --accent: #235c4b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-size: var(--text-body);
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+button {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  font-size: var(--text-action);
+  font-family: inherit;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
