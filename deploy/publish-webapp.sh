@@ -10,7 +10,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOC_ROOT="${DOC_ROOT:-/home/hubfamily}"
+DOC_ROOT="${DOC_ROOT:-/home/hubfamily/www}"
 API_BASE="${1:-}"
 
 echo "==> 웹앱 빌드 (node:22-alpine)"
@@ -20,9 +20,10 @@ docker run --rm \
   node:22-alpine sh -c "npm ci --no-audit --no-fund && npm run build"
 
 echo "==> $DOC_ROOT 로 복사"
-# uploads 는 업로드 파일 저장소라 건드리지 않는다
-find "$DOC_ROOT" -maxdepth 1 -mindepth 1 \
-  ! -name uploads ! -name '.*' -exec rm -rf {} +
+# DocumentRoot 는 홈 디렉터리가 아니라 www 하위다.
+# 홈을 그대로 열면 .bashrc 같은 dotfile 이 웹에 노출된다.
+mkdir -p "$DOC_ROOT"
+find "$DOC_ROOT" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
 cp -r "$REPO_DIR/webapp/dist/." "$DOC_ROOT/"
 chown -R hubfamily:hubfamily "$DOC_ROOT"
 

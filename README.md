@@ -58,15 +58,23 @@ vhost 원본은 `deploy/apache/hubfamily.conf`, 서버 실제 경로는 `/usr/lo
 
 ```bash
 useradd -m -d /home/hubfamily hubfamily
-mkdir -p /home/hubfamily/uploads && chown -R hubfamily:hubfamily /home/hubfamily
+mkdir -p /home/hubfamily/www /home/hubfamily/uploads
+chown -R hubfamily:hubfamily /home/hubfamily
 git clone https://github.com/eunjch/hubparent.git /opt/hubfamily
 cd /opt/hubfamily/deploy && cp .env.example .env && chmod 600 .env
 vi .env      # ENV=prod, SECRET_KEY, POSTGRES_PASSWORD, PUBLIC_BASE_URL
 ./deploy.sh
 ```
 
-> `.env` 와 저장소는 `/opt` 에 둔다. 아파치 DocumentRoot 인 `/home/hubfamily` 아래에 두면
-> `.env` 가 웹으로 읽힌다.
+> **경로 규칙** — 웹에 열리는 건 `/home/hubfamily/www` 하나뿐이다.
+> `DocumentRoot` 를 홈 디렉터리로 두면 `.bashrc` 같은 파일이 웹으로 읽힌다.
+> 저장소와 `.env` 는 `/opt/hubfamily` 에 둔다.
+>
+> | 경로 | 용도 | 웹 노출 |
+> |---|---|---|
+> | `/opt/hubfamily` | 저장소 · `.env` | 없음 |
+> | `/home/hubfamily/www` | 웹앱 빌드 산출물 | `/` |
+> | `/home/hubfamily/uploads` | 업로드 파일 | `/uploads/` |
 
 ## 브랜치
 
