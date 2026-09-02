@@ -29,13 +29,44 @@ docker compose exec api alembic upgrade head
 
 ## 배포
 
-대상 서버는 기존 사이트가 함께 도는 공용 호스트다. 아파치는 `/usr/local/httpd2/conf.d/hubfamily.conf`로 붙이고,
-재시작은 반드시 `graceful`을 쓴다. 상세는 계획서 10장 참고.
+서버에서 한 줄이면 된다. 코드 받기 → 컨테이너 빌드·기동 → 마이그레이션 → 웹앱 배포 → 동작 확인까지 한다.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-docker compose exec api alembic upgrade head
+cd /opt/hubfamily/deploy && ./deploy.sh
 ```
+
+| 옵션 | 동작 |
+|---|---|
+| `--no-pull` | `git pull` 건너뛰기 |
+| `--no-web` | 웹앱 배포 없이 API 만 갱신 |
+| `--dev` | prod 오버레이 없이 (로컬용) |
+
+웹앱만 다시 올릴 때는 `./publish-webapp.sh`.
+
+**아파치는 스크립트가 건드리지 않는다.** 대상 서버는 사이트 100여 개가 함께 도는 공용 호스트라,
+vhost 변경과 재시작은 사람이 확인하고 직접 한다. 재시작은 반드시 `graceful`.
+
+```bash
+/usr/local/apache/bin/httpd -t          # Syntax OK 확인
+/usr/local/apache/bin/apachectl graceful
+```
+
+vhost 원본은 `deploy/apache/hubfamily.conf`, 서버 실제 경로는 `/usr/local/httpd2/conf.d/hubfamily.conf`.
+상세는 계획서 10장 참고.
+
+### 최초 1회
+
+```bash
+useradd -m -d /home/hubfamily hubfamily
+mkdir -p /home/hubfamily/uploads && chown -R hubfamily:hubfamily /home/hubfamily
+git clone https://github.com/eunjch/hubparent.git /opt/hubfamily
+cd /opt/hubfamily/deploy && cp .env.example .env && chmod 600 .env
+vi .env      # ENV=prod, SECRET_KEY, POSTGRES_PASSWORD, PUBLIC_BASE_URL
+./deploy.sh
+```
+
+> `.env` 와 저장소는 `/opt` 에 둔다. 아파치 DocumentRoot 인 `/home/hubfamily` 아래에 두면
+> `.env` 가 웹으로 읽힌다.
 
 ## 브랜치
 
