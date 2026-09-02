@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPKMixin
+from app.models.base import Base, TimestampMixin, UUIDPKMixin, enum_column
 from app.models.enums import SubscriptionStatus
 
 
@@ -17,8 +17,8 @@ class Subscription(Base, UUIDPKMixin, TimestampMixin):
 
     family_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("families.id"), index=True, nullable=False)
     plan: Mapped[str] = mapped_column(String(20), default="standard", nullable=False)
-    status: Mapped[SubscriptionStatus] = mapped_column(
-        String(10), default=SubscriptionStatus.TRIAL, nullable=False
+    status: Mapped[SubscriptionStatus] = enum_column(
+        SubscriptionStatus, default=SubscriptionStatus.TRIAL, nullable=False
     )
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     next_billing_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

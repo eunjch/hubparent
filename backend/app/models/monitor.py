@@ -11,13 +11,12 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     SmallInteger,
-    String,
     Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPKMixin
+from app.models.base import Base, TimestampMixin, UUIDPKMixin, enum_column
 from app.models.enums import ActivityLevel, AlertSeverity, AlertType, MoodValue
 
 
@@ -51,8 +50,8 @@ class DailyReport(Base, UUIDPKMixin, TimestampMixin):
     meal_done: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)   # 0–3
     med_taken: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)
     med_total: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)
-    mood: Mapped[MoodValue | None] = mapped_column(String(10))    # 당일 최빈값
-    activity_level: Mapped[ActivityLevel | None] = mapped_column(String(10))
+    mood: Mapped[MoodValue | None] = enum_column(MoodValue)    # 당일 최빈값
+    activity_level: Mapped[ActivityLevel | None] = enum_column(ActivityLevel)
     summary_text: Mapped[str | None] = mapped_column(Text)
 
 
@@ -63,8 +62,8 @@ class Alert(Base, UUIDPKMixin, TimestampMixin):
 
     family_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("families.id"), index=True, nullable=False)
     target_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    type: Mapped[AlertType] = mapped_column(String(20), nullable=False)
-    severity: Mapped[AlertSeverity] = mapped_column(String(10), nullable=False)
+    type: Mapped[AlertType] = enum_column(AlertType, nullable=False)
+    severity: Mapped[AlertSeverity] = enum_column(AlertSeverity, nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     ack_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))

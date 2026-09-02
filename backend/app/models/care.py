@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, TimestampMixin, UUIDPKMixin
+from app.models.base import Base, TimestampMixin, UUIDPKMixin, enum_column
 from app.models.enums import CheckSlot, MealStatus, MedicationStatus, MoodValue, ScheduleKind
 
 
@@ -28,8 +28,8 @@ class MealCheck(Base, UUIDPKMixin, TimestampMixin):
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     check_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
-    slot: Mapped[CheckSlot] = mapped_column(String(10), nullable=False)
-    status: Mapped[MealStatus] = mapped_column(String(10), nullable=False)
+    slot: Mapped[CheckSlot] = enum_column(CheckSlot, nullable=False)
+    status: Mapped[MealStatus] = enum_column(MealStatus, nullable=False)
     photo_path: Mapped[str | None] = mapped_column(String(255))  # 선택 항목
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -42,8 +42,8 @@ class MoodCheck(Base, UUIDPKMixin, TimestampMixin):
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     check_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
-    slot: Mapped[CheckSlot] = mapped_column(String(10), nullable=False)
-    mood: Mapped[MoodValue] = mapped_column(String(10), nullable=False)
+    slot: Mapped[CheckSlot] = enum_column(CheckSlot, nullable=False)
+    mood: Mapped[MoodValue] = enum_column(MoodValue, nullable=False)
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -78,8 +78,8 @@ class MedicationLog(Base, UUIDPKMixin, TimestampMixin):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
-    status: Mapped[MedicationStatus] = mapped_column(
-        String(10), default=MedicationStatus.PENDING, nullable=False
+    status: Mapped[MedicationStatus] = enum_column(
+        MedicationStatus, default=MedicationStatus.PENDING, nullable=False
     )
     reminder_level: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)
     responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -94,7 +94,7 @@ class Schedule(Base, UUIDPKMixin, TimestampMixin):
     target_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
-    kind: Mapped[ScheduleKind] = mapped_column(String(10), nullable=False)
+    kind: Mapped[ScheduleKind] = enum_column(ScheduleKind, nullable=False)
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     place: Mapped[str | None] = mapped_column(String(100))
     notify_before_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)

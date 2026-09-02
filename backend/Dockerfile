@@ -6,9 +6,15 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# 의존성 먼저 설치해 레이어 캐시를 살린다
+# 의존성만 먼저 설치해 레이어 캐시를 살린다.
+# 이 시점엔 소스가 없으므로 패키지 디렉터리를 임시로 만들어 설치한 뒤,
+# 스텁 패키지만 지운다. 의존성은 남고 실제 소스는 아래에서 복사한다.
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install .
+RUN mkdir -p app && touch app/__init__.py \
+ && pip install --upgrade pip \
+ && pip install . \
+ && pip uninstall -y hubfamily-api \
+ && rm -rf app
 
 COPY alembic.ini ./
 COPY alembic ./alembic

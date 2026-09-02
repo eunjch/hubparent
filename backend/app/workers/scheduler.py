@@ -53,7 +53,8 @@ async def close_missed_medications() -> None:
     _ = datetime.now(UTC) - timedelta(days=1)
 
 
-def main() -> None:
+async def run() -> None:
+    """AsyncIOScheduler 는 실행 중인 이벤트 루프 안에서 start() 해야 한다."""
     scheduler = AsyncIOScheduler(timezone=KST)
 
     scheduler.add_job(
@@ -79,9 +80,13 @@ def main() -> None:
         settings.APP_TIMEZONE,
     )
 
-    loop = asyncio.get_event_loop()
+    # 컨테이너가 살아 있는 동안 스케줄러를 유지한다
+    await asyncio.Event().wait()
+
+
+def main() -> None:
     try:
-        loop.run_forever()
+        asyncio.run(run())
     except (KeyboardInterrupt, SystemExit):
         log.info("worker 종료")
 

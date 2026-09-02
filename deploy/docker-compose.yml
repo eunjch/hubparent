@@ -34,9 +34,10 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     env_file: .env
-    # 호스트 외부에 노출하지 않는다. 아파치가 127.0.0.1:8000 으로만 프록시한다.
+    # 호스트 외부에 노출하지 않는다. 아파치가 127.0.0.1 로만 프록시한다.
+    # API_HOST_PORT 는 로컬에서 포트가 겹칠 때만 바꾼다. 서버는 기본값 8000.
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
     volumes:
       - uploads:/data/uploads
     depends_on:
