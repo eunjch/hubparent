@@ -17,6 +17,7 @@ from app.models.user import (
     FamilyMember,
     Invitation,
     User,
+    UserConsent,
     UserSettings,
 )
 
@@ -38,5 +39,6 @@ __all__ = [
     "Schedule",
     "Subscription",
     "User",
+    "UserConsent",
     "UserSettings",
 ]

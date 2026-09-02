@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueCon
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPKMixin, enum_column
-from app.models.enums import DevicePlatform, UserRole
+from app.models.enums import ConsentKind, DevicePlatform, UserRole
 
 
 class User(Base, UUIDPKMixin, TimestampMixin):
@@ -15,6 +15,8 @@ class User(Base, UUIDPKMixin, TimestampMixin):
 
     phone: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
+    # 리포트 메일 수신용. 어르신은 대개 비어 있다 — 메일은 자녀가 받는다.
+    email: Mapped[str | None] = mapped_column(String(120))
     role: Mapped[UserRole] = enum_column(UserRole, nullable=False)
     birth_year: Mapped[int | None] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -22,6 +24,7 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     consented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     memberships: Mapped[list["FamilyMember"]] = relationship(back_populates="user")
+    consents: Mapped[list["UserConsent"]] = relationship(back_populates="user")
     devices: Mapped[list["Device"]] = relationship(back_populates="user")
     settings: Mapped["UserSettings | None"] = relationship(back_populates="user", uselist=False)
 
@@ -58,6 +61,9 @@ class Invitation(Base, UUIDPKMixin, TimestampMixin):
     code: Mapped[str] = mapped_column(String(12), unique=True, index=True, nullable=False)
     family_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("families.id"), nullable=False)
     target_role: Mapped[UserRole] = enum_column(UserRole, nullable=False)
+    # 자녀가 부모님 계정을 미리 만들어 두므로, 코드가 그 계정을 가리킨다.
+    # 어르신은 코드만 입력하면 이 계정으로 들어온다 — 계획서 1.4.
+    target_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     used_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
@@ -108,3 +114,20 @@ class UserSettings(Base, UUIDPKMixin, TimestampMixin):
     notify_schedule: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="settings")
+
+
+class UserConsent(Base, UUIDPKMixin):
+    """동의 이력.
+
+    개인정보보호법 대응. 언제 동의했고 언제 철회했는지가 남아야 한다.
+    users 에 불리언으로 두면 철회 시점이 사라지므로 별도 테이블로 둔다 — 계획서 12.1.
+    """
+
+    __tablename__ = "user_consents"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    kind: Mapped[ConsentKind] = enum_column(ConsentKind, nullable=False)
+    granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    user: Mapped[User] = relationship(back_populates="consents")

@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.timeutil import as_utc
 from app.models.care import MealCheck, MoodCheck
 from app.models.enums import AlertSeverity, AlertType, UserRole
 from app.models.monitor import ActivitySignal, Alert
@@ -23,14 +24,6 @@ from app.models.user import Device, FamilyMember
 
 DISCLAIMER = "의료적 진단이 아닌 참고용 정보입니다."
 
-
-def _as_utc(value: datetime) -> datetime:
-    """DB 에서 온 시각을 aware UTC 로 맞춘다.
-
-    PostgreSQL 은 timezone 을 보존하지만 테스트용 SQLite 는 naive 로 돌려준다.
-    저장은 항상 UTC 이므로(계획서 5.2) naive 면 UTC 로 간주한다.
-    """
-    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
 
 async def _has_open_alert(session: AsyncSession, user_id: uuid.UUID, type_: AlertType) -> bool:
@@ -68,7 +61,7 @@ async def scan(session: AsyncSession) -> list[Alert]:
 
         # ── HIGH: 장시간 미응답 ────────────────────────────────
         if last_seen is not None:
-            silent_for = now - _as_utc(last_seen)
+            silent_for = now - as_utc(last_seen)
             if silent_for >= timedelta(hours=settings.NO_RESPONSE_HOURS):
                 if not await _has_open_alert(session, user_id, AlertType.NO_RESPONSE):
                     hours = int(silent_for.total_seconds() // 3600)

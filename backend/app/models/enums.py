@@ -63,6 +63,14 @@ class SubscriptionStatus(StrEnum):
     CANCELED = "canceled"
 
 
+class ConsentKind(StrEnum):
+    """동의 항목. 필수/선택이 나뉜다 — 계획서 11장."""
+
+    HEALTH_DATA = "health_data"       # 필수 — 건강정보 수집·이용 및 가족 간 공유
+    EMAIL_REPORT = "email_report"     # 선택 — 일일 리포트 메일 수신
+    AI_PROCESSING = "ai_processing"   # 선택 — AI 분석 (도입 시)
+
+
 class DevicePlatform(StrEnum):
     ANDROID = "android"
     IOS = "ios"

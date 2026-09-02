@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     # 보안
     SECRET_KEY: str = "dev-only-change-me"
     ACCESS_TOKEN_MINUTES: int = 30
-    REFRESH_TOKEN_DAYS: int = 30
+    # 어르신이 재로그인 화면을 보면 그 시점에 이탈한다 — 계획서 1.4
+    REFRESH_TOKEN_DAYS: int = 180
 
     # PostgreSQL
     POSTGRES_DB: str = "hubfamily"

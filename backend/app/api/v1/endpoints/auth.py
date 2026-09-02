@@ -1,74 +1,61 @@
-"""휴대폰 인증 · 토큰.
+"""계정 · 토큰.
 
-MVP 는 SMS 공급사 계약 전이라 코드를 Redis 에만 저장한다.
-dev 환경에서는 응답에 코드를 돌려주어 앱 없이도 개발할 수 있게 한다.
-운영 전환 시 send_sms 만 실제 공급사로 교체하면 된다 — 계획서 14장 2번.
+MVP 는 본인인증이 없다 (계획서 1.4). 실사용자를 받기 전에 반드시 교체하며,
+교체 지점을 좁히기 위해 계정 진입을 POST /auth/start 하나로 모아 둔다.
 """
 
-import secrets
 from datetime import UTC, datetime
 
 import jwt
 from fastapi import APIRouter
 from sqlalchemy import select
 
-from app.core.config import settings
 from app.core.deps import CurrentUser, DBSession
-from app.core.errors import Unauthorized
-from app.core.redis import redis
+from app.core.errors import Conflict, Unauthorized
 from app.core.security import create_access_token, create_refresh_token, decode_token
-from app.models.user import Family, FamilyMember, User, UserSettings
-from app.schemas.auth import (
-    MeOut,
-    OTPRequest,
-    OTPRequestResult,
-    OTPVerify,
-    RefreshRequest,
-    TokenPair,
-    UserOut,
-)
+from app.models.enums import ConsentKind
+from app.models.user import Family, FamilyMember, User, UserConsent, UserSettings
+from app.schemas.auth import AuthStart, MeOut, RefreshRequest, TokenPair, UserOut
 
 router = APIRouter(tags=["auth"])
 
-OTP_TTL_SECONDS = 180
-OTP_KEY = "otp:{phone}"
+
+def record_consent(session: DBSession, user_id, kind: ConsentKind, granted: bool) -> None:
+    """동의는 이력으로 남긴다. 철회 시점이 남아야 한다 — 계획서 12.1."""
+    if granted:
+        session.add(UserConsent(user_id=user_id, kind=kind, granted_at=datetime.now(UTC)))
 
 
-@router.post("/auth/otp/request", response_model=OTPRequestResult)
-async def request_otp(payload: OTPRequest) -> OTPRequestResult:
-    code = f"{secrets.randbelow(1_000_000):06d}"
-    await redis.setex(OTP_KEY.format(phone=payload.phone), OTP_TTL_SECONDS, code)
-
-    # TODO(M3): SMS 공급사 연동. 지금은 발송하지 않는다.
-    return OTPRequestResult(sent=True, dev_code=None if settings.is_prod else code)
-
-
-@router.post("/auth/otp/verify", response_model=TokenPair)
-async def verify_otp(payload: OTPVerify, session: DBSession) -> TokenPair:
-    key = OTP_KEY.format(phone=payload.phone)
-    saved = await redis.get(key)
-    if saved is None or saved != payload.code:
-        raise Unauthorized("INVALID_OTP", "인증번호가 맞지 않습니다. 다시 입력해 주세요.")
-    await redis.delete(key)
+@router.post("/auth/start", response_model=TokenPair)
+async def start(payload: AuthStart, session: DBSession) -> TokenPair:
+    """계정을 만들거나, 이미 있으면 그 계정으로 토큰을 발급한다."""
+    if not payload.agree_health_data:
+        raise Conflict("CONSENT_REQUIRED", "건강정보 이용 동의가 필요합니다.")
 
     user = await session.scalar(select(User).where(User.phone == payload.phone))
     is_new = user is None
 
     if is_new:
-        if not payload.name or payload.role is None:
-            raise Unauthorized("SIGNUP_REQUIRED", "이름과 역할이 필요합니다.")
         user = User(
             phone=payload.phone,
             name=payload.name,
+            email=payload.email,
             role=payload.role,
             birth_year=payload.birth_year,
-            # 인증번호 확인 = 민감정보 수집·이용 동의 시점 (계획서 11장)
             consented_at=datetime.now(UTC),
         )
         session.add(user)
         await session.flush()
+
         session.add(UserSettings(user_id=user.id))
+        record_consent(session, user.id, ConsentKind.HEALTH_DATA, True)
+        record_consent(session, user.id, ConsentKind.EMAIL_REPORT, payload.agree_email_report)
         await session.flush()
+    else:
+        # 재접속. 이메일만 새로 들어왔으면 채운다.
+        if payload.email and not user.email:
+            user.email = payload.email
+            await session.flush()
 
     return TokenPair(
         access_token=create_access_token(user.id),
