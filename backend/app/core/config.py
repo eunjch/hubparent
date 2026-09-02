@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     ALERT_SCAN_INTERVAL_MINUTES: int = 15
     DAILY_REPORT_HOUR: int = 21
 
+    # 메일 — 네이버웍스 SMTP (M4 리포트 메일)
+    # 네이버웍스는 인증 계정 주소로만 발신된다. From 을 사용자 주소로 바꿀 수 없다.
+    SMTP_HOST: str = "smtp.worksmobile.com"
+    SMTP_PORT: int = 465
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    MAIL_FROM_NAME: str = "HUB FAMILY"
+
     # 외부 연동 — M3 에서 채운다
     SMS_PROVIDER: str = ""
     SMS_API_KEY: str = ""
