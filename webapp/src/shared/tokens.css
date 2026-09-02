@@ -715,3 +715,253 @@ input:focus-visible {
   line-height: 1;
   flex: none;
 }
+
+/* ── 온보딩 화면 (시작 · 자녀 등록 · 어르신 합류) ──────────── */
+
+/* 배경 씬을 깐 온보딩 화면. 홈과 달리 스크롤되는 폼이 올라온다 */
+.screen.onboard {
+  position: relative;
+  background: var(--ground);
+}
+
+.screen.onboard > .screen-body,
+.screen.onboard > .screen-head,
+.screen.onboard > .screen-foot {
+  position: relative;
+  z-index: 1;
+}
+
+.screen.onboard > .screen-head {
+  background: transparent;
+  border-bottom: none;
+}
+
+/* 화면 상단 소개 */
+.hero {
+  text-align: center;
+  padding: var(--gap) 0 var(--gap-loose);
+}
+
+.hero-badge {
+  width: 104px;
+  height: 104px;
+  margin: 0 auto var(--gap);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  display: grid;
+  place-items: center;
+}
+
+.hero h1 {
+  font-size: var(--text-title);
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.hero p {
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  margin: 8px 0 0;
+  line-height: 1.55;
+}
+
+/* 역할 선택 카드 */
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  width: 100%;
+  min-height: 104px;
+  padding: var(--gap-tight) var(--gap);
+  border: 2px solid transparent;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  color: var(--ink);
+}
+
+.role-card .face {
+  flex: none;
+  width: 68px;
+  height: 68px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(35, 51, 43, 0.1);
+}
+
+.role-card .t {
+  display: block;
+  font-size: var(--text-action);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.role-card .d {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+.role-card .chev {
+  margin-left: auto;
+  font-size: 28px;
+  color: var(--ink-3);
+}
+
+.role-card.child {
+  background: var(--med-bg);
+  border-color: #bcdcf5;
+}
+.role-card.child .t {
+  color: var(--med-ink);
+}
+
+.role-card.parent {
+  background: var(--meal-bg);
+  border-color: #cbe6bd;
+}
+.role-card.parent .t {
+  color: var(--meal-ink);
+}
+
+/* 폼 묶음 카드 */
+.form-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.form-card > h2 {
+  font-size: var(--text-body);
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-card > h2 .tagcolor {
+  width: 8px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  flex: none;
+}
+
+.form-card > h2 .tagcolor.me {
+  background: var(--med-ink);
+}
+.form-card > h2 .tagcolor.senior {
+  background: var(--meal-ink);
+}
+.form-card > h2 .tagcolor.agree {
+  background: var(--mood-ink);
+}
+
+/* 하단 고정 실행 버튼 */
+.sticky-cta {
+  position: sticky;
+  bottom: 0;
+  padding: var(--gap-tight) var(--gap) calc(var(--gap) + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(244, 248, 243, 0) 0%, var(--ground) 30%);
+  z-index: 5;
+}
+
+/* 초대코드 안내 (G2) */
+.code-hero {
+  text-align: center;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--gap-loose) var(--gap);
+}
+
+.code-hero .code {
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--brand-strong);
+  margin: var(--gap-tight) 0 0;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+
+.code-hero .cap {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.code-hero .expire {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  margin: var(--gap-tight) 0 0;
+}
+
+/* 어르신 코드 입력 (S1) */
+.join-input {
+  width: 100%;
+  min-height: 92px;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-align: center;
+  text-transform: uppercase;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 0 var(--gap-tight);
+}
+
+.join-input::placeholder {
+  color: #cfd9d2;
+  letter-spacing: 0.24em;
+}
+
+.join-input:focus {
+  border-color: var(--brand);
+}
+
+/* 합류 확인 — 이름을 가장 크게 */
+.confirm-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--gap-loose) var(--gap);
+  text-align: center;
+}
+
+.confirm-card .face {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto var(--gap);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.confirm-card .name {
+  font-size: 34px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.confirm-card .fam {
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  margin: 6px 0 0;
+}
