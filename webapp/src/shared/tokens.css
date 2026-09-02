@@ -1,38 +1,72 @@
-/* 고령자 친화 UX 토큰 — 계획서 9장의 수용 기준을 그대로 값으로 고정한다.
-   디자인 취향이 아니라 지켜야 하는 기준이다. 임의로 낮추지 말 것. */
+/* HUB FAMILY 디자인 토큰 — CONCEPT 4 "패밀리 캐릭터"
+ *
+ *  파스텔 카드 + 캐릭터 일러스트 + 하단 탭바.
+ *
+ *  단, 계획서 9장의 고령자 UX 기준은 취향이 아니라 수용 기준이다. 낮추지 말 것:
+ *  본문 18px · 주요 버튼 24px · 터치 56px · 대비 WCAG AA(4.5:1) · 색만으로 상태 구분 금지.
+ *  파스텔은 배경에만 쓰고 글자는 항상 진한 색을 얹어 대비를 확보한다.
+ */
 
 :root {
-  /* 글자 크기 — 본문 최소 18px, 주요 숫자·버튼 24px 이상.
+  /* ── 크기 ─────────────────────────────────────────────────
      --font-scale 은 설정(화면 9)에서 1 / 1.25 / 1.5 로 바뀐다. */
   --font-scale: 1;
+  --text-sm: calc(15px * var(--font-scale));
   --text-body: calc(18px * var(--font-scale));
   --text-label: calc(20px * var(--font-scale));
   --text-action: calc(24px * var(--font-scale));
   --text-title: calc(28px * var(--font-scale));
   --text-hero: calc(40px * var(--font-scale));
 
-  /* 터치 타깃 최소 56px, 버튼 간격 12px 이상 */
   --touch-min: 56px;
   --gap-tight: 12px;
   --gap: 16px;
   --gap-loose: 24px;
-  --radius: 12px;
 
-  /* 색 — 상태를 색에만 의존하지 않는다. 항상 아이콘·텍스트를 함께 쓴다.
-     대비는 WCAG AA 4.5:1 이상을 만족하는 값으로 고른다. */
-  --ground: #f7f8f5;
+  --radius: 16px;
+  --radius-card: 20px;
+  --radius-pill: 999px;
+
+  /* ── 바탕 ───────────────────────────────────────────────── */
+  --sky-top: #cfe9fb;
+  --sky-bottom: #eaf6ee;
+  --ground: #f4f8f3;
   --surface: #ffffff;
-  --ink: #15201b;
-  --ink-2: #46534c;
-  --line: #dfe5db;
+  --surface-2: #eef2ec;
+  --line: #e2eae0;
 
-  --ok: #1c6b52;          /* 완료 · 정상 */
-  --ok-soft: #dcece4;
-  --warn: #8a5a10;        /* 주의 */
-  --warn-soft: #f6ebd8;
-  --danger: #a83526;      /* 이상 징후 */
-  --danger-soft: #f8e3df;
-  --accent: #235c4b;
+  --ink: #23332b;
+  --ink-2: #5d6f66;
+  --ink-3: #8b9a92;
+
+  /* ── 주 강조 ─────────────────────────────────────────────
+     탭 활성·주요 버튼. 흰 글씨를 얹어 4.5:1 을 넘긴다. */
+  --brand: #37904a;
+  --brand-strong: #2b7239;
+  --brand-soft: #e4f2e3;
+
+  /* ── 기능별 파스텔 ───────────────────────────────────────
+     배경(-bg)은 연하게, 글자·아이콘(-ink)은 진하게 짝짓는다. */
+  --meal-bg: #e7f3e0;
+  --meal-ink: #4a7d38;
+  --med-bg: #dcedfb;
+  --med-ink: #2f6f9e;
+  --mood-bg: #fdf3d3;
+  --mood-ink: #8a6a12;
+  --plan-bg: #ece6fa;
+  --plan-ink: #5f4aa8;
+  --contact-bg: #fbe2e6;
+  --contact-ink: #a8455a;
+
+  /* ── 상태 ───────────────────────────────────────────────── */
+  --ok: #37904a;
+  --ok-soft: #e4f2e3;
+  --warn: #8a6a12;
+  --warn-soft: #fdf3d3;
+  --danger: #b03a3a;
+  --danger-soft: #fbe4e2;
+
+  --shadow-card: 0 1px 2px rgba(35, 51, 43, 0.04), 0 6px 16px -10px rgba(35, 51, 43, 0.22);
 }
 
 * {
@@ -50,20 +84,14 @@ body {
 }
 
 button {
-  min-height: var(--touch-min);
-  min-width: var(--touch-min);
-  font-size: var(--text-action);
   font-family: inherit;
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
   cursor: pointer;
 }
 
 button:focus-visible,
-a:focus-visible {
-  outline: 3px solid var(--accent);
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -72,4 +100,511 @@ a:focus-visible {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ── 화면 뼈대 ──────────────────────────────────────────────── */
+
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--ground);
+}
+
+/* 홈 화면은 위쪽이 하늘 배경이다 */
+.screen.sky {
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 38%, var(--ground) 60%);
+}
+
+.screen-head {
+  display: grid;
+  grid-template-columns: var(--touch-min) 1fr var(--touch-min);
+  align-items: center;
+  padding: 0 var(--gap-tight);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.screen-head h1 {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-align: center;
+}
+
+.icon-btn {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  border: none;
+  background: none;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--ink);
+  border-radius: var(--radius);
+}
+
+.icon-btn-space {
+  display: block;
+  width: var(--touch-min);
+}
+
+.screen-body {
+  flex: 1;
+  padding: var(--gap-loose) var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.screen-foot {
+  padding: var(--gap) var(--gap) var(--gap-loose);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+}
+
+/* ── 인사 영역 ──────────────────────────────────────────────── */
+
+.greet {
+  display: grid;
+  grid-template-columns: 64px 1fr var(--touch-min);
+  align-items: center;
+  gap: var(--gap-tight);
+  padding: var(--gap) var(--gap) var(--gap-tight);
+}
+
+.greet-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-card);
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+}
+
+.greet-text {
+  min-width: 0;
+}
+
+.greet-name {
+  font-size: var(--text-label);
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.greet-sub {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin: 2px 0 0;
+}
+
+/* ── 카드 ───────────────────────────────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--gap);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-tight);
+  margin-bottom: var(--gap-tight);
+}
+
+.card-title h2 {
+  font-size: var(--text-body);
+  font-weight: 700;
+  margin: 0;
+}
+
+.card-title .date {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+}
+
+/* 오늘 한눈에 보기 — 4칸 */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat .ico {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.stat .k {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.stat .v {
+  font-size: var(--text-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 메뉴 카드 ─────────────────────────────────────────────── */
+
+/* 자녀: 2×2 그리드 */
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap-tight);
+}
+
+/* 부모: 세로 리스트. 한 줄이 하나의 행동이다 */
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+}
+
+.menu-card {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  width: 100%;
+  min-height: 88px;
+  padding: var(--gap-tight) var(--gap);
+  border: none;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  color: var(--ink);
+}
+
+.menu-card .ico {
+  font-size: 34px;
+  line-height: 1;
+  flex: none;
+}
+
+.menu-card .body {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-card .t {
+  display: block;
+  font-size: var(--text-action);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.menu-card .d {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.menu-card .chev {
+  font-size: 26px;
+  color: var(--ink-3);
+  flex: none;
+}
+
+/* 그리드 카드는 세로로 쌓는다 */
+.menu-grid .menu-card {
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 128px;
+}
+
+.menu-grid .menu-card .t {
+  font-size: var(--text-label);
+}
+
+.menu-grid .menu-card .chev {
+  display: none;
+}
+
+.tone-meal {
+  background: var(--meal-bg);
+}
+.tone-meal .t {
+  color: var(--meal-ink);
+}
+.tone-med {
+  background: var(--med-bg);
+}
+.tone-med .t {
+  color: var(--med-ink);
+}
+.tone-mood {
+  background: var(--mood-bg);
+}
+.tone-mood .t {
+  color: var(--mood-ink);
+}
+.tone-plan {
+  background: var(--plan-bg);
+}
+.tone-plan .t {
+  color: var(--plan-ink);
+}
+.tone-contact {
+  background: var(--contact-bg);
+}
+.tone-contact .t {
+  color: var(--contact-ink);
+}
+.tone-plain {
+  background: var(--surface);
+}
+
+/* ── 하단 탭바 ─────────────────────────────────────────────── */
+
+.tabbar {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 2px;
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  z-index: 10;
+}
+
+.tab {
+  min-height: var(--touch-min);
+  border: none;
+  background: none;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  padding: 4px 2px;
+}
+
+.tab .ico {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* 활성 상태를 색만으로 알리지 않는다 — 굵기도 함께 바꾼다 */
+.tab[aria-current="page"] {
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+
+/* ── 버튼 ───────────────────────────────────────────────────── */
+
+.big-btn {
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--gap-tight) var(--gap);
+  font-size: var(--text-action);
+  font-weight: 700;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.big-btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.big-btn.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.big-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── 입력 ───────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.field-input {
+  min-height: var(--touch-min);
+  padding: 0 var(--gap-tight);
+  font-size: var(--text-label);
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.field-hint {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-tight);
+  min-height: var(--touch-min);
+  padding: var(--gap-tight);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: var(--text-body);
+  line-height: 1.45;
+}
+
+.check input {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--brand);
+}
+
+.check em {
+  font-style: normal;
+  font-size: var(--text-sm);
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.check em.req {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.check em.opt {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+/* ── 알림 ───────────────────────────────────────────────────── */
+
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0;
+  padding: var(--gap-tight);
+  border-radius: var(--radius);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
+.notice.info {
+  background: var(--ok-soft);
+  color: #245a30;
+}
+
+.notice.error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.spinner {
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* ── 온보딩 ─────────────────────────────────────────────────── */
+
+.lede {
+  font-size: var(--text-title);
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.sub {
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* 초대코드는 어르신이 보고 눌러 넣는 것이라 최대한 크게 */
+.code-display {
+  font-size: var(--text-hero);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+  padding: var(--gap-loose) var(--gap);
+  background: var(--surface);
+  border: 2px solid var(--brand);
+  border-radius: var(--radius-card);
+  color: var(--brand-strong);
+  word-break: break-all;
+}
+
+.code-input {
+  font-size: var(--text-hero);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+  min-height: 88px;
+}
+
+.confirm-name {
+  font-size: var(--text-hero);
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.role-btn {
+  min-height: 112px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.role-btn .ico {
+  font-size: 44px;
+  line-height: 1;
+  flex: none;
 }
