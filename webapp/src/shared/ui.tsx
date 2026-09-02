@@ -10,6 +10,8 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
+import { TabBell } from "./icons";
+
 export type Tone = "meal" | "med" | "mood" | "plan" | "contact" | "plain";
 
 /* ── 화면 뼈대 ──────────────────────────────────────────────── */
@@ -56,38 +58,41 @@ export function Screen({
 export function Greeting({
   name,
   suffix,
+  headline,
   message,
-  avatar = "🙂",
+  avatar,
   onBell,
   alertCount = 0,
 }: {
   name: string;
   /** "어머님" 같은 호칭. 자녀 화면에서는 "님" */
   suffix?: string;
-  message: string;
-  avatar?: string;
+  /** 이름 아랫줄 인사. 시안에서 이 줄이 가장 크다 */
+  headline: string;
+  message?: string;
+  avatar?: ReactNode;
   onBell?: () => void;
   alertCount?: number;
 }) {
   return (
     <div className="greet">
-      <span className="greet-avatar" aria-hidden="true">
-        {avatar}
-      </span>
+      <span className="greet-avatar">{avatar}</span>
       <div className="greet-text">
         <p className="greet-name">
-          {name} {suffix ?? "님"}
+          {name} <span className="plain">{suffix ?? "님,"}</span>
+          <br />
+          {headline}
         </p>
-        <p className="greet-sub">{message}</p>
+        {message && <p className="greet-sub">{message}</p>}
       </div>
       {onBell && (
         <button
-          className="icon-btn"
+          className="bell-btn"
           onClick={onBell}
           aria-label={alertCount > 0 ? `알림 ${alertCount}건` : "알림"}
-          style={{ fontSize: 24 }}
         >
-          {alertCount > 0 ? "🔔" : "🔕"}
+          <TabBell />
+          {alertCount > 0 && <span className="dot" />}
         </button>
       )}
     </div>
@@ -124,20 +129,37 @@ export function Card({
 }
 
 /** 오늘 한눈에 보기의 한 칸. 값이 없으면 "—" 로 둔다 — 0 과 구분해야 한다. */
-export function Stat({ icon, label, value }: { icon: string; label: string; value: string }) {
+export function Stat({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  tone?: Tone;
+}) {
+  const unknown = value === "—";
   return (
-    <div className="stat">
-      <span className="ico" aria-hidden="true">
-        {icon}
-      </span>
+    <div className={`stat${tone ? ` t-${tone}` : ""}`}>
+      <span className="ico">{icon}</span>
       <span className="k">{label}</span>
-      <span className="v">{value}</span>
+      <span className={`v${unknown ? " muted" : ""}`}>{value}</span>
     </div>
   );
 }
 
 export function StatRow({ children }: { children: ReactNode }) {
   return <div className="stat-row">{children}</div>;
+}
+
+export function PillButton({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
+  return (
+    <button className="pill-btn" onClick={onClick}>
+      {children} ›
+    </button>
+  );
 }
 
 /** 기능 진입 카드. 어르신 화면은 리스트, 자녀 화면은 2×2 그리드로 배치된다. */
@@ -149,7 +171,7 @@ export function MenuCard({
   onClick,
   disabled,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   description?: string;
   tone?: Tone;
@@ -158,9 +180,7 @@ export function MenuCard({
 }) {
   return (
     <button className={`menu-card tone-${tone}`} onClick={onClick} disabled={disabled}>
-      <span className="ico" aria-hidden="true">
-        {icon}
-      </span>
+      <span className="ico">{icon}</span>
       <span className="body">
         <span className="t">{title}</span>
         {description && <span className="d">{description}</span>}
@@ -184,7 +204,8 @@ export function MenuList({ children }: { children: ReactNode }) {
 
 export interface TabItem {
   key: string;
-  icon: string;
+  /** 활성 여부를 받아 채움/선을 바꾼다 — 색만으로 상태를 알리지 않는다 */
+  icon: (active: boolean) => ReactNode;
   label: string;
   onClick?: () => void;
 }
@@ -199,9 +220,7 @@ export function TabBar({ items, current }: { items: TabItem[]; current: string }
           aria-current={it.key === current ? "page" : undefined}
           onClick={it.onClick}
         >
-          <span className="ico" aria-hidden="true">
-            {it.icon}
-          </span>
+          <span className="ico">{it.icon(it.key === current)}</span>
           <span>{it.label}</span>
         </button>
       ))}
