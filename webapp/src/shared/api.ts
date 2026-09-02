@@ -6,7 +6,11 @@
 
 import { getAccessToken } from "./auth";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+/** 기본값은 빈 문자열 = 같은 오리진.
+ *  브라우저에서 hubfamily.mangotree.co.kr 로 열면 아파치가 /api/ 를 컨테이너로 넘긴다.
+ *  Capacitor 앱은 오리진이 https://localhost 라 같은 오리진이 성립하지 않으므로,
+ *  앱 빌드 시에만 VITE_API_BASE_URL 로 절대 주소를 준다. */
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export class ApiError extends Error {
   readonly code: string;
