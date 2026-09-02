@@ -33,6 +33,11 @@ fail() { printf '\033[1;31m실패: %s\033[0m\n' "$1"; exit 1; }
 
 [ -f .env ] || fail ".env 가 없습니다. cp .env.example .env 후 값을 채우세요."
 
+# .env 에서 포트와 호스트를 읽는다
+PORT="$(grep -E '^API_HOST_PORT=' .env | cut -d= -f2 | cut -d'#' -f1 | tr -d ' \r')"
+PORT="${PORT:-8000}"
+HOST="$(grep -E '^PUBLIC_BASE_URL=' .env | cut -d= -f2- | tr -d ' \r' | sed -E 's#^https?://##; s#/.*##')"
+
 # ── 1. 코드 ────────────────────────────────────────────────────────
 if [ "$DO_PULL" = 1 ]; then
   step "코드 받기"
@@ -45,11 +50,18 @@ step "컨테이너 빌드 · 기동"
 "${COMPOSE[@]}" up -d --build
 
 step "기동 대기"
+# docker compose ps 의 --format 옵션은 버전마다 달라 쓰지 않는다.
+# 실제로 응답하는지를 기준으로 기다린다.
+ready=0
 for _ in $(seq 1 40); do
-  "${COMPOSE[@]}" ps --format '{{.Service}} {{.Status}}' | grep -q '^api Up' && break
+  if curl -sf --max-time 3 "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
   sleep 3
 done
-"${COMPOSE[@]}" ps --format 'table {{.Service}}\t{{.Status}}'
+"${COMPOSE[@]}" ps
+[ "$ready" = 1 ] || fail "API 가 기동하지 않았습니다.  ${COMPOSE[*]} logs api"
 
 # ── 3. 마이그레이션 ────────────────────────────────────────────────
 step "DB 마이그레이션"
@@ -63,13 +75,12 @@ fi
 
 # ── 5. 확인 ────────────────────────────────────────────────────────
 step "동작 확인"
-PORT="$(grep -E '^API_HOST_PORT=' .env | cut -d= -f2 | tr -d ' \r' | cut -d'#' -f1)"
-PORT="${PORT:-8000}"
-HOST="$(grep -E '^PUBLIC_BASE_URL=' .env | cut -d= -f2- | tr -d ' \r' | sed -E 's#^https?://##; s#/.*##')"
-
 health="$(curl -s --max-time 5 "http://127.0.0.1:${PORT}/health" || true)"
 echo "  컨테이너 직접   : ${health:-응답 없음}"
-case "$health" in *'"status":"ok"'*) ;; *) fail "API 가 응답하지 않습니다. ${COMPOSE[*]} logs api 확인" ;; esac
+case "$health" in
+  *'"status":"ok"'*) ;;
+  *) fail "API 가 응답하지 않습니다.  ${COMPOSE[*]} logs api" ;;
+esac
 
 if [ -n "$HOST" ]; then
   code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 -H "Host: $HOST" http://127.0.0.1/api/v1/me || true)"
