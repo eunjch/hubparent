@@ -15,8 +15,11 @@ class User(Base, UUIDPKMixin, TimestampMixin):
 
     phone: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
-    # 리포트 메일 수신용. 어르신은 대개 비어 있다 — 메일은 자녀가 받는다.
-    email: Mapped[str | None] = mapped_column(String(120))
+    # 자녀의 로그인 ID 겸 리포트 메일 주소. 어르신은 비어 있다.
+    # NULL 이 여럿 허용되므로 어르신 계정에는 제약이 걸리지 않는다.
+    email: Mapped[str | None] = mapped_column(String(120), unique=True, index=True)
+    # 자녀만 갖는다. 어르신은 자녀 이름·번호로 들어오므로 비밀번호가 없다.
+    password_hash: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[UserRole] = enum_column(UserRole, nullable=False)
     birth_year: Mapped[int | None] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -53,20 +56,6 @@ class FamilyMember(Base, UUIDPKMixin, TimestampMixin):
     user: Mapped[User] = relationship(back_populates="memberships")
 
 
-class Invitation(Base, UUIDPKMixin, TimestampMixin):
-    """자녀가 발급하고 어르신이 코드로 합류한다."""
-
-    __tablename__ = "invitations"
-
-    code: Mapped[str] = mapped_column(String(12), unique=True, index=True, nullable=False)
-    family_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("families.id"), nullable=False)
-    target_role: Mapped[UserRole] = enum_column(UserRole, nullable=False)
-    # 자녀가 부모님 계정을 미리 만들어 두므로, 코드가 그 계정을 가리킨다.
-    # 어르신은 코드만 입력하면 이 계정으로 들어온다 — 계획서 1.4.
-    target_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    used_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
 
 
 class Device(Base, UUIDPKMixin, TimestampMixin):

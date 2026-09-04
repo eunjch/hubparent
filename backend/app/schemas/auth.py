@@ -6,21 +6,54 @@ from app.models.enums import UserRole
 from app.schemas.common import ORMModel
 
 
-class AuthStart(BaseModel):
-    """MVP 로그인·가입. 본인인증 없음 — 계획서 1.4.
+class GuardianRegister(BaseModel):
+    """자녀 회원가입. 이메일이 로그인 ID 다."""
 
-    실사용자를 받기 전에 반드시 인증을 붙인다. 교체 지점은 이 엔드포인트 하나다.
-    """
-
-    phone: str = Field(min_length=10, max_length=20, examples=["01012345678"])
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=72)
     name: str = Field(min_length=1, max_length=50)
-    role: UserRole = UserRole.GUARDIAN
-    email: EmailStr | None = None
-    birth_year: int | None = Field(default=None, ge=1900, le=2030)
+    phone: str = Field(min_length=10, max_length=20, examples=["010-1234-5678"])
     # 건강정보 수집·이용 및 가족 간 공유 (필수)
     agree_health_data: bool = False
     # 일일 리포트 메일 수신 (선택)
     agree_email_report: bool = False
+
+
+class GuardianLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=72)
+
+
+class SeniorLookup(BaseModel):
+    """부모 로그인 1단계 — 자녀 이름과 자녀 전화번호로 가족을 찾는다.
+
+    어르신이 확실히 아는 정보만 묻는다. 본인 번호는 기억이 흐릴 수 있지만
+    자녀 이름과 번호는 대개 외우고 있거나 전화기에 있다 (계획서 1.4).
+    """
+
+    guardian_name: str = Field(min_length=1, max_length=50)
+    guardian_phone: str = Field(min_length=10, max_length=20)
+
+
+class SeniorChoice(ORMModel):
+    id: uuid.UUID
+    name: str
+    relation: str | None
+
+
+class SeniorLookupResult(BaseModel):
+    family_name: str
+    guardian_name: str
+    seniors: list[SeniorChoice]
+
+
+class SeniorLogin(SeniorLookup):
+    """부모 로그인 2단계 — 목록에서 본인을 고른다.
+
+    1단계 정보를 다시 받아 관계를 재검증한다. senior_id 만으로는 들어올 수 없다.
+    """
+
+    senior_id: uuid.UUID
 
 
 class TokenPair(BaseModel):

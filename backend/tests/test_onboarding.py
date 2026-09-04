@@ -1,123 +1,174 @@
-"""온보딩 흐름 — 계획서 1.4.
+"""가입 · 로그인 흐름 — 계획서 1.4.
 
-자녀가 가족과 부모님 계정을 만들고, 어르신은 코드만 입력해 들어온다.
-어르신 쪽 입력이 0이라는 것이 이 설계의 핵심이라, 그 계약을 테스트로 고정한다.
+자녀는 일반 회원가입(이메일 + 비밀번호),
+어르신은 자녀 이름 + 자녀 번호로 가족을 찾아 목록에서 본인을 고른다.
+어르신 쪽 입력이 최소라는 것이 이 설계의 핵심이라 그 계약을 테스트로 고정한다.
 """
 
 import pytest
 
+GUARDIAN = {
+    "email": "minsu@example.com",
+    "password": "hubfamily1234",
+    "name": "김민수",
+    "phone": "010-1111-2222",
+    "agree_health_data": True,
+    "agree_email_report": True,
+}
 
-async def _guardian(client, phone="01011112222"):
-    res = await client.post(
-        "/api/v1/auth/start",
-        json={
-            "phone": phone,
-            "name": "김민수",
-            "role": "guardian",
-            "email": "minsu@example.com",
-            "agree_health_data": True,
-            "agree_email_report": True,
-        },
-    )
+
+async def _register(client, **over):
+    body = {**GUARDIAN, **over}
+    res = await client.post("/api/v1/auth/register", json=body)
     assert res.status_code == 200, res.text
     return res.json()
 
 
-async def _family(client, token, senior_phone="01033334444"):
+async def _add_senior(client, token, name="김영희", phone="010-3333-4444", relation="어머니"):
     res = await client.post(
-        "/api/v1/families",
+        "/api/v1/family/seniors",
         headers={"Authorization": f"Bearer {token}"},
-        json={
-            "name": "김영희 가족",
-            "senior_name": "김영희",
-            "senior_phone": senior_phone,
-            "relation": "어머니",
-        },
+        json={"name": name, "phone": phone, "relation": relation},
     )
     assert res.status_code == 200, res.text
     return res.json()
 
 
 @pytest.mark.asyncio
-async def test_health_consent_is_required(client):
+async def test_register_requires_health_consent(client):
     res = await client.post(
-        "/api/v1/auth/start",
-        json={"phone": "01099998888", "name": "동의안함", "role": "guardian"},
+        "/api/v1/auth/register", json={**GUARDIAN, "agree_health_data": False}
     )
     assert res.status_code == 409
     assert res.json()["code"] == "CONSENT_REQUIRED"
 
 
 @pytest.mark.asyncio
-async def test_guardian_creates_family_and_gets_code(client):
-    g = await _guardian(client)
-    assert g["is_new_user"] is True
+async def test_register_then_login(client):
+    reg = await _register(client)
+    assert reg["is_new_user"] is True
 
-    created = await _family(client, g["access_token"])
-    assert len(created["invitation_code"]) == 6
-    # 혼동되는 글자는 코드에 쓰지 않는다
-    assert not set(created["invitation_code"]) & set("01OI")
+    ok = await client.post(
+        "/api/v1/auth/login", json={"email": GUARDIAN["email"], "password": GUARDIAN["password"]}
+    )
+    assert ok.status_code == 200
+
+    bad = await client.post(
+        "/api/v1/auth/login", json={"email": GUARDIAN["email"], "password": "wrongpassword"}
+    )
+    assert bad.status_code == 401
+    assert bad.json()["code"] == "BAD_CREDENTIALS"
 
 
 @pytest.mark.asyncio
-async def test_senior_joins_with_code_only(client):
-    g = await _guardian(client)
-    created = await _family(client, g["access_token"])
-    code = created["invitation_code"]
+async def test_duplicate_email_is_rejected(client):
+    await _register(client)
+    res = await client.post("/api/v1/auth/register", json={**GUARDIAN, "phone": "010-9999-0000"})
+    assert res.status_code == 409
+    assert res.json()["code"] == "EMAIL_TAKEN"
 
-    # 어르신은 로그인 전에 "김영희 님 맞으세요?" 를 본다
-    preview = await client.get(f"/api/v1/invitations/{code}")
-    assert preview.status_code == 200
-    body = preview.json()
-    assert body["target_name"] == "김영희"
-    assert body["expired"] is False and body["used"] is False
 
-    # 코드만으로 토큰을 받는다 — 인증 헤더 없음
-    claim = await client.post(f"/api/v1/invitations/{code}/claim")
-    assert claim.status_code == 200, claim.text
-    senior_token = claim.json()["access_token"]
+@pytest.mark.asyncio
+async def test_guardian_manages_multiple_seniors(client):
+    """자녀 1명 : 부모 N명."""
+    token = (await _register(client))["access_token"]
+    auth = {"Authorization": f"Bearer {token}"}
 
-    me = await client.get("/api/v1/me", headers={"Authorization": f"Bearer {senior_token}"})
-    assert me.status_code == 200
+    await _add_senior(client, token, name="김영희", phone="010-3333-4444", relation="어머니")
+    await _add_senior(client, token, name="김철수", phone="010-5555-6666", relation="아버지")
+
+    res = await client.get("/api/v1/family/seniors", headers=auth)
+    assert res.status_code == 200
+    seniors = res.json()
+    assert [s["name"] for s in seniors] == ["김영희", "김철수"]
+    # 아직 한 번도 안 들어왔다
+    assert all(s["joined"] is False for s in seniors)
+
+
+@pytest.mark.asyncio
+async def test_senior_logs_in_with_guardian_name_and_phone(client):
+    token = (await _register(client))["access_token"]
+    await _add_senior(client, token, name="김영희")
+    await _add_senior(client, token, name="김철수", phone="010-5555-6666", relation="아버지")
+
+    # 1단계 — 하이픈이 있든 없든 찾아야 한다
+    lookup = await client.post(
+        "/api/v1/auth/senior/lookup",
+        json={"guardian_name": "김민수", "guardian_phone": "01011112222"},
+    )
+    assert lookup.status_code == 200, lookup.text
+    body = lookup.json()
+    assert {s["name"] for s in body["seniors"]} == {"김영희", "김철수"}
+
+    # 2단계 — 본인 선택
+    target = next(s for s in body["seniors"] if s["name"] == "김영희")
+    login = await client.post(
+        "/api/v1/auth/senior/login",
+        json={
+            "guardian_name": "김민수",
+            "guardian_phone": "010-1111-2222",
+            "senior_id": target["id"],
+        },
+    )
+    assert login.status_code == 200, login.text
+
+    me = await client.get(
+        "/api/v1/me", headers={"Authorization": f"Bearer {login.json()['access_token']}"}
+    )
     assert me.json()["user"]["name"] == "김영희"
     assert me.json()["user"]["role"] == "senior"
-    # 합류 시점에 어르신 본인 동의가 성립한다
+    # 첫 로그인 시점에 본인 동의가 성립한다
     assert me.json()["consented"] is True
 
 
 @pytest.mark.asyncio
-async def test_code_is_single_use(client):
-    g = await _guardian(client)
-    code = (await _family(client, g["access_token"]))["invitation_code"]
+async def test_wrong_guardian_info_is_rejected(client):
+    token = (await _register(client))["access_token"]
+    await _add_senior(client, token)
 
-    assert (await client.post(f"/api/v1/invitations/{code}/claim")).status_code == 200
-    second = await client.post(f"/api/v1/invitations/{code}/claim")
-    assert second.status_code == 409
-    assert second.json()["code"] == "INVITE_USED"
-
-
-@pytest.mark.asyncio
-async def test_unknown_code_is_rejected(client):
-    res = await client.post("/api/v1/invitations/ZZZZZZ/claim")
-    assert res.status_code == 404
-    assert res.json()["code"] == "INVITE_NOT_FOUND"
-
-
-@pytest.mark.asyncio
-async def test_senior_cannot_be_in_two_families(client):
-    g1 = await _guardian(client, phone="01011110001")
-    await _family(client, g1["access_token"], senior_phone="01055556666")
-
-    g2 = await _guardian(client, phone="01011110002")
     res = await client.post(
-        "/api/v1/families",
-        headers={"Authorization": f"Bearer {g2['access_token']}"},
+        "/api/v1/auth/senior/lookup",
+        json={"guardian_name": "다른사람", "guardian_phone": "010-1111-2222"},
+    )
+    assert res.status_code == 404
+    assert res.json()["code"] == "GUARDIAN_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_senior_id_alone_cannot_log_in(client):
+    """다른 가족의 senior_id 를 알아도 자녀 정보가 맞지 않으면 못 들어온다."""
+    t1 = (await _register(client))["access_token"]
+    victim = await _add_senior(client, t1)
+
+    t2 = (await _register(client, email="other@example.com", phone="010-7777-8888", name="남남"))[
+        "access_token"
+    ]
+    await _add_senior(client, t2, name="남의부모", phone="010-2222-1111")
+
+    res = await client.post(
+        "/api/v1/auth/senior/login",
         json={
-            "name": "다른 가족",
-            "senior_name": "김영희",
-            "senior_phone": "01055556666",
-            "relation": "아들",
+            "guardian_name": "남남",
+            "guardian_phone": "010-7777-8888",
+            "senior_id": victim["id"],
         },
+    )
+    assert res.status_code == 404
+    assert res.json()["code"] == "SENIOR_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_senior_already_in_another_family(client):
+    t1 = (await _register(client))["access_token"]
+    await _add_senior(client, t1, phone="010-3333-4444")
+
+    t2 = (await _register(client, email="other@example.com", phone="010-7777-8888", name="남남"))[
+        "access_token"
+    ]
+    res = await client.post(
+        "/api/v1/family/seniors",
+        headers={"Authorization": f"Bearer {t2}"},
+        json={"name": "김영희", "phone": "010-3333-4444"},
     )
     assert res.status_code == 409
     assert res.json()["code"] == "SENIOR_ALREADY_JOINED"
