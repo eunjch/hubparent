@@ -3302,3 +3302,36 @@ input[type="datetime-local"] {
 .screen > .greet:first-child {
   padding-top: calc(var(--gap-tight) + var(--sat));
 }
+
+/* ── 복용 시각 입력 (G4) ──────────────────────────────────── */
+
+.time-add {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* input 은 기본 폭이 있어 min-width:0 이 없으면 옆 버튼을 밀어낸다 */
+.time-add .field-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-add-btn {
+  flex: none;
+  min-height: var(--touch-min);
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: #fff;
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+.time-add-btn:disabled {
+  background: var(--brand-soft);
+  color: var(--ink-3);
+}

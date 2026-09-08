@@ -15,8 +15,6 @@ import { BigButton, Cheer, Field, Notice, SegTabs, Spinner } from "../shared/ui"
 
 type Tab = "list" | "settings";
 
-/** 흔히 쓰는 시각을 먼저 준다. 자녀가 직접 칠 수도 있다. */
-const PRESET_TIMES = ["08:00", "12:00", "18:00", "20:00", "22:00"];
 const TIME_PATTERN = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
 /** "08:00" → 아침 / 점심 / 저녁 (시안의 시점 라벨) */
@@ -69,14 +67,15 @@ export default function MedManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId]);
 
-  function toggleTime(t: string) {
-    setTimes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t].sort()));
+  function removeTime(t: string) {
+    setTimes((prev) => prev.filter((x) => x !== t));
   }
 
+  /** 시각 입력(type=time)의 값을 목록에 넣는다. 같은 시각은 한 번만. */
   function addCustomTime() {
     const t = customTime.trim();
     if (!TIME_PATTERN.test(t)) {
-      setError("시각은 08:00 처럼 입력해 주세요.");
+      setError("시각을 골라 주세요.");
       return;
     }
     const [hh, mm] = t.split(":");
@@ -231,40 +230,34 @@ export default function MedManage() {
 
             <div className="field">
               <span className="field-label">복용 시각</span>
-              <div className="time-picks">
-                {PRESET_TIMES.map((t) => (
-                  <button
-                    key={t}
-                    className={`time-pick${times.includes(t) ? " on" : ""}`}
-                    onClick={() => toggleTime(t)}
-                    aria-pressed={times.includes(t)}
-                  >
-                    {t}
-                  </button>
-                ))}
-                {times
-                  .filter((t) => !PRESET_TIMES.includes(t))
-                  .map((t) => (
-                    <button key={t} className="time-pick on" onClick={() => toggleTime(t)} aria-pressed>
-                      {t}
-                    </button>
-                  ))}
-              </div>
-
-              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              {/* 시각을 고르고 [추가]. 고른 것은 알약 모양으로 쌓이고 × 로 뺀다 */}
+              <div className="time-add">
                 <input
                   className="field-input"
+                  type="time"
                   value={customTime}
                   onChange={(e) => setCustomTime(e.target.value)}
-                  placeholder="09:30"
-                  inputMode="numeric"
-                  aria-label="다른 시각 직접 입력"
-                  style={{ flex: 1 }}
+                  aria-label="복용 시각"
                 />
-                <button className="row-del" onClick={addCustomTime} style={{ minHeight: 56 }}>
+                <button className="time-add-btn" onClick={addCustomTime} disabled={!customTime}>
                   추가
                 </button>
               </div>
+
+              {times.length > 0 && (
+                <div className="time-picks">
+                  {times.map((t) => (
+                    <button
+                      key={t}
+                      className="time-pick on"
+                      onClick={() => removeTime(t)}
+                      aria-label={`${t} 빼기`}
+                    >
+                      {t} <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <span className="field-hint">하루에 여러 번이면 시각을 여러 개 고르세요.</span>
             </div>
 
