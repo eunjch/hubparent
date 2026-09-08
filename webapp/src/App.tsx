@@ -17,6 +17,10 @@ import { flush } from "./shared/offlineQueue";
 import { Screen, Spinner } from "./shared/ui";
 import Alerts from "./pages/Alerts";
 import GuardianHome from "./pages/GuardianHome";
+import GuardianMore from "./pages/GuardianMore";
+import Report from "./pages/Report";
+import SeniorMore from "./pages/SeniorMore";
+import SeniorRecord from "./pages/SeniorRecord";
 import GuardianLogin from "./pages/GuardianLogin";
 import GuardianSignup from "./pages/GuardianSignup";
 import SeniorAdd from "./pages/SeniorAdd";
@@ -112,6 +116,22 @@ export default function App() {
           }
         />
         <Route
+          path="/s/record"
+          element={
+            <Guarded>
+              <SeniorRecord />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/s/more"
+          element={
+            <Guarded>
+              <SeniorMore />
+            </Guarded>
+          }
+        />
+        <Route
           path="/s/meal"
           element={
             <Guarded>
@@ -150,6 +170,22 @@ export default function App() {
           element={
             <Guarded>
               <GuardianHome />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/report"
+          element={
+            <Guarded>
+              <Report />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/more"
+          element={
+            <Guarded>
+              <GuardianMore />
             </Guarded>
           }
         />

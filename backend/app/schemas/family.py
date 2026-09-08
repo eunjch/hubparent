@@ -38,5 +38,6 @@ class FamilyOut(ORMModel):
 class MemberOut(BaseModel):
     user_id: uuid.UUID
     name: str
+    phone: str  # 어르신 화면의 `자녀에게 전화하기` 가 쓴다
     role: UserRole
     relation: str | None

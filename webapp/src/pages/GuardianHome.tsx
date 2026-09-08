@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
 import { Backdrop, Icon } from "../shared/icons";
+import { GuardianTabs } from "../shared/tabs";
 import type { ActivityLevel, FamilyReport, Me, MoodValue, Senior } from "../shared/types";
 import {
   BigButton,
@@ -20,7 +21,6 @@ import {
   ScoreRing,
   Screen,
   Spinner,
-  TabBar,
   Tile,
   TileGrid,
 } from "../shared/ui";
@@ -48,7 +48,6 @@ export default function GuardianHome() {
   const [report, setReport] = useState<FamilyReport | null>(null);
 
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("home");
 
   useEffect(() => {
     (async () => {
@@ -83,18 +82,6 @@ export default function GuardianHome() {
     nav("/", { replace: true });
   }
 
-  const tabs = (
-    <TabBar
-      current={tab}
-      items={[
-        { key: "home", icon: "home", label: "홈", onClick: () => setTab("home") },
-        { key: "report", icon: "report", label: "리포트", onClick: () => setTab("report") },
-        { key: "message", icon: "message", label: "메시지", onClick: () => nav("/g/alerts") },
-        { key: "more", icon: "more", label: "더보기", onClick: () => setTab("more") },
-      ]}
-    />
-  );
-
   if (error) {
     return (
       <Screen title="부모님">
@@ -109,35 +96,6 @@ export default function GuardianHome() {
       <Screen title="부모님">
         <Spinner />
       </Screen>
-    );
-  }
-
-  if (tab !== "home") {
-    return (
-      <div className="screen decorated">
-        <Backdrop />
-        <main className="screen-body">
-          <Notice>이 화면은 다음 단계에서 준비됩니다.</Notice>
-          {tab === "more" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--gap-tight)" }}>
-              <BigButton tone="primary" icon="caregiver" onClick={() => nav("/g/seniors")}>
-                부모님 관리
-              </BigButton>
-              <BigButton icon="pills" onClick={() => nav("/g/medications")}>
-                약 복용 시간 설정
-              </BigButton>
-              <BigButton icon="calendar" onClick={() => nav("/g/schedules")}>
-                일정 관리
-              </BigButton>
-              <BigButton icon="bell" onClick={() => nav("/g/alerts")}>
-                알림
-              </BigButton>
-              <BigButton onClick={signOut}>로그아웃</BigButton>
-            </div>
-          )}
-        </main>
-        {tabs}
-      </div>
     );
   }
 
@@ -337,7 +295,7 @@ export default function GuardianHome() {
         )}
       </main>
 
-      {tabs}
+      <GuardianTabs current="home" />
     </div>
   );
 }

@@ -166,9 +166,11 @@ async def remove_senior(senior_id: uuid.UUID, user: CurrentUser, session: DBSess
 async def list_members(user: CurrentUser, session: DBSession) -> list[MemberOut]:
     family_id = await _my_family_id(session, user)
     rows = await session.execute(
-        select(User.id, User.name, FamilyMember.role, FamilyMember.relation)
+        select(User.id, User.name, User.phone, FamilyMember.role, FamilyMember.relation)
         .join(FamilyMember, FamilyMember.user_id == User.id)
         .where(FamilyMember.family_id == family_id)
     )
-    return [MemberOut(user_id=r[0], name=r[1], role=r[2], relation=r[3]) for r in rows.all()]
+    return [
+        MemberOut(user_id=r[0], name=r[1], phone=r[2], role=r[3], relation=r[4]) for r in rows.all()
+    ]
 

@@ -154,3 +154,12 @@ export interface AlertList {
   items: Alert[];
   unread: number;
 }
+
+/** 가족 구성원 (어르신 화면의 `자녀에게 전화하기`) */
+export interface Member {
+  user_id: string;
+  name: string;
+  phone: string;
+  role: Role;
+  relation: string | null;
+}

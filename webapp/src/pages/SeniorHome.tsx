@@ -9,9 +9,10 @@ import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
-import { Backdrop } from "../shared/icons";
-import type { Me } from "../shared/types";
-import { BigButton, Notice, ScoreRing, Screen, Spinner, TabBar, Tile, TileGrid } from "../shared/ui";
+import { Backdrop, Icon } from "../shared/icons";
+import { SeniorTabs } from "../shared/tabs";
+import type { Me, Member } from "../shared/types";
+import { BigButton, Notice, ScoreRing, Screen, Spinner, Tile, TileGrid } from "../shared/ui";
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -21,13 +22,17 @@ export default function SeniorHome() {
   const nav = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
   const [checked, setChecked] = useState<{ done: number; total: number } | null>(null);
+  const [guardian, setGuardian] = useState<Member | null>(null);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("home");
 
   useEffect(() => {
     request<Me>("/me")
       .then(setMe)
       .catch(() => setError("정보를 불러오지 못했습니다. 잠시 후 다시 열어주세요."));
+    // 하단 `자녀에게 전화하기` — 첫 번째 자녀
+    request<Member[]>("/family/members")
+      .then((rows) => setGuardian(rows.find((m) => m.role === "guardian") ?? null))
+      .catch(() => setGuardian(null));
   }, []);
 
   // 오늘 얼마나 체크했는지 — 건강 지수의 근거.
@@ -54,18 +59,6 @@ export default function SeniorHome() {
     nav("/", { replace: true });
   }
 
-  const tabs = (
-    <TabBar
-      current={tab}
-      items={[
-        { key: "home", icon: "home", label: "홈", onClick: () => setTab("home") },
-        { key: "record", icon: "yes", label: "건강기록", onClick: () => setTab("record") },
-        { key: "schedule", icon: "calendar", label: "일정", onClick: () => nav("/s/schedule") },
-        { key: "more", icon: "more", label: "더보기", onClick: () => setTab("more") },
-      ]}
-    />
-  );
-
   if (error) {
     return (
       <Screen title="홈">
@@ -80,23 +73,6 @@ export default function SeniorHome() {
       <Screen title="홈">
         <Spinner />
       </Screen>
-    );
-  }
-
-  if (tab !== "home") {
-    return (
-      <div className="screen decorated">
-        <Backdrop variant="leaf" />
-        <main className="screen-body">
-          <Notice>이 화면은 다음 단계에서 준비됩니다.</Notice>
-          {tab === "more" && (
-            <div style={{ marginTop: "auto" }}>
-              <BigButton onClick={signOut}>로그아웃</BigButton>
-            </div>
-          )}
-        </main>
-        {tabs}
-      </div>
     );
   }
 
@@ -161,9 +137,19 @@ export default function SeniorHome() {
           />
         </TileGrid>
 
+        {/* 별도 연락처 화면 없이 여기서 바로 건다 (계획서 7.2 S1) */}
+        {guardian && (
+          <div className="help-bar">
+            <span className="q">도움이 필요하신가요?</span>
+            <a className="call" href={`tel:${guardian.phone}`}>
+              <Icon name="phone" />
+              자녀에게 전화하기
+            </a>
+          </div>
+        )}
       </main>
 
-      {tabs}
+      <SeniorTabs current="home" />
     </div>
   );
 }

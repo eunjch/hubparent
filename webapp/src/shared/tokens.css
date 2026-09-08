@@ -2583,3 +2583,320 @@ input[type="datetime-local"] {
   font-size: var(--text-body);
   font-weight: 700;
 }
+
+/* ── 날짜 이동 (리포트 · 건강기록) ─────────────────────────── */
+
+.date-nav {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 4px;
+}
+
+.date-nav .icon-btn:disabled {
+  opacity: 0.3;
+}
+
+.date-nav-label {
+  text-align: center;
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--ink);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-nav.big .date-nav-label {
+  font-size: var(--text-title);
+}
+
+.today-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand-deep);
+  background: var(--brand-soft);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+/* ── 기분 변화 (G1 리포트 · S 건강기록) ────────────────────── */
+
+.mood-trio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mood-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mood-slot .face {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+.mood-trio.big .mood-slot .face {
+  width: 68px;
+  height: 68px;
+  font-size: 2.25rem;
+}
+
+.mood-slot.good .face {
+  background: #fff3c4;
+}
+.mood-slot.normal .face {
+  background: #e3ecff;
+}
+.mood-slot.bad .face {
+  background: #fde3ea;
+}
+
+.mood-slot .k {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.mood-slot .v {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── 상세 행 (식사 · 약) ───────────────────────────────────── */
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.detail-row + .detail-row {
+  border-top: 1px solid var(--line);
+}
+
+.detail-row img.lead {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+
+.detail-row .t {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-body);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-row .t .time {
+  color: var(--ink-2);
+  margin-right: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-row.big {
+  padding: 12px 0;
+}
+
+.detail-row.big .t {
+  font-size: var(--text-label);
+}
+
+.detail-row.big img.lead {
+  width: 36px;
+  height: 36px;
+}
+
+/* 시간대별 활동량 — 24개 막대, 6시간마다 라벨 */
+.trend.hours {
+  gap: 2px;
+  height: 120px;
+}
+
+.trend.hours .trend-col .bar {
+  width: 80%;
+  border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(180deg, #7fb0ff 0%, #4a7fe0 100%);
+}
+
+.trend.hours .trend-col .lab {
+  white-space: nowrap;
+  min-height: 1em;
+}
+
+/* 카드 제목 옆 링크 */
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--brand-deep);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-height: 40px;
+  padding: 0 4px;
+}
+
+.record-score {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--gap-tight);
+}
+
+.record-score-text .t {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.record-score-text .d {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+/* ── 더보기 ────────────────────────────────────────────────── */
+
+.more-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: var(--text-body);
+}
+
+.info-row + .info-row {
+  border-top: 1px solid var(--line);
+}
+
+.info-row .k {
+  color: var(--ink-2);
+  flex: none;
+}
+
+.info-row .v {
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  word-break: break-all;
+}
+
+.call-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch-min);
+  padding: 8px 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.call-row + .call-row {
+  border-top: 1px solid var(--line);
+}
+
+.call-row img.lead {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.call-row .body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.call-row .t {
+  font-size: var(--text-label);
+  font-weight: 800;
+}
+
+.call-row .d {
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.call-tag {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--ok-soft);
+  color: var(--ok-ink);
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+/* ── 부모 홈 하단 — 자녀에게 전화하기 (계획서 7.2 S1) ──────── */
+
+.help-bar {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 10px 10px 10px var(--gap-tight);
+}
+
+.help-bar .q {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  word-break: keep-all;
+}
+
+.help-bar .call {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid #bfe8d3;
+  background: var(--ok-soft);
+  color: var(--ok-ink);
+  font-size: var(--text-body);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.help-bar .call img {
+  width: 22px;
+  height: 22px;
+}
