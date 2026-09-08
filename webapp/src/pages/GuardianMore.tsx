@@ -9,8 +9,7 @@ import { Backdrop } from "../shared/icons";
 import { GuardianTabs } from "../shared/tabs";
 import type { Me } from "../shared/types";
 import { BigButton, Card, Notice, RowCard, Spinner } from "../shared/ui";
-
-import { prettyPhone } from "./SeniorMore";
+import { prettyPhone } from "../shared/format";
 
 export default function GuardianMore() {
   const nav = useNavigate();

@@ -2900,3 +2900,174 @@ input[type="datetime-local"] {
   width: 22px;
   height: 22px;
 }
+
+/* ── 목록 행의 수정·지우기 (부모님 관리 · 일정) ────────────── */
+
+.row-actions {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row-actions .row-del,
+.row-actions .row-edit {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.row-edit {
+  border-radius: var(--radius);
+  border: 1.5px solid var(--brand-soft);
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.next-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.text-btn {
+  border: none;
+  background: none;
+  color: var(--brand-deep);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.text-btn.danger {
+  color: var(--ink-3);
+}
+
+/* 식사 사진 썸네일 */
+.thumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.thumb.lg {
+  width: 64px;
+  height: 64px;
+}
+
+.thumb-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: var(--gap-tight);
+}
+
+.thumb-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.thumb-item .cap {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+/* ── 넘침 안전장치 ─────────────────────────────────────────────
+   flex 자식은 min-width:auto 라 내용이 길면 화면 밖으로 삐져나간다.
+   본문 바로 아래 요소는 본문 폭을 넘지 못하게 못 박는다. */
+.screen-body > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tile-grid {
+  min-width: 0;
+}
+
+.tile {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tile .head {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.help-bar {
+  flex-wrap: wrap;
+}
+
+.help-bar .call {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.senior-list .senior-row .body {
+  min-width: 0;
+}
+
+/* ── 좁은 폰 (320~360px) ─────────────────────────────────────── */
+@media (max-width: 360px) {
+  .tile .t {
+    white-space: normal;
+    font-size: var(--text-body);
+    line-height: 1.2;
+  }
+
+  .tile img {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* 식사 체크도 약 복용처럼 답 버튼을 아래 줄에 */
+  .answer-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .answer-row .answers {
+    flex: 1 1 100%;
+    padding-left: 46px;
+  }
+
+  .answer-row .ans {
+    flex: 1 1 0;
+    padding: 0 6px;
+  }
+
+  .hello-text .t {
+    font-size: var(--text-title);
+  }
+
+  .next-head .when {
+    font-size: var(--text-body);
+  }
+
+  .summary-grid {
+    gap: 4px;
+  }
+
+  .row-actions .row-del,
+  .row-actions .row-edit {
+    padding: 0 10px;
+  }
+}
+
+/* 다가오는 일정 — 좁으면 배지가 다음 줄로 내려간다 (뒤쪽 nowrap 규칙을 되돌림) */
+.next-head {
+  flex-wrap: wrap;
+}
+
+.next-head .when {
+  white-space: normal;
+}

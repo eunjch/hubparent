@@ -107,6 +107,9 @@ export default function SeniorRecord() {
                   <div className="detail-row big" key={s.key}>
                     <Icon name={s.icon} className="lead" />
                     <span className="t">{s.label}</span>
+                    {m?.photo_path && (
+                      <img className="thumb" src={`/uploads/${m.photo_path}`} alt={`${s.label} 식사 사진`} />
+                    )}
                     <StatusPill tone={m?.status === "ate" ? "done" : m ? "mid" : "none"} withCheck={m?.status === "ate"}>
                       {m?.status === "ate" ? "먹었어요" : m ? "안 먹었어요" : "아직"}
                     </StatusPill>

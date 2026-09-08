@@ -52,6 +52,13 @@ function toIso(local: string): string {
   return new Date(local).toISOString();
 }
 
+/** ISO → datetime-local 값. 수정 폼에 기존 시각을 채울 때 쓴다. */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export default function ScheduleManage() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -63,6 +70,7 @@ export default function ScheduleManage() {
   const [note, setNote] = useState("");
 
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Schedule | null>(null);
   const [title, setTitle] = useState("");
   const [place, setPlace] = useState("");
   const [kind, setKind] = useState<ScheduleKind>("hospital");
@@ -109,6 +117,19 @@ export default function ScheduleManage() {
     setWhen("");
     setReminders([60]);
     setAdding(false);
+    setEditing(null);
+  }
+
+  /** 기존 일정을 폼에 채운다 */
+  function startEdit(row: Schedule) {
+    setEditing(row);
+    setTitle(row.title);
+    setPlace(row.place ?? "");
+    setKind(row.kind);
+    setWhen(toLocalInput(row.start_at));
+    setReminders(row.reminder_minutes);
+    setAdding(true);
+    window.scrollTo({ top: 0 });
   }
 
   async function save() {
@@ -116,17 +137,21 @@ export default function ScheduleManage() {
     setBusy(true);
     setError("");
     try {
-      await request<Schedule>("/schedules", {
-        method: "POST",
-        body: {
-          target_user_id: seniorId,
-          title: title.trim(),
-          kind,
-          start_at: toIso(when),
-          place: place.trim() || null,
-          reminder_minutes: reminders,
-        },
-      });
+      const body = {
+        title: title.trim(),
+        kind,
+        start_at: toIso(when),
+        place: place.trim() || null,
+        reminder_minutes: reminders,
+      };
+      if (editing) {
+        await request<Schedule>(`/schedules/${editing.id}`, { method: "PATCH", body });
+      } else {
+        await request<Schedule>("/schedules", {
+          method: "POST",
+          body: { target_user_id: seniorId, ...body },
+        });
+      }
       resetForm();
       await load();
     } catch (e) {
@@ -173,8 +198,8 @@ export default function ScheduleManage() {
         <h1>병원 일정</h1>
         <button
           className="icon-btn"
-          onClick={() => setAdding((v) => !v)}
-          aria-label={adding ? "추가 취소" : "일정 추가"}
+          onClick={() => (adding ? resetForm() : setAdding(true))}
+          aria-label={adding ? "취소" : "일정 추가"}
         >
           {adding ? "×" : "+"}
         </button>
@@ -205,7 +230,8 @@ export default function ScheduleManage() {
         {adding && (
           <section className="form-card">
             <h2>
-              <span className="tagcolor me" aria-hidden="true" />일정 추가
+              <span className="tagcolor me" aria-hidden="true" />
+              {editing ? "일정 수정" : "일정 추가"}
             </h2>
 
             <div className="field">
@@ -278,6 +304,14 @@ export default function ScheduleManage() {
             <button className="notify-btn" onClick={() => notify(next)}>
               부모님에게 알림 전송
             </button>
+            <div className="next-actions">
+              <button className="text-btn" onClick={() => startEdit(next)}>
+                수정
+              </button>
+              <button className="text-btn danger" onClick={() => remove(next)}>
+                지우기
+              </button>
+            </div>
             {next.notified_at && (
               <p className="field-hint" style={{ marginTop: 6 }}>
                 마지막 전송 {formatWhen(next.notified_at).time}
@@ -300,14 +334,19 @@ export default function ScheduleManage() {
                 <div className="sched-row" key={r.id}>
                   <Icon name={kindIcon(r.kind)} className="lead" />
                   <div className="body">
-                    <span className="t">
-                      {w.date} {w.time}
+                    <span className="t">{w.date}</span>
+                    <span className="d">
+                      {w.time} · {r.title}
                     </span>
-                    <span className="d">{r.title}</span>
                   </div>
-                  <button className="row-del" onClick={() => remove(r)} aria-label={`${r.title} 지우기`}>
-                    지우기
-                  </button>
+                  <span className="row-actions">
+                    <button className="row-edit" onClick={() => startEdit(r)} aria-label={`${r.title} 수정`}>
+                      수정
+                    </button>
+                    <button className="row-del" onClick={() => remove(r)} aria-label={`${r.title} 지우기`}>
+                      지우기
+                    </button>
+                  </span>
                 </div>
               );
             })}

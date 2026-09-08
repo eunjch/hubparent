@@ -137,6 +137,17 @@ export default function MealCheck() {
                   {s.label} 사진 {find(s.key)?.photo_path ? "바꾸기" : "추가"}
                 </BigButton>
               ))}
+              {/* 올린 사진은 바로 보인다 — "올라갔나?" 를 묻지 않게 */}
+              {rows.some((r) => r.photo_path) && (
+                <div className="thumb-row">
+                  {SLOTS.filter((s) => find(s.key)?.photo_path).map((s) => (
+                    <span className="thumb-item" key={s.key}>
+                      <img className="thumb lg" src={`/uploads/${find(s.key)!.photo_path}`} alt={`${s.label} 식사 사진`} />
+                      <span className="cap">{s.label}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
               {photoNote && <p className="field-hint" style={{ marginTop: 8 }}>{photoNote}</p>}
             </div>
           )}

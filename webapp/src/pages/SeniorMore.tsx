@@ -9,18 +9,11 @@ import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
+import { prettyPhone } from "../shared/format";
 import { Backdrop, Icon } from "../shared/icons";
 import { SeniorTabs } from "../shared/tabs";
 import type { Me, Member } from "../shared/types";
 import { BigButton, Card, Notice, Spinner } from "../shared/ui";
-
-/** 01012345678 → 010-1234-5678 */
-export function prettyPhone(p: string): string {
-  const d = p.replace(/\D/g, "");
-  if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
-  if (d.length === 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
-  return p;
-}
 
 export default function SeniorMore() {
   const nav = useNavigate();

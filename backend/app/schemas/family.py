@@ -17,7 +17,9 @@ class SeniorCreate(BaseModel):
 
 class SeniorUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=50)
+    phone: str | None = Field(default=None, min_length=10, max_length=20)
     relation: str | None = Field(default=None, max_length=20)
+    birth_year: int | None = Field(default=None, ge=1900, le=2030)
 
 
 class SeniorOut(BaseModel):

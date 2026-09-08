@@ -238,6 +238,14 @@ export default function App() {
             </Guarded>
           }
         />
+        <Route
+          path="/g/seniors/:id"
+          element={
+            <Guarded>
+              <SeniorAdd />
+            </Guarded>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

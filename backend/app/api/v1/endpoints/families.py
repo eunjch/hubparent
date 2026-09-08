@@ -131,6 +131,15 @@ async def update_senior(
         senior.name = payload.name.strip()
     if payload.relation is not None:
         member.relation = payload.relation
+    if payload.birth_year is not None:
+        senior.birth_year = payload.birth_year
+    if payload.phone is not None:
+        phone = normalize_phone(payload.phone)
+        if phone != senior.phone:
+            taken = await session.scalar(select(User.id).where(User.phone == phone, User.id != senior.id))
+            if taken is not None:
+                raise Conflict("PHONE_TAKEN", "이미 쓰고 있는 번호입니다.")
+            senior.phone = phone
     await session.flush()
 
     return SeniorOut(

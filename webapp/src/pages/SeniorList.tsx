@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { prettyPhone } from "../shared/format";
 import { Backdrop, Icon } from "../shared/icons";
 import type { Me, Senior } from "../shared/types";
 import { BigButton, Notice, Spinner } from "../shared/ui";
@@ -67,7 +68,7 @@ export default function SeniorList() {
 
         {me && seniors && seniors.length > 0 && (
           <Notice>
-            부모님께 <b>{me.user.name}</b> · <b>{me.user.phone}</b> 을(를) 알려주세요. 앱에서 이
+            부모님께 <b>{me.user.name}</b> · <b>{prettyPhone(me.user.phone)}</b> 을(를) 알려주세요. 앱에서 이
             이름과 번호를 넣으시면 들어오실 수 있습니다.
           </Notice>
         )}
@@ -83,14 +84,19 @@ export default function SeniorList() {
                   {s.name}
                   {s.relation && <span className="rel">{s.relation}</span>}
                 </span>
-                <span className="d">{s.phone}</span>
+                <span className="d">{prettyPhone(s.phone)}</span>
                 <span className={`state ${s.joined ? "in" : "out"}`}>
                   {s.joined ? "앱 사용 중" : "아직 안 들어오셨어요"}
                 </span>
               </div>
-              <button className="row-del" onClick={() => remove(s)} aria-label={`${s.name} 빼기`}>
-                빼기
-              </button>
+              <span className="row-actions">
+                <button className="row-edit" onClick={() => nav(`/g/seniors/${s.id}`)} aria-label={`${s.name} 정보 수정`}>
+                  수정
+                </button>
+                <button className="row-del" onClick={() => remove(s)} aria-label={`${s.name} 빼기`}>
+                  빼기
+                </button>
+              </span>
             </div>
           ))}
         </div>

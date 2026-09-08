@@ -200,6 +200,9 @@ export default function Report() {
                   <div className="detail-row" key={s.key}>
                     <Icon name={s.icon} className="lead" />
                     <span className="t">{s.label}</span>
+                    {m?.photo_path && (
+                      <img className="thumb" src={`/uploads/${m.photo_path}`} alt={`${s.label} 식사 사진`} />
+                    )}
                     <StatusPill tone={m?.status === "ate" ? "done" : m ? "mid" : "none"}>
                       {m?.status === "ate" ? "먹었어요" : m ? "안 먹었어요" : "미기록"}
                     </StatusPill>
