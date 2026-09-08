@@ -56,7 +56,7 @@ export default function GuardianLogin() {
           <span className="hero-badge">
             <Icon name="caregiver" />
           </span>
-          <h1 style={{ fontSize: "var(--text-action)" }}>다시 오셨네요</h1>
+          <h2 style={{ fontSize: "var(--text-action)" }}>다시 오셨네요</h2>
         </div>
 
         <section className="form-card">

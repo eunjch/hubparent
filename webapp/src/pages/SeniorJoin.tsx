@@ -127,11 +127,11 @@ export default function SeniorJoin() {
           <span className="hero-badge">
             <Icon name="heart" />
           </span>
-          <h1 style={{ fontSize: "var(--text-action)" }}>
+          <h2 style={{ fontSize: "var(--text-action)" }}>
             자녀분의 이름과
             <br />
             전화번호를 넣어주세요
-          </h1>
+          </h2>
         </div>
 
         <section className="form-card">

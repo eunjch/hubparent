@@ -69,9 +69,9 @@ export default function SeniorAdd() {
           <span className="hero-badge">
             <Icon name="heart" />
           </span>
-          <h1 style={{ fontSize: "var(--text-action)" }}>
+          <h2 style={{ fontSize: "var(--text-action)" }}>
             {first ? "먼저 부모님을 등록해 주세요" : "부모님을 추가합니다"}
-          </h1>
+          </h2>
           <p>부모님은 따로 가입하지 않으셔도 됩니다.</p>
         </div>
 

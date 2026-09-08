@@ -10,16 +10,18 @@
 
 :root {
   /* ── 크기 ─────────────────────────────────────────────────
-     --font-scale 은 설정(화면 9)에서 1 / 1.25 / 1.5 로 바뀐다. */
-  --font-scale: 1;
-  --text-sm: calc(15px * var(--font-scale));
-  --text-body: calc(18px * var(--font-scale));
-  --text-label: calc(20px * var(--font-scale));
-  --text-action: calc(24px * var(--font-scale));
-  --text-title: calc(28px * var(--font-scale));
-  --text-hero: calc(40px * var(--font-scale));
+     앱 안에 글자 크기 설정을 두지 않고 기기 설정을 따른다 (계획서 7.4 · 9장).
+     그러려면 글자와 터치 영역이 rem 이어야 한다 — px 로 박으면 기기 설정이
+     반영되지 않는다. 기준 1rem = 브라우저 기본 16px.
+     여백(gap)은 글자가 아니므로 px 로 둔다. */
+  --text-sm: 0.9375rem; /* 15px */
+  --text-body: 1.125rem; /* 18px — 본문 최소 */
+  --text-label: 1.25rem; /* 20px */
+  --text-action: 1.5rem; /* 24px — 주요 버튼 */
+  --text-title: 1.75rem; /* 28px */
+  --text-hero: 2.5rem; /* 40px */
 
-  --touch-min: 56px;
+  --touch-min: 3.5rem; /* 56px. 글자가 커지면 버튼도 같이 커진다 */
   --gap-tight: 12px;
   --gap: 16px;
   --gap-loose: 24px;
@@ -150,7 +152,7 @@ textarea:focus-visible {
   min-width: 48px;
   border: none;
   background: none;
-  font-size: 30px;
+  font-size: 1.875rem;
   line-height: 1;
   color: var(--ink);
   border-radius: var(--radius);
@@ -440,7 +442,7 @@ textarea:focus-visible {
 }
 
 .row-card .chev {
-  font-size: 26px;
+  font-size: 1.625rem;
   color: var(--ink-3);
   flex: none;
 }
@@ -756,7 +758,8 @@ textarea:focus-visible {
   height: 64px;
 }
 
-.hero h1 {
+.hero h1,
+.hero h2 {
   font-size: var(--text-title);
   font-weight: 800;
   margin: 0;
@@ -832,7 +835,7 @@ textarea:focus-visible {
 
 .role-card .chev {
   margin-left: auto;
-  font-size: 28px;
+  font-size: 1.75rem;
   color: var(--ink-3);
 }
 
@@ -1048,7 +1051,7 @@ textarea:focus-visible {
 }
 
 .choice-card .chev {
-  font-size: 30px;
+  font-size: 1.875rem;
   color: var(--ink-3);
   flex: none;
 }
@@ -1078,4 +1081,148 @@ textarea:focus-visible {
   background: var(--coral);
   border-color: var(--coral);
   color: #fff;
+}
+
+/* ══ 반응형 ═══════════════════════════════════════════════════
+ *
+ *  주 대상은 폰이다(Capacitor 웹뷰). 다만 브라우저에서도 열리므로
+ *  좁은 폰 · 일반 폰 · 태블릿/데스크톱 · 가로 모드를 각각 다룬다.
+ *
+ *  글자와 터치 영역은 rem 이라 기기 설정을 따라 함께 커진다(계획서 9장).
+ *  여기서는 폭과 여백만 조정한다.
+ */
+
+/* ── 좁은 폰 (~360px) — 갤럭시 S 기본형, 아이폰 SE ──────────── */
+@media (max-width: 360px) {
+  :root {
+    --gap-tight: 10px;
+    --gap: 12px;
+    --gap-loose: 18px;
+  }
+
+  .tile {
+    min-height: 92px;
+    gap: 6px;
+  }
+
+  .tile img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .role-card,
+  .choice-card {
+    gap: var(--gap-tight);
+  }
+
+  .role-card .face {
+    width: 54px;
+    height: 54px;
+  }
+
+  .role-card .face img {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* 상태 알약이 제목을 밀어내지 않게 줄바꿈을 허용한다 */
+  .row-card {
+    flex-wrap: wrap;
+  }
+
+  .row-card .body {
+    flex-basis: 60%;
+  }
+}
+
+/* ── 태블릿 · 데스크톱 (600px~) ──────────────────────────────
+   앱 컬럼을 화면 가운데 세우고 바탕을 한 톤 낮춘다.
+   폰에서 보던 배치를 그대로 유지하는 것이 목적이다. */
+@media (min-width: 600px) {
+  body {
+    background: #f2e7de;
+  }
+
+  .screen {
+    max-width: 500px;
+    box-shadow:
+      0 0 0 1px rgba(107, 76, 69, 0.06),
+      0 24px 60px -34px rgba(107, 76, 69, 0.5);
+  }
+
+  /* 화면이 충분히 크면 여백을 조금 더 준다 */
+  .screen-body {
+    padding: var(--gap) var(--gap-loose) var(--gap-loose);
+  }
+
+  .screen-head,
+  .brandbar {
+    padding-left: var(--gap);
+    padding-right: var(--gap);
+  }
+
+  .sticky-cta {
+    padding-left: var(--gap-loose);
+    padding-right: var(--gap-loose);
+    background: linear-gradient(180deg, rgba(255, 248, 242, 0) 0%, var(--ground) 30%);
+  }
+}
+
+/* ── 가로 모드 · 낮은 높이 ───────────────────────────────────
+   sticky 요소가 화면을 다 먹어 본문이 안 보이는 것을 막는다. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .screen-head,
+  .brandbar,
+  .tabbar,
+  .sticky-cta {
+    position: static;
+  }
+
+  .hero {
+    padding: var(--gap-tight) 0;
+  }
+
+  .hero-badge {
+    width: 72px;
+    height: 72px;
+    margin-bottom: var(--gap-tight);
+  }
+
+  .hero-badge img {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ── 넘칠 수 있는 것들 ──────────────────────────────────────
+   본문이 가로로 밀리면 어르신 화면에서 특히 치명적이다. */
+img {
+  max-width: 100%;
+}
+
+.screen,
+.screen-body {
+  overflow-x: hidden;
+}
+
+/* 부모님 전환 칩만 예외로 가로 스크롤을 허용한다 */
+.senior-tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.senior-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* 긴 이름·이메일이 레이아웃을 밀지 않게 */
+.senior-row .t,
+.senior-row .d,
+.row-card .t,
+.row-card .d,
+.banner .t,
+.banner .d,
+.choice-card .t {
+  overflow-wrap: anywhere;
 }
