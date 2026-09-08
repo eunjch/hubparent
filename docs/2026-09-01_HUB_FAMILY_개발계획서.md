@@ -1,7 +1,7 @@
 # 2026-09-01 HUB FAMILY 개발 계획서
 
 > 가족 안심 케어 플랫폼 · 팀 MEDIC
-> 문서 버전 v0.2 · 최종 수정 2026-09-02
+> 문서 버전 v0.3 · 최종 수정 2026-09-08
 
 ---
 
@@ -15,11 +15,12 @@
 
 | 구분 | 대상 | 앱에서 하는 일 |
 |---|---|---|
-| 어르신(Senior) | 60~80대 부모 | 하루 3회 체크(식사·복약·기분), 일정 확인, 보호자 연락 |
-| 보호자(Guardian) | 30~50대 자녀 | 리포트 열람, 병원 일정 등록, 이상 징후 알림 수신, 결제 |
+| 어르신(Senior) | 60~80대 부모 | 체크 3종(식사·복약·기분) 누르기, 일정 **확인**, 자녀에게 전화 |
+| 보호자(Guardian) | 30~50대 자녀 | 리포트 열람, **병원 일정·복약 시간 설정**, 이상 징후 알림 수신, 결제 |
 
-- 결제자와 사용자가 분리된다 → **가입/온보딩은 자녀 주도**, 어르신은 초대코드로 합류하는 흐름이어야 한다.
-- 한 가족(Family)에 어르신 1명 이상 + 보호자 N명이 속한다.
+- 결제자와 사용자가 분리된다 → **가입·등록은 전부 자녀가 한다.** 어르신은 만들지도, 입력하지도 않는다.
+- **자녀 1 : 부모 N.** 한 자녀가 부모님 여러 분을 관리한다. 형제도 같은 가족에 들어올 수 있다.
+- 어르신 화면에서 *만드는* 동작은 없다. 일정도 복약 시간도 자녀가 설정하고, 어르신은 누르기만 한다.
 
 ### 1.3 MVP 기능 범위 (STAGE 1)
 
@@ -35,20 +36,24 @@
 
 **MVP 제외 (STAGE 2 이후)**: AI 패턴 변화 분석, AI 맞춤 리포트, AI 안부 전화, 병원·요양기관 연동, 방문 케어 매칭.
 
-### 1.4 MVP 인증 방식 (2026-09-02 결정)
+### 1.4 MVP 인증 방식 (2026-09-08 확정 · 구현 완료)
 
-휴대폰 본인인증을 MVP 범위에서 뺀다. SMS 공급사 계약이 선행되어야 하고, 어르신에게 인증번호 입력은 진입 장벽이다.
+휴대폰 본인인증은 MVP 범위 밖이다. SMS 공급사 계약이 선행되어야 하고, 어르신에게 인증번호 입력은 진입 장벽이다.
+대신 **자녀는 일반 회원가입, 어르신은 자녀 정보로 들어오는** 구조로 간다.
 
-| 대상 | 입력하는 것 | 인증 수단 |
+| 대상 | 가입 | 로그인 |
 |---|---|---|
-| 자녀 | 이름 · 연락처 · 이메일 · 부모님 성함 | 없음 |
-| 어르신 | **6자리 초대코드만** | 코드가 곧 인증 |
+| 자녀 | 이메일 · 비밀번호 · 이름 · 연락처 · 동의 | **이메일 + 비밀번호** (argon2 해시) |
+| 어르신 | **없음** — 자녀가 성함·연락처를 등록해 준다 | **자녀 이름 + 자녀 전화번호** → 부모님 목록에서 본인 선택 |
 
-- 어르신은 이름조차 입력하지 않는다. 자녀가 등록한 성함을 보고 "김영희 님 맞으세요?" 한 번 누르면 끝.
-- 어르신 토큰은 refresh 180일 + 앱 실행 시 자동 갱신. **재로그인 화면을 보게 만들면 그 시점에 이탈한다.**
+- 어르신에게 비밀번호를 만들게 하지 않는다. 자녀 이름과 번호는 대개 외우고 있거나 전화기에 있는 정보다.
+- 2단계(본인 선택)에서 자녀 정보를 다시 검증한다. `senior_id` 만으로는 들어올 수 없다.
+- 어르신 refresh 토큰은 180일 + 앱 실행 시 자동 갱신. **재로그인 화면을 보게 만들면 그 시점에 이탈한다.**
+- 6자리 초대코드와 `invitations` 테이블은 제거했다.
 
-> **이 방식은 전화번호만 알면 타인 계정으로 접근할 수 있다.** 데모·검증용으로만 쓰고, 실사용자를 받기 전에 반드시 교체한다.
-> 건강정보를 다루므로 더 그렇다. 교체 비용을 줄이기 위해 인증 진입점을 `POST /auth/start` 한 곳으로 몰아둔다.
+> **한계: 자녀 이름과 번호를 아는 사람은 그 가족의 어르신 계정에 들어올 수 있다.**
+> 데모·검증용으로만 쓰고 실사용자를 받기 전에 반드시 교체한다. 건강정보를 다루므로 더 그렇다.
+> 교체 비용을 줄이기 위해 계정 진입을 `app/api/v1/endpoints/auth.py` 한 파일로 몰아 두었다.
 
 ---
 
@@ -133,9 +138,9 @@ hubfamily/
 │  └─ Dockerfile
 ├─ webapp/                     # 웹뷰에 로드되는 SPA
 │  ├─ src/
-│  │  ├─ senior/               # 화면 1~5, 9, 10
-│  │  ├─ guardian/             # 화면 7, 8
-│  │  ├─ shared/               # API 클라이언트, 오프라인 큐, 디자인 토큰
+│  │  ├─ pages/                # 화면 (자녀 4 + 부모 5 + 온보딩)
+│  │  ├─ shared/               # API 클라이언트, 오프라인 큐, 디자인 토큰, 공용 컴포넌트
+│  │  ├─ assets/icons/         # MEDIC Warm Care 아이콘 16종
 │  │  └─ native/               # Capacitor 브릿지 래퍼
 │  └─ vite.config.ts
 ├─ mobile/                     # Capacitor 프로젝트
@@ -177,20 +182,20 @@ hubfamily/
 
 | 테이블 | 주요 컬럼 | 설명 |
 |---|---|---|
-| `users` | id, phone, name, **email**, role(senior/guardian), birth_year, consented_at | 계정. email 은 리포트 메일용 (12.1) |
+| `users` | id, phone, name, email(유니크), **password_hash**, role, birth_year, consented_at | 계정. 자녀만 email·비밀번호를 갖는다 |
 | `families` | id, name, created_by, created_at | 가족 그룹 |
 | `family_members` | family_id, user_id, role, relation(아들/딸 등) | 가족-사용자 N:M |
-| `invitations` | code, family_id, target_role, expires_at, used_at | 초대코드 |
+| `user_consents` | user_id, kind(health_data/email_report/ai_processing), granted_at, revoked_at | 동의 이력. 철회 시점까지 남긴다 |
 | `devices` | user_id, platform, push_token, app_version, last_seen_at | 단말·푸시 토큰 |
 | `meal_checks` | user_id, check_date, slot(B/L/D), status(ate/skip), photo_url, checked_at | 식사 체크 |
-| `medications` | id, user_id, name, dose, times[], weekdays, start_date, end_date, active | 복약 스케줄 |
+| `medications` | id, user_id, name, dose, times[], weekdays, start_date, end_date, active | 복약 스케줄. **자녀가 설정**한다 (7.1 G4) |
 | `medication_logs` | medication_id, scheduled_at, status(taken/missed/pending), responded_at, reminder_level | 복약 이력 |
 | `mood_checks` | user_id, check_date, slot, mood(good/normal/bad), checked_at | 기분 체크 |
 | `schedules` | id, family_id, target_user_id, title, kind(hospital/etc), start_at, place, created_by | 일정 |
 | `activity_signals` | user_id, recorded_at, screen_on_count, step_count, light_level, battery, is_charging | 생활 신호 |
 | `daily_reports` | user_id, report_date, meal_done, med_status, mood, activity_level, summary_text | 일일 리포트 |
 | `alerts` | id, family_id, target_user_id, type, severity, occurred_at, ack_by, ack_at | 이상 징후 |
-| `emergency_contacts` | user_id, name, phone, relation, sort_order | 보호자 연락처 |
+| `emergency_contacts` | user_id, name, phone, relation, sort_order | 어르신이 거는 번호. 최종안에서는 부모 메인의 전화 버튼이 쓴다 |
 | `user_settings` | user_id, font_scale, voice_guide, notify_prefs(jsonb) | 설정 |
 | `subscriptions` | family_id, plan, status, trial_ends_at, next_billing_at | 구독 |
 | `audit_logs` | actor_id, action, target_type, target_id, at, ip | 민감정보 접근 감사 |
@@ -206,55 +211,114 @@ hubfamily/
 
 ## 6. API 설계 (`/api/v1`)
 
+### 6.1 계정 (구현 완료)
+
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/auth/start` | 계정 생성·로그인 (MVP: 인증번호 없음 — 1.4). **인증 교체 시 여기만 바꾼다** |
+| POST | `/auth/register` | 자녀 회원가입. 가입과 동시에 가족·15일 체험이 만들어진다 |
+| POST | `/auth/login` | 자녀 로그인 (이메일 + 비밀번호) |
+| POST | `/auth/senior/lookup` | 부모 1단계 — 자녀 이름·번호로 부모님 목록 조회. 인증 불필요 |
+| POST | `/auth/senior/login` | 부모 2단계 — 본인 선택. 자녀 정보를 재검증한다 |
 | POST | `/auth/refresh` | 토큰 갱신 |
-| GET | `/invitations/{code}` | 합류 전 가족·대상자 확인 ("김영희 님 맞으세요?") |
 | GET | `/me` | 내 프로필·역할·가족 |
-| POST | `/families` | 가족 생성(자녀) |
-| POST | `/families/{id}/invitations` | 초대코드 발급 |
-| POST | `/invitations/{code}/accept` | 어르신 합류 |
-| POST | `/devices` | 푸시 토큰 등록/갱신 |
-| GET/POST | `/checks/meals` | 식사 체크 조회/등록 |
-| POST | `/checks/meals/{id}/photo` | 식사 사진 업로드 |
-| GET/POST | `/checks/moods` | 기분 체크 |
-| GET/POST/PATCH/DELETE | `/medications` | 복약 스케줄 CRUD |
-| GET | `/medications/next` | 다음 복약 시간(화면 3) |
-| POST | `/medications/{id}/logs` | 복용/미복용 응답 |
-| GET/POST/PATCH/DELETE | `/schedules` | 일정 CRUD |
-| POST | `/signals` | 생활 신호 배치 업로드 |
+
+> **인증을 교체할 때 손대는 곳은 이 여섯 개뿐이다** (계획서 1.4).
+
+### 6.2 가족 · 부모님 (구현 완료)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/family` | 내 가족 |
+| GET | `/family/seniors` | 부모님 목록. `joined` 로 앱 사용 여부를 알린다 |
+| POST | `/family/seniors` | 부모님 등록 (자녀 1 : 부모 N) |
+| PATCH | `/family/seniors/{id}` | 성함·관계 수정 |
+| DELETE | `/family/seniors/{id}` | 가족에서 제외. 계정과 기록은 남긴다 |
+| GET | `/family/members` | 구성원 전체 |
+
+### 6.3 체크 · 단말 (구현 완료)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET POST | `/checks/meals` | 식사 체크 (화면 S2) |
+| GET POST | `/checks/moods` | 기분 체크 (화면 S4) |
+| POST | `/devices` | 푸시 토큰 등록·갱신 |
 | POST | `/heartbeat` | 앱 생존 신호 |
-| GET | `/reports/daily?date=` | 오늘 리포트(화면 6) |
-| GET | `/reports/family/{user_id}?date=` | 자녀용 부모 리포트(화면 7) |
-| GET | `/alerts` | 알림 목록(화면 8) |
-| POST | `/alerts/{id}/ack` | 알림 확인 처리 |
-| GET/POST/PATCH/DELETE | `/contacts` | 보호자 연락처(화면 10) |
-| GET/PATCH | `/settings` | 설정(화면 9) |
+| POST | `/signals` | 생활 신호 배치 업로드 |
+| GET PATCH | `/settings` | 설정 (7.4 확인 필요) |
+| CRUD | `/contacts` | 연락처 |
 
-**공통 규약**
+### 6.4 남은 것 (M2~M4)
 
-- 인증: `Authorization: Bearer <access token>` (access 30분 / refresh 30일)
-- 권한: 보호자는 **같은 family에 속한 어르신 데이터만** 조회 가능. 모든 조회 라우터에 family 소속 검증 의존성 적용.
-- 체크 등록 API는 `Idempotency-Key` 헤더 지원 — 오프라인 큐 재전송 시 중복 방지.
-- 에러 포맷 통일: `{ "code": "MEAL_ALREADY_CHECKED", "message": "..." }`
+| 메서드 | 경로 | 화면 | 시점 |
+|---|---|---|---|
+| POST | `/checks/meals/{id}/photo` | S2 사진 추가 | M2 |
+| CRUD | `/medications` | **G4 약 복용 시간 설정 — 자녀 권한** | M3 |
+| GET | `/medications/today` | S3 오늘 복용할 약 목록 | M3 |
+| POST | `/medications/{id}/logs` | S3 복용함 / 안 먹었어요 | M3 |
+| CRUD | `/schedules` | G3 일정 관리 (자녀), S5 일정 확인 (부모, 읽기 전용) | M3 |
+| POST | `/schedules/{id}/notify` | G3 `부모님에게 알림 전송` | M3 |
+| GET | `/reports/family/{user_id}` | G1 오늘 요약 · 기분 변화 | M4 |
+| GET | `/reports/activity/{user_id}` | G1 **시간대별 활동량 그래프** | M4 |
+| GET | `/alerts?filter=` | G2 필터 탭 (전체·이상 징후·일반) | M4 |
+| POST | `/alerts/{id}/ack` · `/alerts/ack-all` | G2 확인 · `모두 확인했어요` | M4 |
+
+### 6.5 공통 규약
+
+- 인증 — `Authorization: Bearer <token>`. access 30분 / refresh 180일.
+- 권한 — 보호자는 **같은 family 에 속한 어르신 데이터만** 조회 가능. 모든 조회 라우터가 `assert_family_access` 를 거친다.
+- **복약·일정은 자녀만 만들고 고친다.** 어르신은 응답(복용함/안 먹었어요)만 남긴다.
+- 체크 등록은 `Idempotency-Key` 지원 — 오프라인 큐 재전송 시 중복 방지.
+- 에러 포맷 통일 — `{ "code": "SENIOR_ALREADY_JOINED", "message": "..." }`
 
 ---
 
-## 7. 화면 명세 (앱구성_MEDIC.pdf 매핑)
+## 7. 화면 명세 (docs/최종화면구분.png 기준 · 2026-09-08 확정)
 
-| # | 화면 | 대상 | 사용 API | 구현 메모 |
-|---|---|---|---|---|
-| 1 | 홈 | 어르신 | `/me`, 날씨, 각 체크 상태 | 큰 카드 4개(식사·복약·기분·일정) + 오늘 리포트 버튼. 미완료 카드 강조 |
-| 2 | 식사 체크 | 어르신 | `/checks/meals` | 아침/점심/저녁 × 먹었어요/안 먹었어요. 사진 등록은 선택 |
-| 3 | 약 복용 알림 | 어르신 | `/medications/next`, `/medications/{id}/logs` | 다음 복약 시간 크게 표시, 복용했어요/아직 안했어요 2버튼 |
-| 4 | 기분 체크 | 어르신 | `/checks/moods` | 3시점 × 이모지 3단계, 저장하기 |
-| 5 | 일정 확인 | 어르신 | `/schedules` | 병원 일정 / 기타 일정 분리. 일정 추가 가능 |
-| 6 | 오늘 리포트 | 어르신 | `/reports/daily` | 식사·약·기분·활동 4항목 요약 + 격려 문구 |
-| 7 | 엄마 리포트 | 보호자 | `/reports/family/{id}` | 부모 프로필 + 4항목 상태 + 상세 보기 |
-| 8 | 이상 징후 알림 | 보호자 | `/alerts`, `/alerts/{id}/ack` | 경고 카드 + [확인] / [전화하기] |
-| 9 | 설정 | 어르신 | `/settings` | 알림 설정, 글자 크기, 음성 안내, FAQ, 앱 정보 |
-| 10 | 보호자 연락처 | 어르신 | `/contacts` | 이름·번호 카드 + 통화 버튼(`tel:`) |
+초기 와이어프레임(`앱구성_MEDIC.pdf`) 10화면을 **자녀 4 + 부모 5 = 9화면**으로 재편했다.
+가장 큰 변화는 **약 복용 시간을 자녀가 설정한다**는 점이다. 어르신은 "드셨어요/안 드셨어요"만 누른다.
+
+### 7.1 자녀용 (4화면)
+
+> 부모님의 하루 상태를 한눈에 확인하고, 일정을 설정할 수 있어요.
+
+| # | 화면 | 사용 API | 구성 |
+|---|---|---|---|
+| G1 | **부모님 리포트** | `/family/seniors`, `/reports/family/{id}`, `/signals` 집계 | 상단 `우리 부모님 ⌄` 전환 드롭다운 + 알림 벨(미확인 시 점)<br>· 오늘 요약 4칸: 식사 3/3 · 약 복용 2/2 · 활동 정상 · 기분 좋음<br>· 기분 변화: 아침·점심·저녁 이모지 나열 + `더보기`<br>· 생활 패턴: 활동량 등급 + **시간대별 막대그래프**(06/12/18/24시) |
+| G2 | **이상 징후 알림** | `/alerts`, `/alerts/{id}/ack` | 필터 탭 `전체 / 이상 징후 / 일반`<br>· 이상 징후 카드(적색): 사유 문구 + `상세 확인`<br>· 일반 알림 목록: 약 복용 미체크 · 기분 미완료 · 식사 미완료 + 시각<br>· `모두 확인했어요` 일괄 ack |
+| G3 | **일정 관리** | `/schedules` CRUD | `다음 일정` 카드 + **`부모님에게 알림 전송`** 버튼<br>· 일정 목록, 우상단 `+` 로 추가 |
+| G4 | **약 복용 시간 설정** | `/medications` CRUD | 복용 약 목록: 시점 · 시각 · 약 이름 · **알림 토글**<br>· 우상단 `+` 로 약 추가 |
+
+### 7.2 부모용 (5화면)
+
+> 간단한 버튼으로 오늘의 상태를 체크하고, 일정을 확인할 수 있어요.
+
+| # | 화면 | 사용 API | 구성 |
+|---|---|---|---|
+| S1 | **메인** | `/me`, 각 체크 상태 | `안녕하세요, 김영희 어르신` + 날짜<br>· 2×2 타일: 식사 체크 · 약 복용 · 기분 체크 · 일정 확인 (각 2줄 설명)<br>· 하단 **`자녀에게 전화하기`** — 별도 연락처 화면 없이 여기서 바로 건다 |
+| S2 | **식사 체크** | `/checks/meals`, 사진 업로드 | 아침·점심·저녁 행 × `먹었어요` / `안 먹었어요` 2버튼<br>· 하단 `사진 추가` (선택) |
+| S3 | **약 복용 체크** | `/medications/today`, `/medications/{id}/logs` | 자녀가 등록한 약이 시각·이름과 함께 나열<br>· 각 행 `복용함` / `안 먹었어요` |
+| S4 | **기분 체크** | `/checks/moods` | 아침·점심·저녁 행 × 이모지 3개(좋음·보통·나쁨) 즉시 선택 |
+| S5 | **일정 확인** | `/schedules` | `다음 일정` 강조 + `전체 일정` 목록. **읽기 전용** — 등록은 자녀가 한다 |
+
+### 7.3 초기안에서 바뀐 것
+
+| 항목 | 초기안 (PDF) | 최종안 | 이유 |
+|---|---|---|---|
+| 약 복용 시간 | 어르신이 등록 | **자녀가 설정** | 어르신 입력을 없애는 방향과 일치. 권한도 자녀로 옮긴다 |
+| 어르신 오늘 리포트 | 별도 화면 | **없음** | 어르신은 체크만, 요약은 자녀가 본다 |
+| 보호자 연락처 | 별도 화면 | 메인의 전화 버튼 | 화면 하나를 줄이고 진입을 1탭으로 |
+| 일정 등록 | 어르신도 가능 | **자녀만** | 어르신 화면은 읽기 전용 |
+| 생활 패턴 | 활동량 3단계 | **시간대별 그래프** | 자녀가 "언제 활동했는지"까지 본다 |
+| 알림 | 목록 하나 | **필터 탭 3종** | 이상 징후와 일반 미체크를 섞지 않는다 |
+
+### 7.4 확인이 필요한 항목
+
+최종안에 **설정 화면이 없다.** 계획서 9장은 글자 크기 배율(100/125/150%)과 음성 안내를 수용 기준으로 두고 있는데,
+어르신이 그것을 바꿀 자리가 사라졌다. 셋 중 하나로 정해야 한다.
+
+1. 자녀가 부모님별로 설정해 준다 (`/settings` 를 자녀 권한으로) — 어르신 입력 0 원칙과 가장 잘 맞는다
+2. 부모 메인에 설정 진입을 추가한다
+3. 기기 자체 글자 크기 설정을 따르고 앱에서는 제공하지 않는다
 
 ---
 
