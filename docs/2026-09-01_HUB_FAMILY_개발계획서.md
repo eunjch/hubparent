@@ -141,13 +141,14 @@ hubfamily/
 │  ├─ src/
 │  │  ├─ pages/                # 화면 (자녀 4 + 부모 5 + 온보딩)
 │  │  ├─ shared/               # API 클라이언트, 오프라인 큐, 디자인 토큰, 공용 컴포넌트
-│  │  ├─ assets/icons/         # MEDIC Warm Care 아이콘 16종
-│  │  └─ native/               # Capacitor 브릿지 래퍼
+│  │  ├─ assets/               # Soft Wellness 아이콘 30종 · 배경 · 로고
+│  │  └─ native/bridge.ts      # Capacitor 브릿지 (푸시 · 로컬 알림 · 카메라)
+│  ├─ assets/                  # 앱 아이콘 · 스플래시 원본 PNG
+│  ├─ capacitor.config.ts      # 네이티브 프로젝트 위치 = ../mobile
 │  └─ vite.config.ts
-├─ mobile/                     # Capacitor 프로젝트
-│  ├─ capacitor.config.ts
-│  ├─ android/
-│  └─ ios/
+├─ mobile/                     # Capacitor 네이티브 프로젝트 (README.md 에 빌드 절차)
+│  ├─ android/                 # 생성 완료 (2026-09-08)
+│  └─ ios/                     # Mac 에서 생성
 ├─ deploy/
 │  ├─ docker-compose.yml
 │  ├─ docker-compose.prod.yml
