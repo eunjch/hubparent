@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { Backdrop } from "../shared/icons";
 import { clearTokens } from "../shared/auth";
 import type { Dose, Me, Senior } from "../shared/types";
 import {
@@ -113,8 +114,8 @@ export default function GuardianHome() {
       items={[
         { key: "home", icon: "home", label: "홈", onClick: () => setTab("home") },
         { key: "report", icon: "report", label: "리포트", onClick: () => setTab("report") },
-        { key: "family", icon: "family", label: "가족", onClick: () => nav("/g/seniors") },
-        { key: "more", icon: "caregiver", label: "더보기", onClick: () => setTab("more") },
+        { key: "family", icon: "caregiver", label: "가족", onClick: () => nav("/g/seniors") },
+        { key: "more", icon: "more", label: "더보기", onClick: () => setTab("more") },
       ]}
     />
   );
@@ -144,7 +145,7 @@ export default function GuardianHome() {
           <Notice>이 화면은 다음 단계에서 준비됩니다.</Notice>
           {tab === "more" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--gap-tight)" }}>
-              <BigButton tone="primary" icon="family" onClick={() => nav("/g/seniors")}>
+              <BigButton tone="primary" icon="caregiver" onClick={() => nav("/g/seniors")}>
                 부모님 관리
               </BigButton>
               <BigButton onClick={signOut}>로그아웃</BigButton>
@@ -162,7 +163,8 @@ export default function GuardianHome() {
   const current = seniors.find((s) => s.id === seniorId);
 
   return (
-    <div className="screen">
+    <div className="screen decorated">
+      <Backdrop />
       <BrandBar onBell={() => setTab("alerts")} />
 
       <main className="screen-body">
@@ -176,7 +178,7 @@ export default function GuardianHome() {
         {seniors.length === 0 && (
           <>
             <Notice>아직 등록된 부모님이 없습니다.</Notice>
-            <BigButton tone="primary" icon="family" onClick={() => nav("/g/seniors/new")}>
+            <BigButton tone="primary" icon="caregiver" onClick={() => nav("/g/seniors/new")}>
               부모님 등록하기
             </BigButton>
           </>
@@ -222,7 +224,7 @@ export default function GuardianHome() {
               }
             />
             <RowCard
-              icon="pill"
+              icon="pills"
               title="약 복용"
               onClick={() => nav("/g/medications")}
               right={
@@ -259,9 +261,9 @@ export default function GuardianHome() {
 
             <TileGrid>
               <Tile icon="report" label="오늘 리포트" tone="plan" onClick={() => setTab("report")} />
-              <Tile icon="pill" label="약 복용 시간" tone="med" onClick={() => nav("/g/medications")} />
+              <Tile icon="pills" label="약 복용 시간" tone="med" onClick={() => nav("/g/medications")} />
               <Tile icon="alert" label="알림" tone="meal" onClick={() => setTab("alerts")} />
-              <Tile icon="family" label="부모님 관리" tone="contact" onClick={() => nav("/g/seniors")} />
+              <Tile icon="caregiver" label="부모님 관리" tone="contact" onClick={() => nav("/g/seniors")} />
             </TileGrid>
 
             <Cheer>건강한 오늘이 더 행복한 내일이 됩니다. 늘 응원합니다!</Cheer>

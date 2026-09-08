@@ -149,7 +149,7 @@ export default function MedManage() {
 
       {meds?.map((m) => (
         <div className="med-row" key={m.id}>
-          <Icon name="pill" className="lead" />
+          <Icon name="pills" className="lead" />
           <div className="body">
             <span className="t">
               {m.name}
@@ -236,7 +236,7 @@ export default function MedManage() {
         </section>
       ) : (
         seniorId && (
-          <BigButton tone="primary" icon="pill" onClick={() => setAdding(true)}>
+          <BigButton tone="primary" icon="pills" onClick={() => setAdding(true)}>
             약 추가하기
           </BigButton>
         )

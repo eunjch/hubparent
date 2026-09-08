@@ -1,19 +1,18 @@
-/* HUB FAMILY 디자인 토큰 — MEDIC "01 Warm Care / 따뜻한 가족 돌봄"
+/* HUB FAMILY 디자인 토큰 — MEDIC "03 Soft Wellness"
  *
- *  크림 바탕 · 코랄 강조 · 브라운 글자. 기능별 파스텔 타일과 하단 탭 4개.
- *  팔레트 값은 아이콘 세트의 README 를 그대로 따른다.
+ *  아주 연한 라벤더 바탕 · 네이비 글자 · 기능별 파스텔 카드.
+ *  자녀 화면은 보라 계열, 부모 화면은 민트 계열로 갈린다.
+ *  팔레트 값은 에셋 팩 README 를 그대로 따른다.
  *
  *  단, 계획서 9장의 고령자 UX 기준은 취향이 아니라 수용 기준이다. 낮추지 말 것:
  *  본문 18px · 주요 버튼 24px · 터치 56px · 대비 WCAG AA(4.5:1) · 색만으로 상태 구분 금지.
- *  파스텔은 배경에만 쓰고 글자는 브라운(--ink)이나 진한 짝을 얹어 대비를 확보한다.
+ *  파스텔은 배경에만 쓰고 글자는 네이비(--ink)나 진한 짝을 얹어 대비를 확보한다.
  */
 
 :root {
   /* ── 크기 ─────────────────────────────────────────────────
-     앱 안에 글자 크기 설정을 두지 않고 기기 설정을 따른다 (계획서 7.4 · 9장).
-     그러려면 글자와 터치 영역이 rem 이어야 한다 — px 로 박으면 기기 설정이
-     반영되지 않는다. 기준 1rem = 브라우저 기본 16px.
-     여백(gap)은 글자가 아니므로 px 로 둔다. */
+     앱 안에 글자 크기 설정을 두지 않고 기기 설정을 따른다 (계획서 9.1).
+     그래서 글자와 터치 영역은 rem 이다. 여백은 글자가 아니므로 px. */
   --text-sm: 0.9375rem; /* 15px */
   --text-body: 1.125rem; /* 18px — 본문 최소 */
   --text-label: 1.25rem; /* 20px */
@@ -21,65 +20,62 @@
   --text-title: 1.75rem; /* 28px */
   --text-hero: 2.5rem; /* 40px */
 
-  --touch-min: 3.5rem; /* 56px. 글자가 커지면 버튼도 같이 커진다 */
+  --touch-min: 3.5rem; /* 56px */
   --gap-tight: 12px;
   --gap: 16px;
   --gap-loose: 24px;
 
   --radius: 14px;
-  --radius-card: 18px;
+  --radius-card: 20px;
   --radius-pill: 999px;
 
-  /* ── Warm Care 팔레트 ───────────────────────────────────── */
-  --coral: #ff7f73;
-  --coral-deep: #e2564a; /* 흰 글씨를 얹을 때 쓰는 진한 코랄 */
-  --peach: #ffd7c8;
-  --sage: #8cbf93;
-  --lavender: #a69ae8;
-  --yellow: #ffc857;
-  --cream: #fff8f2;
-  --brown: #6b4c45;
-  --green: #3fbf7f;
-  --blue: #6aa7ff;
+  /* ── Soft Wellness 팔레트 ───────────────────────────────── */
+  --navy: #394a8a;
+  --purple: #8d86f7;
+  --blue: #7baeff;
+  --mint: #74d6a6;
+  --pink: #f4b2c7;
+  --yellow: #ffd766;
 
   /* ── 바탕 · 글자 ────────────────────────────────────────── */
-  --ground: var(--cream);
+  --ground: #f6f7fd;
   --surface: #ffffff;
-  --surface-2: #fdf1ea;
-  --line: #f0e0d8;
+  --surface-2: #eef0fb;
+  --line: #e3e7f6;
 
-  --ink: var(--brown);
-  --ink-2: #927068;
-  --ink-3: #b39a93;
+  --ink: var(--navy);
+  --ink-2: #6b76a6;
+  --ink-3: #9aa3c4;
 
-  /* ── 주 강조 ────────────────────────────────────────────── */
-  --brand: var(--coral);
-  --brand-strong: var(--coral-deep);
-  --brand-soft: #ffe9e3;
+  /* ── 주 강조 ────────────────────────────────────────────
+     흰 글씨를 얹을 때는 -deep 을 쓴다. 파스텔 원색에 흰 글씨는 대비가 모자란다. */
+  --brand: var(--purple);
+  --brand-deep: #5b52c9;
+  --brand-strong: var(--brand-deep);
+  --brand-soft: #eceafe;
 
-  /* ── 기능별 파스텔 ───────────────────────────────────────
-     배경(-bg)은 연하게, 글자·강조(-ink)는 진하게 짝짓는다. */
-  --meal-bg: #ffe4dc;
-  --meal-ink: #c9584c;
-  --med-bg: #dff3e4;
-  --med-ink: #2f7f56;
-  --mood-bg: #eae4fb;
-  --mood-ink: #6353b8;
-  --plan-bg: #deeafd;
-  --plan-ink: #3f74c4;
-  --contact-bg: #dff3e4;
-  --contact-ink: #2f7f56;
+  /* ── 기능별 파스텔 ─────────────────────────────────────── */
+  --meal-bg: #e6f6ee;
+  --meal-ink: #2b7f58;
+  --med-bg: #fdeaf1;
+  --med-ink: #b04a71;
+  --mood-bg: #eceafe;
+  --mood-ink: #5b52c9;
+  --plan-bg: #e4eeff;
+  --plan-ink: #35619f;
+  --contact-bg: #e6f6ee;
+  --contact-ink: #2b7f58;
 
   /* ── 상태 ───────────────────────────────────────────────── */
-  --ok: var(--green);
-  --ok-soft: #dff5e9;
-  --ok-ink: #1f7f52;
-  --warn: #a97710;
-  --warn-soft: #fff2d6;
-  --danger: #c94a3d;
-  --danger-soft: #ffe4e0;
+  --ok: var(--mint);
+  --ok-soft: #e0f6ec;
+  --ok-ink: #21764f;
+  --warn: #96700c;
+  --warn-soft: #fff5da;
+  --danger: #c2415f;
+  --danger-soft: #fdeaf0;
 
-  --shadow-card: 0 1px 2px rgba(107, 76, 69, 0.04), 0 6px 18px -12px rgba(107, 76, 69, 0.3);
+  --shadow-card: 0 1px 2px rgba(57, 74, 138, 0.04), 0 10px 26px -16px rgba(57, 74, 138, 0.35);
 }
 
 * {
@@ -105,7 +101,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid var(--coral);
+  outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -228,7 +224,7 @@ textarea:focus-visible {
   width: 9px;
   height: 9px;
   border-radius: var(--radius-pill);
-  background: var(--coral);
+  background: var(--brand);
   border: 2px solid var(--ground);
 }
 
@@ -463,7 +459,7 @@ textarea:focus-visible {
 }
 
 .pill.todo {
-  background: var(--coral);
+  background: var(--brand);
   color: #fff;
 }
 
@@ -554,20 +550,20 @@ textarea:focus-visible {
 }
 
 .big-btn.primary {
-  background: var(--coral);
-  border-color: var(--coral);
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
   color: #fff;
 }
 
 .big-btn.confirm {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--ok-ink);
+  border-color: var(--ok-ink);
   color: #fff;
 }
 
 .big-btn.soft {
-  background: var(--lavender);
-  border-color: var(--lavender);
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
   color: #fff;
 }
 
@@ -653,7 +649,7 @@ textarea:focus-visible {
   height: 26px;
   margin: 0;
   flex: none;
-  accent-color: var(--coral);
+  accent-color: var(--brand-deep);
 }
 
 .check em {
@@ -667,7 +663,7 @@ textarea:focus-visible {
 
 .check em.req {
   background: var(--brand-soft);
-  color: var(--coral-deep);
+  color: var(--brand-deep);
 }
 
 .check em.opt {
@@ -840,7 +836,7 @@ textarea:focus-visible {
 }
 
 .role-card.child {
-  background: var(--peach);
+  background: var(--mood-bg);
 }
 .role-card.child .t {
   color: var(--meal-ink);
@@ -882,13 +878,13 @@ textarea:focus-visible {
 }
 
 .form-card > h2 .tagcolor.me {
-  background: var(--coral);
+  background: var(--brand);
 }
 .form-card > h2 .tagcolor.senior {
-  background: var(--sage);
+  background: var(--mint);
 }
 .form-card > h2 .tagcolor.agree {
-  background: var(--lavender);
+  background: var(--purple);
 }
 
 /* 하단 고정 실행 버튼 */
@@ -896,14 +892,14 @@ textarea:focus-visible {
   position: sticky;
   bottom: 0;
   padding: var(--gap-tight) var(--gap) calc(var(--gap) + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(255, 248, 242, 0) 0%, var(--ground) 30%);
+  background: linear-gradient(180deg, rgba(246, 247, 253, 0) 0%, var(--ground) 30%);
   z-index: 5;
 }
 
 .text-link {
   border: none;
   background: none;
-  color: var(--coral-deep);
+  color: var(--brand-deep);
   font-size: var(--text-body);
   font-weight: 600;
   text-decoration: underline;
@@ -1013,7 +1009,7 @@ textarea:focus-visible {
   padding: var(--gap-tight) var(--gap);
   border: none;
   border-radius: var(--radius-card);
-  background: var(--peach);
+  background: var(--mood-bg);
   box-shadow: var(--shadow-card);
   text-align: left;
   color: var(--ink);
@@ -1078,8 +1074,8 @@ textarea:focus-visible {
 }
 
 .senior-chip[aria-pressed="true"] {
-  background: var(--coral);
-  border-color: var(--coral);
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
   color: #fff;
 }
 
@@ -1140,14 +1136,14 @@ textarea:focus-visible {
    폰에서 보던 배치를 그대로 유지하는 것이 목적이다. */
 @media (min-width: 600px) {
   body {
-    background: #f2e7de;
+    background: #e9ecf9;
   }
 
   .screen {
     max-width: 500px;
     box-shadow:
-      0 0 0 1px rgba(107, 76, 69, 0.06),
-      0 24px 60px -34px rgba(107, 76, 69, 0.5);
+      0 0 0 1px rgba(57, 74, 138, 0.06),
+      0 24px 60px -34px rgba(57, 74, 138, 0.45);
   }
 
   /* 화면이 충분히 크면 여백을 조금 더 준다 */
@@ -1164,7 +1160,7 @@ textarea:focus-visible {
   .sticky-cta {
     padding-left: var(--gap-loose);
     padding-right: var(--gap-loose);
-    background: linear-gradient(180deg, rgba(255, 248, 242, 0) 0%, var(--ground) 30%);
+    background: linear-gradient(180deg, rgba(246, 247, 253, 0) 0%, var(--ground) 30%);
   }
 }
 
@@ -1300,8 +1296,8 @@ img {
 }
 
 .ans.yes.on {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--ok-ink);
+  border-color: var(--ok-ink);
   color: #fff;
 }
 
@@ -1366,7 +1362,7 @@ img {
 
 .face-btn.good.on {
   background: var(--ok-soft);
-  border-color: var(--green);
+  border-color: var(--mint);
   color: var(--ok-ink);
 }
 
@@ -1378,8 +1374,8 @@ img {
 
 .face-btn.bad.on {
   background: var(--brand-soft);
-  border-color: var(--coral);
-  color: var(--coral-deep);
+  border-color: var(--brand);
+  color: var(--brand-deep);
 }
 
 @media (max-width: 400px) {
@@ -1466,6 +1462,111 @@ img {
 
 .time-pick.on {
   background: var(--med-bg);
-  border-color: var(--sage);
+  border-color: var(--mint);
   color: var(--med-ink);
+}
+
+/* ── 배경 장식 (Soft Wellness) ──────────────────────────────
+ *  화면 위쪽에 아주 연하게 깔린다. 글자 대비를 해치면 안 되므로
+ *  투명도를 낮추고 본문보다 뒤(z-index 0)에 둔다.
+ */
+
+.backdrop {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 260px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.backdrop .blobs {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140%;
+  opacity: 0.5;
+}
+
+.backdrop .leaf-l,
+.backdrop .leaf-r {
+  position: absolute;
+  top: 40px;
+  width: 108px;
+  opacity: 0.35;
+}
+
+.backdrop .leaf-l {
+  left: -24px;
+}
+
+.backdrop .leaf-r {
+  right: -24px;
+  transform: scaleX(-1);
+}
+
+/* 배경을 쓰는 화면은 본문을 위로 올린다 */
+.screen.decorated {
+  position: relative;
+}
+
+.screen.decorated > .screen-head,
+.screen.decorated > .brandbar,
+.screen.decorated > .screen-body,
+.screen.decorated > .greet,
+.screen.decorated > .sticky-cta {
+  position: relative;
+  z-index: 1;
+}
+
+.screen.decorated > .screen-head,
+.screen.decorated > .brandbar {
+  background: transparent;
+}
+
+/* ── 건강 지수 링 (시안 신규) ───────────────────────────────
+ *  0~100 점수를 원형으로 보여준다. 숫자를 항상 함께 쓴다 —
+ *  색·각도만으로 상태를 알리지 않는다 (계획서 9장).
+ */
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.score-ring {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.score-ring .value {
+  font-size: var(--text-title);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.score-text .t {
+  display: block;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.score-text .d {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin-top: 2px;
 }

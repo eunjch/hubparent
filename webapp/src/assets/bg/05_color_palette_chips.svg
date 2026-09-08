@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="140" viewBox="0 0 700 140">
+<rect width="700" height="140" fill="none"/>
+
+<g transform="translate(70,40)">
+  <circle cx="50" cy="50" r="34" fill="#8D86F7"/><text x="50" y="108" text-anchor="middle" font-family="Arial" font-size="18" fill="#27324A">Purple</text>
+  <circle cx="170" cy="50" r="34" fill="#7BAEFF"/><text x="170" y="108" text-anchor="middle" font-family="Arial" font-size="18" fill="#27324A">Blue</text>
+  <circle cx="290" cy="50" r="34" fill="#F4B2C7"/><text x="290" y="108" text-anchor="middle" font-family="Arial" font-size="18" fill="#27324A">Pink</text>
+  <circle cx="410" cy="50" r="34" fill="#74D6A6"/><text x="410" y="108" text-anchor="middle" font-family="Arial" font-size="18" fill="#27324A">Mint</text>
+  <circle cx="530" cy="50" r="34" fill="#FFD766"/><text x="530" y="108" text-anchor="middle" font-family="Arial" font-size="18" fill="#27324A">Yellow</text>
+</g>
+
+</svg>

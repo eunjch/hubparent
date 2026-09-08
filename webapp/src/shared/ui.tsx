@@ -59,7 +59,7 @@ export function BrandBar({
   return (
     <div className="brandbar">
       <span className="logo">
-        <Icon name="heart" />
+        <Icon name="logo" />
         MEDIC
       </span>
       {onBell && (
@@ -215,7 +215,7 @@ export function StatusPill({
 }) {
   return (
     <span className={`pill ${tone}`}>
-      {withCheck && <Icon name="check" size={16} />}
+      {withCheck && <Icon name="yes" size={16} />}
       {children}
     </span>
   );

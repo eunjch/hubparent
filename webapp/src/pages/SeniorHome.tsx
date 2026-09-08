@@ -11,10 +11,9 @@ import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
-import { Icon } from "../shared/icons";
+import { Backdrop, ICON, Icon } from "../shared/icons";
 import type { Me } from "../shared/types";
 import {
-  Banner,
   BigButton,
   BrandBar,
   Greeting,
@@ -45,11 +44,30 @@ export default function SeniorHome() {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("home");
+  const [checked, setChecked] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
     request<Me>("/me")
       .then(setMe)
       .catch(() => setError("정보를 불러오지 못했습니다. 잠시 후 다시 열어주세요."));
+  }, []);
+
+  // 오늘 얼마나 체크했는지 — 건강 지수의 근거
+  useEffect(() => {
+    const day = new Date().toISOString().slice(0, 10);
+    Promise.all([
+      request<{ status: string }[]>(`/checks/meals?check_date=${day}`),
+      request<unknown[]>(`/checks/moods?check_date=${day}`),
+      request<{ status: string }[]>("/medications/today"),
+    ])
+      .then(([meals, moods, doses]) => {
+        const done =
+          meals.filter((m) => m.status === "ate").length +
+          moods.length +
+          doses.filter((d) => d.status === "taken").length;
+        setChecked({ done, total: 3 + 3 + doses.length });
+      })
+      .catch(() => setChecked({ done: 0, total: 6 }));
   }, []);
 
   async function signOut() {
@@ -63,8 +81,8 @@ export default function SeniorHome() {
       items={[
         { key: "home", icon: "home", label: "홈", onClick: () => setTab("home") },
         { key: "report", icon: "report", label: "리포트", onClick: () => setTab("report") },
-        { key: "family", icon: "family", label: "가족", onClick: () => setTab("family") },
-        { key: "more", icon: "caregiver", label: "더보기", onClick: () => setTab("more") },
+        { key: "family", icon: "caregiver", label: "가족", onClick: () => setTab("family") },
+        { key: "more", icon: "more", label: "더보기", onClick: () => setTab("more") },
       ]}
     />
   );
@@ -105,8 +123,18 @@ export default function SeniorHome() {
 
   const { headline, icon } = greetingByHour();
 
+  // 오늘 체크한 항목 비율로 만든다. 서버 리포트(M4)가 붙으면 그 값으로 바꾼다.
+  const score = checked === null ? 0 : Math.round((checked.done / Math.max(checked.total, 1)) * 100);
+  const scoreMessage =
+    checked === null
+      ? "불러오는 중이에요."
+      : checked.done === checked.total
+        ? "좋은 컨디션이에요!"
+        : `${checked.total - checked.done}가지만 더 확인해 주세요.`;
+
   return (
-    <div className="screen">
+    <div className="screen decorated">
+      <Backdrop variant="leaf" />
       <BrandBar onBell={() => setTab("alerts")} />
 
       <main className="screen-body">
@@ -117,17 +145,22 @@ export default function SeniorHome() {
           message="오늘도 건강한 하루 되세요."
         />
 
-        <Banner
-          icon="leaf"
-          title="오늘도"
-          description="좋은 하루가 될 거예요."
-          tone="med"
-          trailingIcon="heart"
-        />
+        {/* 오늘의 건강 지수 — 체크한 만큼 올라간다. 숫자를 항상 함께 쓴다 (계획서 9장) */}
+        <section className="card">
+          <div className="score">
+            <span className="score-ring" style={{ backgroundImage: `url(${ICON.healthRing})` }}>
+              <span className="value">{score}</span>
+            </span>
+            <span className="score-text">
+              <span className="t">오늘의 건강 지수</span>
+              <span className="d">{scoreMessage}</span>
+            </span>
+          </div>
+        </section>
 
         <TileGrid>
           <Tile icon="meal" label="식사 체크" tone="meal" onClick={() => nav("/s/meal")} />
-          <Tile icon="pill" label="약 복용" tone="med" onClick={() => nav("/s/med")} />
+          <Tile icon="pills" label="약 복용" tone="med" onClick={() => nav("/s/med")} />
           <Tile icon="mood" label="기분 체크" tone="mood" onClick={() => nav("/s/mood")} />
           <Tile icon="report" label="오늘 리포트" tone="plan" onClick={() => setTab("report")} />
         </TileGrid>

@@ -6,17 +6,18 @@
 
 import { useNavigate } from "react-router-dom";
 
-import { Icon } from "../shared/icons";
+import { Backdrop, Icon } from "../shared/icons";
 
 export default function Start() {
   const nav = useNavigate();
 
   return (
-    <div className="screen">
+    <div className="screen decorated">
+      <Backdrop variant="leaf" />
       <main className="screen-body">
         <div className="hero">
           <span className="hero-badge">
-            <Icon name="family" />
+            <Icon name="logo" />
           </span>
           <h1>MEDIC</h1>
           <p>

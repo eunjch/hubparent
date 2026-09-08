@@ -134,7 +134,7 @@ export default function MealCheck() {
                 사진을 추가하고 싶으신가요?
               </p>
               {SLOTS.filter((s) => find(s.key)?.status === "ate" && find(s.key)?.id).map((s) => (
-                <BigButton key={s.key} icon="camera" onClick={() => addPhoto(find(s.key)!)}>
+                <BigButton key={s.key} icon="plus" onClick={() => addPhoto(find(s.key)!)}>
                   {s.label} 사진 {find(s.key)?.photo_path ? "바꾸기" : "추가"}
                 </BigButton>
               ))}

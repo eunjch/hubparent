@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="220" viewBox="0 0 1600 220">
+<rect width="1600" height="220" fill="none"/>
+
+<defs>
+  <linearGradient id="waveg" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#DCEBFF"/>
+    <stop offset="50%" stop-color="#F4F2FF"/>
+    <stop offset="100%" stop-color="#EEFBEF"/>
+  </linearGradient>
+</defs>
+<path d="M0 110 C220 20 380 20 580 104 C760 180 930 184 1140 108 C1330 38 1460 40 1600 102 V220 H0 Z" fill="url(#waveg)" opacity="0.8"/>
+
+</svg>

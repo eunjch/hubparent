@@ -52,7 +52,7 @@ export default function MedCheck() {
   return (
     <Screen title="약 복용" onBack={() => nav("/s/home")}>
       <Banner
-        icon="pill"
+        icon="pills"
         title="제시간에 드시는 약이"
         description="더 건강한 내일을 만듭니다."
         tone="med"
@@ -74,7 +74,7 @@ export default function MedCheck() {
             const key = d.medication_id + d.scheduled_at;
             return (
               <div className="answer-row" key={key}>
-                <Icon name="pill" className="lead" />
+                <Icon name="pills" className="lead" />
                 <span className="body">
                   <span className="t">
                     {d.time} {d.name}
@@ -103,7 +103,7 @@ export default function MedCheck() {
             );
           })}
 
-          <Cheer icon="pill">
+          <Cheer icon="pills">
             {pending > 0
               ? `아직 ${pending}번 남았어요. 제때 드시면 더 건강하고 활기찬 일상을 유지할 수 있어요.`
               : "오늘 약을 다 확인하셨어요. 정말 잘하셨습니다!"}

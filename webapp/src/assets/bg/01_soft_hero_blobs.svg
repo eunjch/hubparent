@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="420" viewBox="0 0 1600 420">
+<rect width="1600" height="420" fill="none"/>
+
+<defs>
+  <radialGradient id="b1"><stop offset="0%" stop-color="#7BAEFF" stop-opacity="0.28"/><stop offset="100%" stop-color="#7BAEFF" stop-opacity="0"/></radialGradient>
+  <radialGradient id="b2"><stop offset="0%" stop-color="#8D86F7" stop-opacity="0.22"/><stop offset="100%" stop-color="#8D86F7" stop-opacity="0"/></radialGradient>
+  <radialGradient id="b3"><stop offset="0%" stop-color="#74D6A6" stop-opacity="0.22"/><stop offset="100%" stop-color="#74D6A6" stop-opacity="0"/></radialGradient>
+  <radialGradient id="b4"><stop offset="0%" stop-color="#F4B2C7" stop-opacity="0.20"/><stop offset="100%" stop-color="#F4B2C7" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="720" cy="165" rx="185" ry="108" fill="url(#b1)"/>
+<ellipse cx="845" cy="190" rx="175" ry="110" fill="url(#b2)"/>
+<ellipse cx="960" cy="168" rx="165" ry="102" fill="url(#b3)"/>
+<ellipse cx="1080" cy="188" rx="150" ry="96" fill="url(#b4)"/>
+<ellipse cx="880" cy="112" rx="122" ry="76" fill="url(#b1)"/>
+<ellipse cx="1030" cy="118" rx="108" ry="70" fill="url(#b3)"/>
+<path d="M634 193 C674 150 737 130 787 149 C742 172 701 204 681 238" fill="none" stroke="#7BAEFF" stroke-opacity="0.25" stroke-width="18" stroke-linecap="round"/>
+<path d="M1112 206 C1065 150 1006 146 968 158 C1005 186 1047 214 1069 247" fill="none" stroke="#74D6A6" stroke-opacity="0.22" stroke-width="18" stroke-linecap="round"/>
+<text x="880" y="186" text-anchor="middle" font-family="Arial" font-size="42" fill="#FFFFFF" opacity="0.88">Care</text>
+<text x="880" y="232" text-anchor="middle" font-family="Arial" font-size="42" fill="#FFFFFF" opacity="0.88">Connects</text>
+<text x="880" y="278" text-anchor="middle" font-family="Arial" font-size="42" fill="#FFFFFF" opacity="0.88">Better Days</text>
+
+</svg>
