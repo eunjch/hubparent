@@ -34,8 +34,13 @@ class MedicationStatus(StrEnum):
 
 
 class ScheduleKind(StrEnum):
-    HOSPITAL = "hospital"   # 병원 일정 — 자녀가 등록
-    OTHER = "other"         # 기타 일정
+    """시안의 일정 목록이 종류별 아이콘을 쓴다."""
+
+    HOSPITAL = "hospital"   # 병원 진료
+    DENTAL = "dental"       # 치과
+    CHECKUP = "checkup"     # 건강검진
+    FAMILY = "family"       # 가족 모임
+    OTHER = "other"
 
 
 class AlertType(StrEnum):

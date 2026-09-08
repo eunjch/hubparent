@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
 import { saveTokens } from "../shared/auth";
-import { Icon } from "../shared/icons";
+import { Backdrop, Icon } from "../shared/icons";
 import type { SeniorLookupResult, TokenPair } from "../shared/types";
 import { BigButton, Field, Notice, Spinner } from "../shared/ui";
 
@@ -64,7 +64,8 @@ export default function SeniorJoin() {
   /* ── 2단계 — 본인 선택 ── */
   if (found) {
     return (
-      <div className="screen">
+      <div className="screen decorated">
+      <Backdrop variant="leaf" />
 
         <header className="screen-head">
           <button className="icon-btn" onClick={() => setFound(null)} aria-label="뒤로 가기">
@@ -112,7 +113,8 @@ export default function SeniorJoin() {
 
   /* ── 1단계 — 자녀 정보 입력 ── */
   return (
-    <div className="screen">
+    <div className="screen decorated">
+      <Backdrop variant="leaf" />
 
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/")} aria-label="뒤로 가기">

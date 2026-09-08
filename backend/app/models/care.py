@@ -9,7 +9,6 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
-    Integer,
     SmallInteger,
     String,
     UniqueConstraint,
@@ -97,5 +96,6 @@ class Schedule(Base, UUIDPKMixin, TimestampMixin):
     kind: Mapped[ScheduleKind] = enum_column(ScheduleKind, nullable=False)
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     place: Mapped[str | None] = mapped_column(String(100))
-    notify_before_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    # 사전 알림 시각. [1440, 60] 이면 하루 전 + 1시간 전 두 번 (계획서 8.5.6)
+    reminder_minutes: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
     notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

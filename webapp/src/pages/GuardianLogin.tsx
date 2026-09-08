@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
 import { saveTokens } from "../shared/auth";
-import { Icon } from "../shared/icons";
+import { Backdrop, Icon } from "../shared/icons";
 import type { TokenPair } from "../shared/types";
 import { BigButton, Field, Notice } from "../shared/ui";
 
@@ -41,7 +41,8 @@ export default function GuardianLogin() {
   const canSubmit = email.trim().length > 3 && password.length > 0 && !busy;
 
   return (
-    <div className="screen">
+    <div className="screen decorated">
+      <Backdrop />
 
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/")} aria-label="뒤로 가기">

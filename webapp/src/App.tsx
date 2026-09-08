@@ -21,6 +21,8 @@ import GuardianSignup from "./pages/GuardianSignup";
 import SeniorAdd from "./pages/SeniorAdd";
 import MealCheck from "./pages/MealCheck";
 import MedManage from "./pages/MedManage";
+import ScheduleManage from "./pages/ScheduleManage";
+import ScheduleView from "./pages/ScheduleView";
 import MedCheck from "./pages/MedCheck";
 import MoodCheck from "./pages/MoodCheck";
 import SeniorHome from "./pages/SeniorHome";
@@ -125,6 +127,14 @@ export default function App() {
           }
         />
         <Route
+          path="/s/schedule"
+          element={
+            <Guarded>
+              <ScheduleView />
+            </Guarded>
+          }
+        />
+        <Route
           path="/s/mood"
           element={
             <Guarded>
@@ -139,6 +149,14 @@ export default function App() {
           element={
             <Guarded>
               <GuardianHome />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/schedules"
+          element={
+            <Guarded>
+              <ScheduleManage />
             </Guarded>
           }
         />

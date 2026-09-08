@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
-import { Icon } from "../shared/icons";
+import { Backdrop, Icon } from "../shared/icons";
 import type { Senior } from "../shared/types";
 import { BigButton, Field, Notice } from "../shared/ui";
 
@@ -50,7 +50,8 @@ export default function SeniorAdd() {
   }
 
   return (
-    <div className="screen">
+    <div className="screen decorated">
+      <Backdrop variant="leaf" />
 
       <header className="screen-head">
         <button

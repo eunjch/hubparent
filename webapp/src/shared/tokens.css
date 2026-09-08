@@ -1570,3 +1570,466 @@ img {
   color: var(--ink-2);
   margin-top: 2px;
 }
+
+/* ── 세그먼트 탭 (시안 공통) ────────────────────────────────── */
+
+.seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+}
+
+.seg-item {
+  flex: 1;
+  min-height: 44px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.seg-item.on {
+  background: var(--brand-deep);
+  color: #fff;
+}
+
+/* ── 건강 지수 링 ──────────────────────────────────────────── */
+
+.score-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  line-height: 1.15;
+}
+
+.score-ring.lg {
+  width: 92px;
+  height: 92px;
+}
+
+.score-ring.sm {
+  width: 68px;
+  height: 68px;
+}
+
+.score-ring .value {
+  font-size: var(--text-title);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-ring.sm .value {
+  font-size: var(--text-label);
+}
+
+.score-ring .cap {
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+/* ── 타일 부제 ─────────────────────────────────────────────── */
+
+.tile {
+  align-items: flex-start;
+  text-align: left;
+  justify-content: flex-start;
+  min-height: 120px;
+  padding: var(--gap);
+}
+
+.tile .d {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* ── 오늘의 건강 요약 (자녀 홈) ─────────────────────────────── */
+
+.summary-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding-bottom: var(--gap-tight);
+}
+
+.summary-head .msg .t {
+  display: block;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.summary-head .msg .d {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: var(--gap-tight);
+}
+
+.summary-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.summary-cell img {
+  width: 26px;
+  height: 26px;
+}
+
+.summary-cell .k {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.summary-cell .v {
+  font-size: var(--text-body);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-cell .s {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.summary-cell .s.ok {
+  color: var(--ok-ink);
+}
+.summary-cell .s.mid {
+  color: var(--warn);
+}
+.summary-cell .s.none {
+  color: var(--ink-3);
+}
+
+/* ── 부모 홈 인사 + 건강지수 (시안 S1) ─────────────────────── */
+
+.hello {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-tight);
+  padding: var(--gap-tight) 0 var(--gap);
+}
+
+.hello-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.hello-text .t {
+  font-size: var(--text-title);
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.hello-text .d {
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  margin: 8px 0 0;
+}
+
+.hello-score {
+  flex: none;
+  width: 116px;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.hello-score .label {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.hello-score .cond {
+  font-size: 0.75rem;
+  color: var(--ok-ink);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.date-note {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  text-align: center;
+  margin: var(--gap-tight) 0 0;
+}
+
+/* ── 자녀 홈: 우리 부모님 전환 (시안 G1) ───────────────────── */
+
+.whose {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  padding: var(--gap-tight) 0 2px;
+}
+
+.whose-pick {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-title);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  min-height: 44px;
+  text-align: left;
+}
+
+.whose-date {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  align-self: flex-end;
+  padding-bottom: 12px;
+}
+
+.whose-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 6px;
+}
+
+.whose-item {
+  min-height: var(--touch-min);
+  border: none;
+  background: none;
+  border-radius: var(--radius);
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: left;
+  padding: 0 var(--gap-tight);
+}
+
+.whose-item.on {
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  font-weight: 800;
+}
+
+/* ── 최근 7일 추이 그래프 ──────────────────────────────────── */
+
+.trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 132px;
+}
+
+.trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.trend-col .bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.trend-col .bar {
+  width: 68%;
+  min-height: 6px;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(180deg, var(--purple) 0%, var(--blue) 100%);
+}
+
+.trend-col .lab {
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-badge {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+}
+
+.trend-badge.ok {
+  background: var(--ok-soft);
+  color: var(--ok-ink);
+}
+
+.trend-badge.mid {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+/* ── 일정 (G3 · S5) ────────────────────────────────────────── */
+
+.next-card {
+  border: 2px solid var(--plan-bg);
+}
+
+.next-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-tight);
+  flex-wrap: wrap;
+}
+
+.next-head .when {
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.next-head .badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--plan-ink);
+  background: var(--plan-bg);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.next-title {
+  font-size: var(--text-body);
+  font-weight: 700;
+  margin: 8px 0 0;
+}
+
+.next-place {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  margin: 2px 0 var(--gap-tight);
+}
+
+.list-title {
+  font-size: var(--text-body);
+  font-weight: 800;
+  color: var(--ink);
+  margin: var(--gap-tight) 0 2px;
+}
+
+.sched-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--gap-tight) var(--gap);
+}
+
+.sched-row img.lead {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.sched-row .body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sched-row .t {
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.sched-row .d {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.sched-row .d.strong {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sched-row .chev {
+  font-size: 1.625rem;
+  color: var(--ink-3);
+  flex: none;
+}
+
+.sched-row.big {
+  min-height: 92px;
+}
+
+/* 일정 종류 고르기 */
+.kind-picks {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kind-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 76px;
+  min-height: 76px;
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.kind-pick img {
+  width: 28px;
+  height: 28px;
+}
+
+.kind-pick.on {
+  background: var(--plan-bg);
+  border-color: var(--blue);
+  color: var(--plan-ink);
+}

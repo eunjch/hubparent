@@ -7,7 +7,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
-import { Icon, type IconName } from "./icons";
+import { ICON, Icon, type IconName } from "./icons";
 
 export type Tone = "meal" | "med" | "mood" | "plan" | "contact" | "warm";
 
@@ -183,11 +183,14 @@ export function TileGrid({ children }: { children: ReactNode }) {
 export function Tile({
   icon,
   label,
+  description,
   tone,
   onClick,
 }: {
   icon: IconName;
   label: string;
+  /** 시안의 "오늘 식사 기록하기 ›" 같은 한 줄 안내 */
+  description?: string;
   tone: Tone;
   onClick?: () => void;
 }) {
@@ -195,6 +198,11 @@ export function Tile({
     <button className={`tile ${tone}`} onClick={onClick}>
       <Icon name={icon} />
       <span className="t">{label}</span>
+      {description && (
+        <span className="d">
+          {description} <span aria-hidden="true">›</span>
+        </span>
+      )}
     </button>
   );
 }
@@ -260,6 +268,52 @@ export function RowCard({
     );
   }
   return <div className="row-card">{inner}</div>;
+}
+
+/** 세그먼트 탭 — 알림 필터 · 약 복용 관리 · 일정 확인에 공통으로 쓴다 (시안).
+ *  활성 항목은 색만이 아니라 채움으로도 구분된다 (계획서 9장). */
+export function SegTabs<T extends string>({
+  items,
+  current,
+  onChange,
+}: {
+  items: { key: T; label: string }[];
+  current: T;
+  onChange: (key: T) => void;
+}) {
+  return (
+    <div className="seg" role="tablist">
+      {items.map((it) => (
+        <button
+          key={it.key}
+          role="tab"
+          className={`seg-item${it.key === current ? " on" : ""}`}
+          aria-selected={it.key === current}
+          onClick={() => onChange(it.key)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** 건강 지수. 숫자와 문구를 항상 함께 쓴다 — 색·각도만으로 알리지 않는다 (계획서 9장). */
+export function ScoreRing({
+  score,
+  size = "lg",
+  caption,
+}: {
+  score: number;
+  size?: "lg" | "sm";
+  caption?: string;
+}) {
+  return (
+    <span className={`score-ring ${size}`} style={{ backgroundImage: `url(${ICON.healthRing})` }}>
+      <span className="value">{score}</span>
+      {caption && <span className="cap">{caption}</span>}
+    </span>
+  );
 }
 
 /* ── 하단 탭바 ─────────────────────────────────────────────── */

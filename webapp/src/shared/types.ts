@@ -97,3 +97,20 @@ export interface Dose {
   scheduled_at: string;
   status: MedicationStatus;
 }
+
+/* ── 일정 (화면 G3 · S5) ────────────────────────────────── */
+
+export type ScheduleKind = "hospital" | "dental" | "checkup" | "family" | "other";
+
+export interface Schedule {
+  id: string;
+  target_user_id: string;
+  title: string;
+  kind: ScheduleKind;
+  start_at: string;
+  place: string | null;
+  /** [1440, 60] 이면 하루 전 + 1시간 전 */
+  reminder_minutes: number[];
+  notified_at: string | null;
+  upcoming: boolean;
+}
