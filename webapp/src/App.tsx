@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { request } from "./shared/api";
-import { hasSession, refreshSession } from "./shared/auth";
+import { clearTokens, hasSession, refreshSession } from "./shared/auth";
 import type { Me } from "./shared/types";
 import { flush } from "./shared/offlineQueue";
 import { Screen, Spinner } from "./shared/ui";
@@ -37,8 +37,43 @@ import Start from "./pages/Start";
 
 type Boot = { state: "loading" } | { state: "anonymous" } | { state: "signed-in"; me: Me };
 
-/** 저장된 세션이 있으면 역할에 맞는 홈으로 보낸다. */
-function Landing({ boot }: { boot: Boot }) {
+/** 저장된 세션이 있으면 역할에 맞는 홈으로 보낸다.
+ *
+ *  `/` 에 올 때마다 새로 판단한다. 앱 시작 때 한 번만 계산하면
+ *  로그아웃 뒤에도 "로그인됨" 으로 남아 홈으로 되돌려 보내는 핑퐁이 생긴다. */
+function Landing() {
+  const [boot, setBoot] = useState<Boot>({ state: "loading" });
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!hasSession()) {
+        setBoot({ state: "anonymous" });
+        return;
+      }
+      try {
+        const me = await request<Me>("/me");
+        if (alive) setBoot({ state: "signed-in", me });
+      } catch {
+        // access 가 만료됐을 수 있다. refresh 로 한 번 더 시도한다.
+        if (await refreshSession()) {
+          try {
+            const me = await request<Me>("/me");
+            if (alive) setBoot({ state: "signed-in", me });
+            return;
+          } catch {
+            /* 아래로 떨어진다 */
+          }
+        }
+        await clearTokens();
+        if (alive) setBoot({ state: "anonymous" });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   if (boot.state === "loading") {
     return (
       <Screen>
@@ -60,32 +95,6 @@ function Guarded({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [boot, setBoot] = useState<Boot>({ state: "loading" });
-
-  useEffect(() => {
-    (async () => {
-      if (!hasSession()) {
-        setBoot({ state: "anonymous" });
-        return;
-      }
-      try {
-        const me = await request<Me>("/me");
-        setBoot({ state: "signed-in", me });
-      } catch {
-        // access 가 만료됐을 수 있다. refresh 로 한 번 더 시도한다.
-        if (await refreshSession()) {
-          try {
-            setBoot({ state: "signed-in", me: await request<Me>("/me") });
-            return;
-          } catch {
-            /* 아래로 떨어진다 */
-          }
-        }
-        setBoot({ state: "anonymous" });
-      }
-    })();
-  }, []);
-
   // 오프라인 동안 쌓인 체크를 온라인 복귀 시 올린다(계획서 3장).
   useEffect(() => {
     const onOnline = () => void flush();
@@ -97,7 +106,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing boot={boot} />} />
+        <Route path="/" element={<Landing />} />
 
         {/* 자녀 — 로그인 · 회원가입 */}
         <Route path="/login" element={<GuardianLogin />} />
