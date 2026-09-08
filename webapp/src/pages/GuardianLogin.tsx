@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
+import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
 import { Backdrop, Icon } from "../shared/icons";
 import type { TokenPair } from "../shared/types";
@@ -29,6 +30,7 @@ export default function GuardianLogin() {
         body: { email: email.trim(), password },
       });
       await saveTokens(tokens.access_token, tokens.refresh_token);
+      void afterLogin("guardian");
       nav("/g/home", { replace: true });
     } catch (e) {
       setError(

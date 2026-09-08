@@ -855,4 +855,4 @@ MVP 는 결제를 붙이지 않는다. 15일 체험 상태만 `subscriptions` �
 3. **Firebase 프로젝트 생성 + `google-services.json`** — M3 착수 전까지 (8.5.9)
 4. iOS 개발자 계정(연 $99) 등록 시점 — APNs 인증키(`.p8`)가 여기서 나온다
 5. 디자인 산출물 수급 — 시안 변경 예정 (2026-09-08)
-6. Android SDK 환경 구성 — `mobile/android/` 생성에 JDK 17 + Android Studio 필요
+~~6. Android SDK 환경 구성~~ → 2026-09-08 완료. `mobile/android/` 생성, 디버그 APK 빌드 확인. 절차는 `mobile/README.md`. **주의: Capacitor 8 은 Java 21** — Android Studio 동봉 JBR 로 빌드한다

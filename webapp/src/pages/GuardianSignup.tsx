@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
+import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
 import { Backdrop } from "../shared/icons";
 import type { TokenPair } from "../shared/types";
@@ -61,6 +62,7 @@ export default function GuardianSignup() {
         },
       });
       await saveTokens(tokens.access_token, tokens.refresh_token);
+      void afterLogin("guardian");
       // 가입 직후에는 부모님이 없다. 바로 등록 화면으로 보낸다.
       nav("/g/seniors/new", { replace: true, state: { first: true } });
     } catch (e) {

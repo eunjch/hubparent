@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
+import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
 import { Backdrop, Icon } from "../shared/icons";
 import type { SeniorLookupResult, TokenPair } from "../shared/types";
@@ -54,6 +55,8 @@ export default function SeniorJoin() {
         },
       });
       await saveTokens(tokens.access_token, tokens.refresh_token);
+      // 자녀가 옆에서 도와주는 이 시점이 권한을 받기 가장 좋은 때다 (계획서 8.5.4)
+      void afterLogin("senior");
       nav("/s/home", { replace: true });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "잠시 후 다시 시도해 주세요.");

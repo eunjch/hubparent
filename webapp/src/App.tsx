@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
+import { afterLogin, bindBackButton, bindNavigator, isNativeApp, onResume, syncLocalNotifications } from "./native/bridge";
 import { request } from "./shared/api";
 import { clearTokens, hasSession, refreshSession } from "./shared/auth";
 import type { Me } from "./shared/types";
@@ -54,6 +55,8 @@ function Landing() {
       try {
         const me = await request<Me>("/me");
         if (alive) setBoot({ state: "signed-in", me });
+        // 앱을 다시 열 때마다 푸시 토큰과 로컬 알림 예약을 맞춘다 (계획서 8.5.4)
+        void afterLogin(me.user.role);
       } catch {
         // access 가 만료됐을 수 있다. refresh 로 한 번 더 시도한다.
         if (await refreshSession()) {
@@ -85,6 +88,30 @@ function Landing() {
   return <Navigate to={boot.me.user.role === "senior" ? "/s/home" : "/g/home"} replace />;
 }
 
+/** 앱(Capacitor)에서만 도는 연결 — 알림 탭 이동 · 뒤로가기 · 복귀 시 재동기화.
+ *  라우터 안에 있어야 navigate 를 쓸 수 있어 컴포넌트로 둔다. 웹에서는 아무것도 안 한다. */
+function NativeBoot() {
+  const nav = useNavigate();
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    bindNavigator((route) => nav(route));
+    const offBack = bindBackButton(
+      () => window.location.pathname !== "/" && !/^\/(s|g)\/home$/.test(window.location.pathname),
+      () => nav(-1),
+    );
+    const offResume = onResume(() => {
+      if (!hasSession()) return;
+      void request("/heartbeat", { method: "POST" }).catch(() => undefined);
+      void syncLocalNotifications().catch(() => undefined);
+    });
+    return () => {
+      offBack();
+      offResume();
+    };
+  }, [nav]);
+  return null;
+}
+
 /** 토큰이 없으면 시작 화면으로 되돌린다. */
 function Guarded({ children }: { children: React.ReactNode }) {
   const nav = useNavigate();
@@ -105,6 +132,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <NativeBoot />
       <Routes>
         <Route path="/" element={<Landing />} />
 

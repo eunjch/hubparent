@@ -61,8 +61,8 @@ export default function MealCheck() {
     setBusy(null);
   }
 
-  async function addPhoto(row: Meal) {
-    const file = await pickMealPhoto();
+  async function addPhoto(row: Meal, source: "camera" | "gallery" = "camera") {
+    const file = await pickMealPhoto(source);
     if (!file) return;
 
     setPhotoNote("");
@@ -137,6 +137,14 @@ export default function MealCheck() {
                   {s.label} 사진 {find(s.key)?.photo_path ? "바꾸기" : "추가"}
                 </BigButton>
               ))}
+              <p className="field-hint" style={{ marginTop: 4 }}>
+                찍기 대신 앨범에서 고르려면:{" "}
+                {SLOTS.filter((s) => find(s.key)?.status === "ate" && find(s.key)?.id).map((s) => (
+                  <button key={s.key} className="inline-link" onClick={() => addPhoto(find(s.key)!, "gallery")}>
+                    {s.label}
+                  </button>
+                ))}
+              </p>
               {/* 올린 사진은 바로 보인다 — "올라갔나?" 를 묻지 않게 */}
               {rows.some((r) => r.photo_path) && (
                 <div className="thumb-row">

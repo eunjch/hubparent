@@ -9,8 +9,16 @@ const proxy = {
   "/uploads": { target: API_TARGET, changeOrigin: true },
 };
 
-export default defineConfig({
+// 앱 빌드(--mode app)에서만 API 절대 주소를 박는다. 앱 오리진은 https://localhost 라
+// 상대 경로가 서버를 못 찾는다. HTTPS 가 붙으면 기본값을 https 로 바꾼다.
+const APP_API_BASE = process.env.VITE_API_BASE_URL ?? "http://hubfamily.mangotree.co.kr";
+
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: { proxy },
   preview: { proxy },
-});
+  define:
+    mode === "app"
+      ? { "import.meta.env.VITE_API_BASE_URL": JSON.stringify(APP_API_BASE) }
+      : {},
+}));

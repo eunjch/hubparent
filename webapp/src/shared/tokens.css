@@ -3270,3 +3270,15 @@ input[type="datetime-local"] {
     font-size: 1.375rem;
   }
 }
+
+.inline-link {
+  border: none;
+  background: none;
+  padding: 0 4px;
+  color: var(--brand-deep);
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 32px;
+}
