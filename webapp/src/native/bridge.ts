@@ -55,6 +55,8 @@ let pushListenersBound = false;
  *  거부하면 null — 화면이 "알림이 꺼져 있어요" 를 보여 줄 수 있다. */
 export async function registerPush(): Promise<string | null> {
   if (!isNativeApp()) return null;
+  // google-services.json 없이 register() 를 부르면 네이티브가 죽는다. 빌드 때 정해진다 (vite.config)
+  if (!import.meta.env.VITE_PUSH_ENABLED) return null;
 
   let perm = await PushNotifications.checkPermissions();
   if (perm.receive === "prompt" || perm.receive === "prompt-with-rationale") {
@@ -218,10 +220,11 @@ export function bindBackButton(canGoBack: () => boolean, goBack: () => void): ()
 /** 로그인 직후 한 번. 푸시 등록 → 어르신이면 로컬 알림 2주치 예약. */
 export async function afterLogin(role: Role): Promise<void> {
   if (!isNativeApp()) return;
-  await registerPush();
+  // 로컬 예약이 먼저다 — Firebase 가 없어도 이건 되어야 한다 (계획서 8.5: 로컬은 보험)
   if (role === "senior") {
     await syncLocalNotifications().catch(() => undefined);
   }
+  await registerPush().catch(() => undefined);
 }
 
 /* ── 사진 (계획서 8.5.8) ───────────────────────────────────── */

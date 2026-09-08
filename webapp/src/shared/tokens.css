@@ -524,7 +524,7 @@ textarea:focus-visible {
   bottom: 0;
   display: grid;
   gap: 2px;
-  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  padding: 6px 4px calc(6px + var(--sab));
   background: var(--surface);
   border-top: 1px solid var(--line);
   z-index: 10;
@@ -921,7 +921,7 @@ textarea:focus-visible {
 .sticky-cta {
   position: sticky;
   bottom: 0;
-  padding: var(--gap-tight) var(--gap) calc(var(--gap) + env(safe-area-inset-bottom));
+  padding: var(--gap-tight) var(--gap) calc(var(--gap) + var(--sab));
   background: linear-gradient(180deg, rgba(246, 247, 253, 0) 0%, var(--ground) 30%);
   z-index: 5;
 }
@@ -3281,4 +3281,24 @@ input[type="datetime-local"] {
   text-decoration: underline;
   text-underline-offset: 3px;
   min-height: 32px;
+}
+
+/* ── 안전영역 (앱은 상태바·제스처바 아래까지 그린다) ─────────────
+   env() 은 노치를, --safe-area-inset-* 는 Capacitor 가 시스템바 크기를 넣어 준다.
+   둘 중 큰 값을 쓴다. 브라우저에서는 둘 다 0 이라 아무 영향이 없다. */
+:root {
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+
+.screen-head {
+  padding-top: calc(6px + var(--sat));
+}
+
+/* 상단 바가 없는 화면(홈 · 시작 · 탭 화면)은 본문이 직접 내려온다 */
+.screen > .screen-body:first-child,
+.screen > .backdrop + .screen-body,
+.screen > .brandbar,
+.screen > .greet:first-child {
+  padding-top: calc(var(--gap-tight) + var(--sat));
 }
