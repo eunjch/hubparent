@@ -19,6 +19,10 @@ import GuardianHome from "./pages/GuardianHome";
 import GuardianLogin from "./pages/GuardianLogin";
 import GuardianSignup from "./pages/GuardianSignup";
 import SeniorAdd from "./pages/SeniorAdd";
+import MealCheck from "./pages/MealCheck";
+import MedManage from "./pages/MedManage";
+import MedCheck from "./pages/MedCheck";
+import MoodCheck from "./pages/MoodCheck";
 import SeniorHome from "./pages/SeniorHome";
 import SeniorJoin from "./pages/SeniorJoin";
 import SeniorList from "./pages/SeniorList";
@@ -104,6 +108,30 @@ export default function App() {
             </Guarded>
           }
         />
+        <Route
+          path="/s/meal"
+          element={
+            <Guarded>
+              <MealCheck />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/s/med"
+          element={
+            <Guarded>
+              <MedCheck />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/s/mood"
+          element={
+            <Guarded>
+              <MoodCheck />
+            </Guarded>
+          }
+        />
 
         {/* 보호자 — 화면 7~8 은 M4 */}
         <Route
@@ -111,6 +139,14 @@ export default function App() {
           element={
             <Guarded>
               <GuardianHome />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/medications"
+          element={
+            <Guarded>
+              <MedManage />
             </Guarded>
           }
         />

@@ -179,12 +179,44 @@ call(
     expect=403,
 )
 
-print("15. 보호자 연락처 (화면 10) + 설정 (화면 9)")
+print("15. 복약 — 자녀가 등록하고 어르신이 응답")
+med = call(
+    "POST",
+    "/api/v1/medications",
+    {"user_id": senior_id, "name": "혈압약", "dose": "1정", "times": ["08:00", "20:00"]},
+    gt,
+)
+assert med["times"] == ["08:00", "20:00"]
+
+doses = call("GET", "/api/v1/medications/today", None, st)
+assert len(doses) == 2, f"복용 건 {len(doses)}개"
+print(f"        -> 오늘 복용 {len(doses)}건")
+
+call(
+    "POST",
+    f"/api/v1/medications/{doses[0]['medication_id']}/logs",
+    {"scheduled_at": doses[0]["scheduled_at"], "status": "taken"},
+    st,
+)
+after = call("GET", "/api/v1/medications/today", None, st)
+assert after[0]["status"] == "taken"
+print("        -> 복용함 기록됨")
+
+print("16. 자녀는 대신 응답할 수 없다")
+call(
+    "POST",
+    f"/api/v1/medications/{doses[1]['medication_id']}/logs",
+    {"scheduled_at": doses[1]["scheduled_at"], "status": "taken"},
+    gt,
+    expect=403,
+)
+
+print("17. 보호자 연락처 (화면 10) + 설정 (화면 9)")
 call("POST", "/api/v1/contacts", {"name": "아들 민수", "phone": "010-1234-5678", "relation": "아들"}, st)
 call("PATCH", "/api/v1/settings", {"font_scale": 150, "voice_guide": True}, st)
 assert call("GET", "/api/v1/settings", None, st)["font_scale"] == 150
 
-print("16. 토큰 없이 접근 차단")
+print("18. 토큰 없이 접근 차단")
 call("GET", "/api/v1/me", None, None, expect=401)
 
 print(f"\n전체 통과 — {BASE}")

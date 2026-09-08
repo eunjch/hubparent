@@ -29,3 +29,24 @@ export async function registerPush(): Promise<string | null> {
 export async function collectSignals(): Promise<never[]> {
   return [];
 }
+
+/** 식사 사진 — 화면 S2 의 `사진 추가`.
+ *
+ *  권한은 **이 함수를 부를 때** 요청한다. 앱 진입 시 미리 묻지 않는다.
+ *  사진은 선택 항목이라 거부당해도 식사 체크는 정상으로 끝나야 한다 (계획서 8.5.8).
+ *
+ *  웹에서는 <input type="file" capture> 로 대신한다. 앱에서는 M2 말에
+ *  @capacitor/camera 를 붙여 촬영·앨범 선택을 고를 수 있게 한다.
+ */
+export async function pickMealPhoto(): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    // 어르신은 대개 방금 먹은 것을 찍는다. 카메라를 먼저 연다.
+    input.capture = "environment";
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+}

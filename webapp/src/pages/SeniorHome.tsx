@@ -3,7 +3,7 @@
  *  시안(Warm Care 1번): 로고 → 인사 → 응원 배너 → 2×2 타일 → 날씨 카드 → 탭 4개.
  *  한 화면에서 할 일이 네 개로 끝나고, 스크롤 없이 다 보이는 것이 목적이다 (계획서 9장).
  *
- *  체크 3종 화면은 M2, 일정은 M3 에서 붙는다. 지금은 진입 타일까지다.
+ *  체크 3종 화면은 붙었다(S2·S3·S4). 일정과 리포트는 M3·M4 에서 붙는다.
  */
 
 import { useEffect, useState } from "react";
@@ -126,9 +126,9 @@ export default function SeniorHome() {
         />
 
         <TileGrid>
-          <Tile icon="meal" label="식사 체크" tone="meal" onClick={() => setTab("meal")} />
-          <Tile icon="pill" label="약 복용" tone="med" onClick={() => setTab("med")} />
-          <Tile icon="mood" label="기분 체크" tone="mood" onClick={() => setTab("mood")} />
+          <Tile icon="meal" label="식사 체크" tone="meal" onClick={() => nav("/s/meal")} />
+          <Tile icon="pill" label="약 복용" tone="med" onClick={() => nav("/s/med")} />
+          <Tile icon="mood" label="기분 체크" tone="mood" onClick={() => nav("/s/mood")} />
           <Tile icon="report" label="오늘 리포트" tone="plan" onClick={() => setTab("report")} />
         </TileGrid>
 

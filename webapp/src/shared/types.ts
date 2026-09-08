@@ -48,3 +48,52 @@ export interface SeniorLookupResult {
   guardian_name: string;
   seniors: SeniorChoice[];
 }
+
+/* ── 체크 3종 (화면 S2 · S3 · S4) ───────────────────────── */
+
+export type CheckSlot = "breakfast" | "lunch" | "dinner";
+export type MealStatus = "ate" | "skipped";
+export type MoodValue = "good" | "normal" | "bad";
+export type MedicationStatus = "pending" | "taken" | "missed";
+
+export interface MealCheck {
+  id: string;
+  check_date: string;
+  slot: CheckSlot;
+  status: MealStatus;
+  photo_path: string | null;
+  checked_at?: string;
+}
+
+export interface MoodCheck {
+  id: string;
+  check_date: string;
+  slot: CheckSlot;
+  mood: MoodValue;
+  checked_at?: string;
+}
+
+/** 자녀가 등록한 약 (화면 G4) */
+export interface Medication {
+  id: string;
+  user_id: string;
+  name: string;
+  dose: string | null;
+  times: string[];
+  weekdays: number[];
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+}
+
+/** 오늘 먹어야 할 한 건 (화면 S3) */
+export interface Dose {
+  medication_id: string;
+  name: string;
+  dose: string | null;
+  /** "08:00" — 화면에 그대로 쓴다 */
+  time: string;
+  /** 응답을 올릴 때 그대로 돌려보낸다 */
+  scheduled_at: string;
+  status: MedicationStatus;
+}

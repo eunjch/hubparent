@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
-import type { Me, Senior } from "../shared/types";
+import type { Dose, Me, Senior } from "../shared/types";
 import {
   Banner,
   BigButton,
@@ -64,6 +64,7 @@ export default function GuardianHome() {
   const [seniorId, setSeniorId] = useState<string | null>(null);
   const [meals, setMeals] = useState<MealCheck[] | null>(null);
   const [moods, setMoods] = useState<MoodCheck[] | null>(null);
+  const [doses, setDoses] = useState<Dose[] | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("home");
 
@@ -86,14 +87,17 @@ export default function GuardianHome() {
     if (!seniorId) return;
     setMeals(null);
     setMoods(null);
+    setDoses(null);
     const day = today();
     Promise.all([
       request<MealCheck[]>(`/checks/meals?check_date=${day}&user_id=${seniorId}`),
       request<MoodCheck[]>(`/checks/moods?check_date=${day}&user_id=${seniorId}`),
+      request<Dose[]>(`/medications/today?user_id=${seniorId}`),
     ])
-      .then(([m, o]) => {
+      .then(([m, o, d]) => {
         setMeals(m);
         setMoods(o);
+        setDoses(d);
       })
       .catch(() => setError("정보를 불러오지 못했습니다."));
   }, [seniorId]);
@@ -154,6 +158,7 @@ export default function GuardianHome() {
 
   const mealDone = meals?.filter((m) => m.status === "ate").length;
   const latestMood = moods?.length ? MOOD[moods[moods.length - 1].mood] : null;
+  const medTaken = doses?.filter((d) => d.status === "taken").length ?? 0;
   const current = seniors.find((s) => s.id === seniorId);
 
   return (
@@ -219,7 +224,21 @@ export default function GuardianHome() {
             <RowCard
               icon="pill"
               title="약 복용"
-              right={<StatusPill tone="none">기록 없음</StatusPill>}
+              onClick={() => nav("/g/medications")}
+              right={
+                doses === null ? (
+                  <StatusPill tone="none">불러오는 중</StatusPill>
+                ) : doses.length === 0 ? (
+                  <StatusPill tone="none">등록 안 됨</StatusPill>
+                ) : (
+                  <StatusPill
+                    tone={medTaken === doses.length ? "done" : "mid"}
+                    withCheck={medTaken === doses.length}
+                  >
+                    {medTaken}/{doses.length}
+                  </StatusPill>
+                )
+              }
             />
             <RowCard
               icon="mood"
@@ -240,7 +259,7 @@ export default function GuardianHome() {
 
             <TileGrid>
               <Tile icon="report" label="오늘 리포트" tone="plan" onClick={() => setTab("report")} />
-              <Tile icon="calendar" label="일정 등록" tone="mood" onClick={() => setTab("plan")} />
+              <Tile icon="pill" label="약 복용 시간" tone="med" onClick={() => nav("/g/medications")} />
               <Tile icon="alert" label="알림" tone="meal" onClick={() => setTab("alerts")} />
               <Tile icon="family" label="부모님 관리" tone="contact" onClick={() => nav("/g/seniors")} />
             </TileGrid>

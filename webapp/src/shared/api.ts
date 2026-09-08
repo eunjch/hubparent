@@ -54,3 +54,26 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
+
+
+/** 파일 업로드. JSON 이 아니라 multipart 라 Content-Type 을 브라우저가 정하게 둔다. */
+export async function upload<T>(path: string, file: File): Promise<T> {
+  const headers: Record<string, string> = {};
+  const token = await getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch(`${BASE_URL}/api/v1${path}`, { method: "POST", headers, body: form });
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null);
+    throw new ApiError(
+      payload?.code ?? "NETWORK_ERROR",
+      payload?.message ?? "사진을 올리지 못했어요.",
+      res.status,
+    );
+  }
+  return (await res.json()) as T;
+}

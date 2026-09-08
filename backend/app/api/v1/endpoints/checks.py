@@ -5,13 +5,17 @@
 같은 값이면 그대로, 다른 값이면 마지막 입력으로 덮는다 — 되돌리기 UX 와도 맞는다 (계획서 9장).
 """
 
+import secrets
 import uuid
 from datetime import UTC, date, datetime
+from pathlib import Path
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, File, Query, UploadFile
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.core.deps import CurrentUser, DBSession, assert_family_access
+from app.core.errors import Conflict, NotFound
 from app.models.care import MealCheck, MoodCheck
 from app.schemas.check import MealCheckIn, MealCheckOut, MoodCheckIn, MoodCheckOut
 from app.services import presence
@@ -103,3 +107,40 @@ async def upsert_mood(payload: MoodCheckIn, user: CurrentUser, session: DBSessio
     await presence.touch(session, user.id)
     await session.flush()
     return MoodCheckOut.model_validate(row)
+
+
+# 식사 사진 (화면 S2 "사진 추가"). 선택 항목이다 — 안 올려도 체크는 끝난다.
+PHOTO_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/heic": ".heic", "image/webp": ".webp"}
+PHOTO_MAX_BYTES = 8 * 1024 * 1024
+
+
+@router.post("/meals/{check_id}/photo", response_model=MealCheckOut)
+async def upload_meal_photo(
+    check_id: uuid.UUID,
+    user: CurrentUser,
+    session: DBSession,
+    file: UploadFile = File(...),
+) -> MealCheckOut:
+    """본인 식사 기록에만 올릴 수 있다."""
+    row = await session.get(MealCheck, check_id)
+    if row is None or row.user_id != user.id:
+        raise NotFound("CHECK_NOT_FOUND", "기록을 찾을 수 없습니다.")
+
+    ext = PHOTO_TYPES.get((file.content_type or "").lower())
+    if ext is None:
+        raise Conflict("UNSUPPORTED_TYPE", "사진 파일만 올릴 수 있습니다.")
+
+    data = await file.read()
+    if len(data) > PHOTO_MAX_BYTES:
+        raise Conflict("FILE_TOO_LARGE", "사진 용량이 너무 큽니다.")
+
+    # 사용자별 디렉터리에 무작위 이름으로 둔다. 원본 파일명은 쓰지 않는다.
+    folder = Path(settings.UPLOAD_DIR) / str(user.id)
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{check_id.hex}_{secrets.token_hex(4)}{ext}"
+    (folder / name).write_bytes(data)
+
+    row.photo_path = f"{user.id}/{name}"
+    await presence.touch(session, user.id)
+    await session.flush()
+    return MealCheckOut.model_validate(row)
