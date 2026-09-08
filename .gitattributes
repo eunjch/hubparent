@@ -1,7 +1,4 @@
-* text=auto eol=lf
-
-*.png binary
-*.jpg binary
-*.pdf binary
-*.pptx binary
-*.keystore binary
+# Windows 배치는 CRLF, 셸 스크립트는 LF 로 고정 — OS 를 오가며 깨지지 않게
+*.bat text eol=crlf
+*.sh text eol=lf
+gradlew text eol=lf
