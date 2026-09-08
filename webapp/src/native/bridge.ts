@@ -33,13 +33,17 @@ export function call(phone: string): void {
 /* ── 알림 채널 (계획서 8.5.7) ────────────────────────────────
  *  채널은 한 번 만들면 사용자가 끌 수 있고 앱이 되돌릴 수 없다.
  *  처음부터 나눠야 "하루 요약만 끄고 약 알림은 켜두기" 가 된다. */
+/* sound 를 비우면 시스템 기본 알림음이다. "default" 라고 쓰면 앱 안의 raw/default 파일을
+ * 찾아 무음이 된다 — 실기기에서 확인한 함정. */
 const CHANNELS = [
-  { id: "medication", name: "약 복용 알림", importance: 5 as const, sound: "default", vibration: true },
-  { id: "anomaly", name: "이상 징후", importance: 5 as const, sound: "default", vibration: true },
-  { id: "schedule", name: "일정", importance: 3 as const, sound: "default", vibration: false },
+  { id: "medication", name: "약 복용 알림", importance: 5 as const, vibration: true },
+  { id: "anomaly", name: "이상 징후", importance: 5 as const, vibration: true },
+  { id: "schedule", name: "일정", importance: 3 as const, vibration: false },
   { id: "report", name: "하루 요약", importance: 2 as const, vibration: false },
 ];
 
+/* 채널은 한 번 만들면 앱이 못 바꾼다 — 같은 ID 로 지웠다 다시 만들어도 이전 설정이 복원된다
+ * (실기기 확인). 정의를 바꿔야 하면 ID 자체를 바꿔야 한다. createChannel 은 멱등이라 매번 불러도 된다. */
 async function ensureChannels(): Promise<void> {
   if (platform() !== "android") return;
   for (const ch of CHANNELS) {
