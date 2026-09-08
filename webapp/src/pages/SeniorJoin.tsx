@@ -1,9 +1,9 @@
-/** S1 어르신 합류 — 이 앱에서 어르신이 하는 유일한 입력.
+/** 부모 로그인 — 자녀 이름 + 자녀 번호 → 본인 선택.
  *
- *  여섯 글자를 넣으면 "김영희 님 맞으세요?" 를 확인하고 끝난다.
- *  이름도 전화번호도 묻지 않는다(계획서 1.4).
+ *  어르신에게 비밀번호를 만들게 하지 않는다. 자녀 이름과 번호는 대개 외우고
+ *  있거나 전화기에 있는 정보다 (계획서 1.4).
  *
- *  용어 규칙(계획서 9장): "초대코드", "인증" 같은 말은 쓰지 않는다. "번호" 라고 부른다.
+ *  용어 규칙(계획서 9장): "인증", "계정" 같은 말은 쓰지 않는다.
  */
 
 import { useState } from "react";
@@ -11,42 +11,47 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
 import { saveTokens } from "../shared/auth";
-import { AvatarSenior } from "../shared/icons";
-import { Scene } from "../shared/Scene";
-import type { InvitationPreview, TokenPair } from "../shared/types";
-import { BigButton, Notice, Spinner } from "../shared/ui";
-
-const CODE_LENGTH = 6;
+import { Icon } from "../shared/icons";
+import type { SeniorLookupResult, TokenPair } from "../shared/types";
+import { BigButton, Field, Notice, Spinner } from "../shared/ui";
 
 export default function SeniorJoin() {
   const nav = useNavigate();
-  const [code, setCode] = useState("");
-  const [preview, setPreview] = useState<InvitationPreview | null>(null);
+  const [guardianName, setGuardianName] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [found, setFound] = useState<SeniorLookupResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function check() {
+  const canLookup = guardianName.trim().length > 0 && guardianPhone.trim().length >= 10 && !busy;
+
+  async function lookup() {
     setBusy(true);
     setError("");
     try {
-      const found = await request<InvitationPreview>(`/invitations/${code.toUpperCase()}`);
-      if (found.used) throw new ApiError("USED", "이미 사용된 번호입니다.", 409);
-      if (found.expired)
-        throw new ApiError("EXPIRED", "기간이 지난 번호입니다. 자녀분께 다시 요청해 주세요.", 409);
-      setPreview(found);
+      const result = await request<SeniorLookupResult>("/auth/senior/lookup", {
+        method: "POST",
+        body: { guardian_name: guardianName.trim(), guardian_phone: guardianPhone.trim() },
+      });
+      setFound(result);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "번호를 다시 확인해 주세요.");
+      setError(e instanceof ApiError ? e.message : "이름과 번호를 다시 확인해 주세요.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function join() {
+  async function choose(seniorId: string) {
     setBusy(true);
     setError("");
     try {
-      const tokens = await request<TokenPair>(`/invitations/${code.toUpperCase()}/claim`, {
+      const tokens = await request<TokenPair>("/auth/senior/login", {
         method: "POST",
+        body: {
+          guardian_name: guardianName.trim(),
+          guardian_phone: guardianPhone.trim(),
+          senior_id: seniorId,
+        },
       });
       await saveTokens(tokens.access_token, tokens.refresh_token);
       nav("/s/home", { replace: true });
@@ -56,14 +61,13 @@ export default function SeniorJoin() {
     }
   }
 
-  /* ── 확인 단계 ── 이름을 크게 보여주고 예/아니오만 묻는다 ── */
-  if (preview) {
+  /* ── 2단계 — 본인 선택 ── */
+  if (found) {
     return (
-      <div className="screen onboard">
-        <Scene variant="senior" />
+      <div className="screen">
 
         <header className="screen-head">
-          <button className="icon-btn" onClick={() => setPreview(null)} aria-label="뒤로 가기">
+          <button className="icon-btn" onClick={() => setFound(null)} aria-label="뒤로 가기">
             ‹
           </button>
           <h1>확인</h1>
@@ -72,36 +76,43 @@ export default function SeniorJoin() {
 
         <main className="screen-body">
           <p className="sub" style={{ textAlign: "center" }}>
-            아래 이름이 맞으신가요?
+            <b>{found.guardian_name}</b> 님의 가족입니다.
+            <br />
+            어느 분이신가요?
           </p>
 
-          <div className="confirm-card">
-            <span className="face">
-              <AvatarSenior size={96} />
-            </span>
-            <p className="name">{preview.target_name} 님</p>
-            <p className="fam">{preview.family_name}</p>
+          <div className="choice-list">
+            {found.seniors.map((s) => (
+              <button
+                key={s.id}
+                className="choice-card"
+                onClick={() => choose(s.id)}
+                disabled={busy}
+              >
+                <span className="face">
+                  <Icon name="heart" size={44} />
+                </span>
+                <span className="body">
+                  <span className="t">{s.name}</span>
+                  {s.relation && <span className="d">{s.relation}</span>}
+                </span>
+                <span className="chev" aria-hidden="true">
+                  ›
+                </span>
+              </button>
+            ))}
           </div>
 
           <Notice tone="error">{error}</Notice>
+          {busy && <Spinner label="들어가는 중…" />}
         </main>
-
-        <div className="sticky-cta" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <BigButton tone="primary" onClick={join} disabled={busy}>
-            {busy ? "연결하는 중…" : "네, 맞아요"}
-          </BigButton>
-          <BigButton onClick={() => setPreview(null)} disabled={busy}>
-            아니에요
-          </BigButton>
-        </div>
       </div>
     );
   }
 
-  /* ── 입력 단계 ── */
+  /* ── 1단계 — 자녀 정보 입력 ── */
   return (
-    <div className="screen onboard">
-      <Scene variant="senior" />
+    <div className="screen">
 
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/")} aria-label="뒤로 가기">
@@ -112,35 +123,40 @@ export default function SeniorJoin() {
       </header>
 
       <main className="screen-body">
-        <div className="hero" style={{ paddingBottom: "var(--gap)" }}>
+        <div className="hero" style={{ paddingBottom: "var(--gap-tight)" }}>
           <span className="hero-badge">
-            <AvatarSenior size={92} />
+            <Icon name="heart" />
           </span>
           <h1 style={{ fontSize: "var(--text-action)" }}>
-            자녀분이 알려준
+            자녀분의 이름과
             <br />
-            번호를 넣어주세요
+            전화번호를 넣어주세요
           </h1>
-          <p>여섯 글자입니다.</p>
         </div>
 
-        <input
-          className="join-input"
-          value={code}
-          onChange={(e) =>
-            setCode(e.target.value.toUpperCase().replace(/\s/g, "").slice(0, CODE_LENGTH))
-          }
-          placeholder="______"
-          autoFocus
-          aria-label="자녀분이 알려준 번호"
-        />
+        <section className="form-card">
+          <Field
+            label="자녀 이름"
+            value={guardianName}
+            onChange={setGuardianName}
+            placeholder="김민수"
+            autoFocus
+          />
+          <Field
+            label="자녀 전화번호"
+            value={guardianPhone}
+            onChange={setGuardianPhone}
+            placeholder="010-1234-5678"
+            inputMode="tel"
+          />
+        </section>
 
         <Notice tone="error">{error}</Notice>
-        {busy && <Spinner label="확인하는 중…" />}
+        {busy && <Spinner label="찾는 중…" />}
       </main>
 
       <div className="sticky-cta">
-        <BigButton tone="primary" onClick={check} disabled={code.length < CODE_LENGTH || busy}>
+        <BigButton tone="primary" onClick={lookup} disabled={!canLookup}>
           다음
         </BigButton>
       </div>

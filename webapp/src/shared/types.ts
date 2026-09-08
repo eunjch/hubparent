@@ -25,16 +25,26 @@ export interface Me {
   consented: boolean;
 }
 
-export interface FamilyCreated {
-  family: { id: string; name: string };
-  senior_id: string;
-  invitation_code: string;
-  invitation_expires_at: string;
+/** 자녀가 관리하는 부모님 한 명 */
+export interface Senior {
+  id: string;
+  name: string;
+  phone: string;
+  relation: string | null;
+  birth_year: number | null;
+  /** 한 번이라도 앱에 들어온 적이 있는지 */
+  joined: boolean;
 }
 
-export interface InvitationPreview {
+/** 부모 로그인 1단계 결과 — 이름 외의 정보는 오지 않는다 */
+export interface SeniorChoice {
+  id: string;
+  name: string;
+  relation: string | null;
+}
+
+export interface SeniorLookupResult {
   family_name: string;
-  target_name: string;
-  expired: boolean;
-  used: boolean;
+  guardian_name: string;
+  seniors: SeniorChoice[];
 }

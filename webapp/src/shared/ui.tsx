@@ -1,39 +1,33 @@
-/** 공용 컴포넌트 — CONCEPT 4 "패밀리 캐릭터".
+/** 공용 컴포넌트 — MEDIC "01 Warm Care".
  *
  *  계획서 9장의 고령자 UX 기준은 취향이 아니라 수용 기준이다.
  *  본문 18px · 버튼 24px · 터치 56px · 대비 4.5:1 · 색만으로 상태를 구분하지 않음.
- *  값은 tokens.css 에 있고 여기서는 토큰만 쓴다 — 인라인으로 px 를 적지 않는다.
- *
- *  아이콘은 지금 이모지로 둔다. 시안의 캐릭터 일러스트는 별도 산출물이며,
- *  받는 대로 이 컴포넌트들의 ico 자리만 교체하면 된다 (계획서 15장).
+ *  값은 tokens.css 에 있고 여기서는 토큰과 클래스만 쓴다.
  */
 
 import type { CSSProperties, ReactNode } from "react";
 
-import { TabBell } from "./icons";
+import { Icon, type IconName } from "./icons";
 
-export type Tone = "meal" | "med" | "mood" | "plan" | "contact" | "plain";
+export type Tone = "meal" | "med" | "mood" | "plan" | "contact" | "warm";
 
 /* ── 화면 뼈대 ──────────────────────────────────────────────── */
 
 export function Screen({
   title,
   onBack,
-  sky,
   children,
   footer,
   tabs,
 }: {
   title?: string;
   onBack?: () => void;
-  /** 홈 화면처럼 위쪽에 하늘 배경을 깔지 여부 */
-  sky?: boolean;
   children: ReactNode;
   footer?: ReactNode;
   tabs?: ReactNode;
 }) {
   return (
-    <div className={`screen${sky ? " sky" : ""}`}>
+    <div className="screen">
       {title && (
         <header className="screen-head">
           {onBack ? (
@@ -54,47 +48,99 @@ export function Screen({
   );
 }
 
-/** 홈 상단 인사. 시안의 아바타 + 인사말 + 알림 벨. */
-export function Greeting({
-  name,
-  suffix,
-  headline,
-  message,
-  avatar,
+/** 홈 상단 — 로고 가운데, 알림 오른쪽. */
+export function BrandBar({
   onBell,
   alertCount = 0,
 }: {
-  name: string;
-  /** "어머님" 같은 호칭. 자녀 화면에서는 "님" */
-  suffix?: string;
-  /** 이름 아랫줄 인사. 시안에서 이 줄이 가장 크다 */
-  headline: string;
-  message?: string;
-  avatar?: ReactNode;
   onBell?: () => void;
   alertCount?: number;
 }) {
   return (
-    <div className="greet">
-      <span className="greet-avatar">{avatar}</span>
-      <div className="greet-text">
-        <p className="greet-name">
-          {name} <span className="plain">{suffix ?? "님,"}</span>
-          <br />
-          {headline}
-        </p>
-        {message && <p className="greet-sub">{message}</p>}
-      </div>
+    <div className="brandbar">
+      <span className="logo">
+        <Icon name="heart" />
+        MEDIC
+      </span>
       {onBell && (
         <button
           className="bell-btn"
           onClick={onBell}
           aria-label={alertCount > 0 ? `알림 ${alertCount}건` : "알림"}
         >
-          <TabBell />
+          <Icon name="bell" />
           {alertCount > 0 && <span className="dot" />}
         </button>
       )}
+    </div>
+  );
+}
+
+/** 이름 + 인사. 시안에서 화면을 여는 가장 큰 글자다. */
+export function Greeting({
+  name,
+  suffix = "님,",
+  headline,
+  trailingIcon,
+  message,
+}: {
+  name: string;
+  suffix?: string;
+  headline: string;
+  trailingIcon?: IconName;
+  message?: string;
+}) {
+  return (
+    <div className="greet">
+      <p className="greet-name">
+        <span>
+          {name}
+          {suffix}
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {headline}
+          {trailingIcon && <Icon name={trailingIcon} />}
+        </span>
+      </p>
+      {message && <p className="greet-sub">{message}</p>}
+    </div>
+  );
+}
+
+/* ── 배너 ───────────────────────────────────────────────────── */
+
+/** 화면 맨 위의 안내 카드. 무엇을 하는 화면인지 한 줄로 알려준다. */
+export function Banner({
+  icon,
+  title,
+  description,
+  tone = "warm",
+  trailingIcon,
+}: {
+  icon: IconName;
+  title: string;
+  description?: string;
+  tone?: Tone;
+  trailingIcon?: IconName;
+}) {
+  return (
+    <div className={`banner ${tone}`}>
+      <Icon name={icon} className="lead" />
+      <span className="body">
+        <span className="t">{title}</span>
+        {description && <span className="d">{description}</span>}
+      </span>
+      {trailingIcon && <Icon name={trailingIcon} className="trail" />}
+    </div>
+  );
+}
+
+/** 화면 맨 아래 응원 문구. 어르신 화면의 마무리 (시안 공통). */
+export function Cheer({ icon = "heart", children }: { icon?: IconName; children: ReactNode }) {
+  return (
+    <div className="cheer">
+      <Icon name={icon} />
+      <p>{children}</p>
     </div>
   );
 }
@@ -128,84 +174,99 @@ export function Card({
   );
 }
 
-/** 오늘 한눈에 보기의 한 칸. 값이 없으면 "—" 로 둔다 — 0 과 구분해야 한다. */
-export function Stat({
+/* ── 홈 타일 ───────────────────────────────────────────────── */
+
+export function TileGrid({ children }: { children: ReactNode }) {
+  return <div className="tile-grid">{children}</div>;
+}
+
+export function Tile({
   icon,
   label,
-  value,
   tone,
+  onClick,
 }: {
-  icon: ReactNode;
+  icon: IconName;
   label: string;
-  value: string;
-  tone?: Tone;
+  tone: Tone;
+  onClick?: () => void;
 }) {
-  const unknown = value === "—";
   return (
-    <div className={`stat${tone ? ` t-${tone}` : ""}`}>
-      <span className="ico">{icon}</span>
-      <span className="k">{label}</span>
-      <span className={`v${unknown ? " muted" : ""}`}>{value}</span>
-    </div>
-  );
-}
-
-export function StatRow({ children }: { children: ReactNode }) {
-  return <div className="stat-row">{children}</div>;
-}
-
-export function PillButton({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
-  return (
-    <button className="pill-btn" onClick={onClick}>
-      {children} ›
+    <button className={`tile ${tone}`} onClick={onClick}>
+      <Icon name={icon} />
+      <span className="t">{label}</span>
     </button>
   );
 }
 
-/** 기능 진입 카드. 어르신 화면은 리스트, 자녀 화면은 2×2 그리드로 배치된다. */
-export function MenuCard({
+/* ── 목록 행 ───────────────────────────────────────────────── */
+
+export type PillTone = "todo" | "done" | "good" | "mid" | "none";
+
+/** 상태 알약. 색만으로 알리지 않도록 문구를 반드시 함께 쓴다 (계획서 9장). */
+export function StatusPill({
+  tone,
+  children,
+  withCheck,
+}: {
+  tone: PillTone;
+  children: ReactNode;
+  withCheck?: boolean;
+}) {
+  return (
+    <span className={`pill ${tone}`}>
+      {withCheck && <Icon name="check" size={16} />}
+      {children}
+    </span>
+  );
+}
+
+export function RowCard({
   icon,
   title,
   description,
-  tone = "plain",
+  right,
   onClick,
-  disabled,
+  chevron,
 }: {
-  icon: ReactNode;
+  icon?: IconName;
   title: string;
   description?: string;
-  tone?: Tone;
+  right?: ReactNode;
   onClick?: () => void;
-  disabled?: boolean;
+  chevron?: boolean;
 }) {
-  return (
-    <button className={`menu-card tone-${tone}`} onClick={onClick} disabled={disabled}>
-      <span className="ico">{icon}</span>
+  const inner = (
+    <>
+      {icon && <Icon name={icon} className="lead" />}
       <span className="body">
         <span className="t">{title}</span>
         {description && <span className="d">{description}</span>}
       </span>
-      <span className="chev" aria-hidden="true">
-        ›
-      </span>
-    </button>
+      {right}
+      {chevron && (
+        <span className="chev" aria-hidden="true">
+          ›
+        </span>
+      )}
+    </>
   );
-}
 
-export function MenuGrid({ children }: { children: ReactNode }) {
-  return <div className="menu-grid">{children}</div>;
-}
-
-export function MenuList({ children }: { children: ReactNode }) {
-  return <div className="menu-list">{children}</div>;
+  if (onClick) {
+    return (
+      <button className="row-card" onClick={onClick}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className="row-card">{inner}</div>;
 }
 
 /* ── 하단 탭바 ─────────────────────────────────────────────── */
 
 export interface TabItem {
   key: string;
-  /** 활성 여부를 받아 채움/선을 바꾼다 — 색만으로 상태를 알리지 않는다 */
-  icon: (active: boolean) => ReactNode;
+  icon: IconName;
   label: string;
   onClick?: () => void;
 }
@@ -220,7 +281,7 @@ export function TabBar({ items, current }: { items: TabItem[]; current: string }
           aria-current={it.key === current ? "page" : undefined}
           onClick={it.onClick}
         >
-          <span className="ico">{it.icon(it.key === current)}</span>
+          <Icon name={it.icon} />
           <span>{it.label}</span>
         </button>
       ))}
@@ -234,6 +295,7 @@ export function BigButton({
   children,
   onClick,
   tone = "plain",
+  icon,
   disabled,
   type = "button",
   className,
@@ -241,7 +303,8 @@ export function BigButton({
 }: {
   children: ReactNode;
   onClick?: () => void;
-  tone?: "primary" | "plain" | "danger";
+  tone?: "primary" | "plain" | "confirm" | "soft" | "danger";
+  icon?: IconName;
   disabled?: boolean;
   type?: "button" | "submit";
   className?: string;
@@ -255,6 +318,7 @@ export function BigButton({
       type={type}
       style={style}
     >
+      {icon && <Icon name={icon} />}
       {children}
     </button>
   );
@@ -322,7 +386,6 @@ export function Check({
 
 /* ── 알림 ───────────────────────────────────────────────────── */
 
-/** 상태를 색으로만 알리지 않는다. 아이콘과 문구를 항상 함께 쓴다 (계획서 9장). */
 export function Notice({
   tone = "info",
   children,
@@ -333,7 +396,7 @@ export function Notice({
   if (!children) return null;
   return (
     <p className={`notice ${tone}`} role={tone === "error" ? "alert" : undefined}>
-      <span aria-hidden="true">{tone === "error" ? "⚠" : "ℹ"}</span>
+      <Icon name={tone === "error" ? "alert" : "leaf"} />
       <span>{children}</span>
     </p>
   );

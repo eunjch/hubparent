@@ -16,10 +16,12 @@ import type { Me } from "./shared/types";
 import { flush } from "./shared/offlineQueue";
 import { Screen, Spinner } from "./shared/ui";
 import GuardianHome from "./pages/GuardianHome";
-import GuardianSetup from "./pages/GuardianSetup";
+import GuardianLogin from "./pages/GuardianLogin";
+import GuardianSignup from "./pages/GuardianSignup";
+import SeniorAdd from "./pages/SeniorAdd";
 import SeniorHome from "./pages/SeniorHome";
-import InviteCode from "./pages/InviteCode";
 import SeniorJoin from "./pages/SeniorJoin";
+import SeniorList from "./pages/SeniorList";
 import Start from "./pages/Start";
 
 type Boot = { state: "loading" } | { state: "anonymous" } | { state: "signed-in"; me: Me };
@@ -86,9 +88,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing boot={boot} />} />
 
-        {/* 온보딩 */}
-        <Route path="/setup" element={<GuardianSetup />} />
-        <Route path="/setup/code" element={<InviteCode />} />
+        {/* 자녀 — 로그인 · 회원가입 */}
+        <Route path="/login" element={<GuardianLogin />} />
+        <Route path="/signup" element={<GuardianSignup />} />
+
+        {/* 부모 — 자녀 이름·번호로 들어온다 */}
         <Route path="/join" element={<SeniorJoin />} />
 
         {/* 어르신 — 화면 1~6, 9, 10 은 M2 이후 */}
@@ -107,6 +111,22 @@ export default function App() {
           element={
             <Guarded>
               <GuardianHome />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/seniors"
+          element={
+            <Guarded>
+              <SeniorList />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/seniors/new"
+          element={
+            <Guarded>
+              <SeniorAdd />
             </Guarded>
           }
         />
