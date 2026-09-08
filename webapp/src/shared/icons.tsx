@@ -38,6 +38,7 @@ import stethoscope from "../assets/icons/19_stethoscope.svg";
 import sun from "../assets/icons/13_sun.svg";
 import tooth from "../assets/icons/18_tooth.svg";
 
+import logoPetals from "../assets/logo/logo_medic_petals.svg";
 import logoSymbol from "../assets/logo/logo_medic_symbol.svg";
 
 import bgBottomWave from "../assets/bg/04_bottom_wave.svg";
@@ -77,6 +78,12 @@ export const ICON = {
   graph: graphBar,
   heart: careHeart,
   logo: logoSymbol,
+} as const;
+
+/** 워드마크 옆 심볼. 첫 화면은 잎 두 장(petals), 나머지는 기존 symbol 을 쓴다. */
+export const LOGO = {
+  petals: logoPetals,
+  symbol: logoSymbol,
 } as const;
 
 export const BG = {

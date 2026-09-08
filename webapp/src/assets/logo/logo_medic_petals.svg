@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<!-- 시안 첫 화면의 심볼 — 잎 두 장이 겹쳐 하트가 된다 (왼쪽 파랑, 오른쪽 보라) -->
+<defs>
+  <linearGradient id="petalL" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#5f8ff5"/>
+    <stop offset="100%" stop-color="#8fbaff"/>
+  </linearGradient>
+  <linearGradient id="petalR" x1="1" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#8a7cf3"/>
+    <stop offset="100%" stop-color="#b7a9fb"/>
+  </linearGradient>
+  <linearGradient id="petalM" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#7f9cf8" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="#5b6fe0" stop-opacity="0.9"/>
+  </linearGradient>
+</defs>
+<!-- 왼쪽 잎 -->
+<path d="M256 424 C150 350 74 286 82 186 C88 110 152 60 214 92 C244 108 256 150 256 200 Z" fill="url(#petalL)"/>
+<!-- 오른쪽 잎 -->
+<path d="M256 424 C362 350 438 286 430 186 C424 110 360 60 298 92 C268 108 256 150 256 200 Z" fill="url(#petalR)"/>
+<!-- 겹치는 가운데 잎 — 두 장이 만나는 느낌 -->
+<path d="M256 424 C214 340 196 262 214 190 C226 146 244 116 256 104 C268 116 286 146 298 190 C316 262 298 340 256 424 Z" fill="url(#petalM)"/>
+<!-- 잎맥 하이라이트 -->
+<path d="M256 404 C246 330 240 262 246 200" stroke="#ffffff" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round" fill="none"/>
+</svg>
