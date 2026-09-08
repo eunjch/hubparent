@@ -79,11 +79,17 @@ export default function MoodCheck() {
 
       {rows && (
         <>
-          <p className="ask">지금 기분은 어떠신가요?</p>
-          <p className="ask-sub">해당하는 그림을 눌러주세요.</p>
+          <section className="ask-card">
+            <div className="ask-head">
+              <div>
+                <p className="ask">지금 기분은 어떠신가요?</p>
+                <p className="ask-sub">지금 이 순간, 솔직하게 알려주세요.</p>
+              </div>
+              <Icon name="moodSet" className="ask-art" />
+            </div>
 
-          {SLOTS.map((s) => (
-            <div className="mood-row" key={s.key}>
+            {SLOTS.map((s) => (
+              <div className="mood-row" key={s.key}>
               <span className="when">{s.label}</span>
               <span className="faces">
                 {MOODS.map((m) => (
@@ -102,8 +108,9 @@ export default function MoodCheck() {
                   </button>
                 ))}
               </span>
-            </div>
-          ))}
+              </div>
+            ))}
+          </section>
 
           <Cheer>
             어떤 날이든, 당신의 마음은 소중합니다. 항상 응원할게요.

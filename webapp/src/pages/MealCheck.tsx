@@ -93,13 +93,19 @@ export default function MealCheck() {
 
       {rows && (
         <>
-          <p className="ask">식사하셨나요?</p>
-          <p className="ask-sub">해당하는 버튼을 눌러주세요.</p>
+          <section className="ask-card">
+            <div className="ask-head">
+              <div>
+                <p className="ask">식사하셨나요?</p>
+                <p className="ask-sub">맛있게 드셨어요?</p>
+              </div>
+              <Icon name="meal" className="ask-art" />
+            </div>
 
-          {SLOTS.map((s) => {
-            const row = find(s.key);
-            return (
-              <div className="answer-row" key={s.key}>
+            {SLOTS.map((s) => {
+              const row = find(s.key);
+              return (
+                <div className="answer-row" key={s.key}>
                 <Icon name={s.icon} className="lead" />
                 <span className="body">
                   <span className="t">{s.label}</span>
@@ -123,9 +129,10 @@ export default function MealCheck() {
                     안 먹었어요
                   </button>
                 </span>
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </section>
 
           {/* 사진은 이미 체크한 끼니에만 붙일 수 있다 */}
           {rows.some((r) => r.status === "ate" && r.id) && (

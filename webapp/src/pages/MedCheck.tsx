@@ -67,13 +67,19 @@ export default function MedCheck() {
 
       {doses && doses.length > 0 && (
         <>
-          <p className="ask">약을 드셨나요?</p>
-          <p className="ask-sub">해당하는 버튼을 눌러주세요.</p>
+          <section className="ask-card">
+            <div className="ask-head">
+              <div>
+                <p className="ask">약을 드셨나요?</p>
+                <p className="ask-sub">건강한 하루를 위해 꼭 챙겨드세요.</p>
+              </div>
+              <Icon name="pills" className="ask-art" />
+            </div>
 
-          {doses.map((d) => {
-            const key = d.medication_id + d.scheduled_at;
-            return (
-              <div className="answer-row" key={key}>
+            {doses.map((d) => {
+              const key = d.medication_id + d.scheduled_at;
+              return (
+                <div className="answer-row" key={key}>
                 <Icon name="pills" className="lead" />
                 <span className="body">
                   <span className="t">
@@ -99,9 +105,10 @@ export default function MedCheck() {
                     안 먹었어요
                   </button>
                 </span>
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </section>
 
           <Cheer icon="pills">
             {pending > 0

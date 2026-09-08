@@ -6,7 +6,7 @@
 
 import { useNavigate } from "react-router-dom";
 
-import { Backdrop, Icon } from "../shared/icons";
+import { BG, Backdrop, Icon } from "../shared/icons";
 
 export default function Start() {
   const nav = useNavigate();
@@ -58,6 +58,8 @@ export default function Start() {
         <button className="text-link" onClick={() => nav("/login")}>
           이미 가입하셨나요? 로그인
         </button>
+
+        <img className="bottom-wave" src={BG.bottomWave} alt="" aria-hidden="true" />
       </main>
     </div>
   );
