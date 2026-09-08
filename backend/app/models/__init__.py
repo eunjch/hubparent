@@ -9,6 +9,7 @@ from app.models.care import (
     Schedule,
 )
 from app.models.monitor import ActivitySignal, Alert, DailyReport
+from app.models.notify import LocalNotification, NotificationLog
 from app.models.ops import AuditLog, Subscription
 from app.models.user import (
     Device,
@@ -30,10 +31,12 @@ __all__ = [
     "EmergencyContact",
     "Family",
     "FamilyMember",
+    "LocalNotification",
     "MealCheck",
     "Medication",
     "MedicationLog",
     "MoodCheck",
+    "NotificationLog",
     "Schedule",
     "Subscription",
     "User",

@@ -114,3 +114,43 @@ export interface Schedule {
   notified_at: string | null;
   upcoming: boolean;
 }
+
+/* ── 리포트 · 이상 징후 (화면 G1 · G2) ─────────────────────── */
+
+export type ActivityLevel = "high" | "normal" | "low";
+
+export interface FamilyReport {
+  user_id: string;
+  report_date: string;
+  score: number;
+  meal_done: number;
+  meal_total: number;
+  med_taken: number;
+  med_total: number;
+  moods: { slot: CheckSlot; mood: MoodValue }[];
+  /** 신호가 없으면 null — "기록 없음" */
+  activity_level: ActivityLevel | null;
+  steps: number;
+  summary_text: string;
+  trend: { date: string; score: number }[];
+  unread_alerts: number;
+}
+
+export type AlertType = "no_response" | "no_checks" | "missed_med";
+export type AlertSeverity = "high" | "medium" | "low";
+
+export interface Alert {
+  id: string;
+  target_user_id: string;
+  target_name: string;
+  type: AlertType;
+  severity: AlertSeverity;
+  message: string;
+  occurred_at: string;
+  ack_at: string | null;
+}
+
+export interface AlertList {
+  items: Alert[];
+  unread: number;
+}

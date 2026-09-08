@@ -15,6 +15,7 @@ import { hasSession, refreshSession } from "./shared/auth";
 import type { Me } from "./shared/types";
 import { flush } from "./shared/offlineQueue";
 import { Screen, Spinner } from "./shared/ui";
+import Alerts from "./pages/Alerts";
 import GuardianHome from "./pages/GuardianHome";
 import GuardianLogin from "./pages/GuardianLogin";
 import GuardianSignup from "./pages/GuardianSignup";
@@ -143,12 +144,20 @@ export default function App() {
           }
         />
 
-        {/* 보호자 — 화면 7~8 은 M4 */}
+        {/* 보호자 */}
         <Route
           path="/g/home"
           element={
             <Guarded>
               <GuardianHome />
+            </Guarded>
+          }
+        />
+        <Route
+          path="/g/alerts"
+          element={
+            <Guarded>
+              <Alerts />
             </Guarded>
           }
         />

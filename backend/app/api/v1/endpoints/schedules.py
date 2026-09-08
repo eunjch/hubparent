@@ -16,6 +16,7 @@ from app.models.care import Schedule
 from app.models.user import FamilyMember
 from app.schemas.common import Ok
 from app.schemas.schedule import ScheduleCreate, ScheduleOut, ScheduleUpdate
+from app.services import notification_plan, push
 
 router = APIRouter(tags=["schedules"])
 
@@ -126,13 +127,18 @@ async def delete_schedule(schedule_id: uuid.UUID, user: CurrentUser, session: DB
 async def notify_schedule(
     schedule_id: uuid.UUID, user: CurrentUser, session: DBSession
 ) -> ScheduleOut:
-    """화면 G3 의 `부모님에게 알림 전송`.
-
-    지금은 보낸 시각만 남긴다. 실제 발송은 푸시가 붙는 M3 에서 채운다.
-    """
+    """화면 G3 의 `부모님에게 알림 전송`. 자녀가 누를 때마다 보낸다 — 중복 방지 없음."""
     row = await _owned(session, user, schedule_id)
     row.notified_at = datetime.now(UTC)
+    when = as_utc(row.start_at).astimezone(notification_plan.med_service.KST)
+    formatted = f"{when.month}월 {when.day}일 {when.strftime('%H:%M')}"
+    await push.send(
+        session,
+        row.target_user_id,
+        title=f"{formatted} 일정이 있어요",
+        body=notification_plan.schedule_body(row),
+        channel="schedule",
+        route="/s/schedule",
+    )
     await session.flush()
-
-    # TODO(M3): 부모님 단말로 알림 푸시 발송
     return _out(row)

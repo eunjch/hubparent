@@ -2449,3 +2449,137 @@ input[type="datetime-local"] {
 .switch.on .knob {
   left: 25px;
 }
+
+/* ── 이상 징후 알림 (화면 G2) ───────────────────────────────── */
+
+/* 필터 탭 — 활성이 적색 (시안) */
+.seg.alert-seg .seg-item.on {
+  background: #e05a5a;
+}
+
+.alert-card {
+  background: #fff1f1;
+  border: 1.5px solid #f3c2c2;
+  border-radius: var(--radius-lg);
+  padding: var(--gap-tight);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+}
+
+.alert-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.alert-head img.lead {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.alert-head .body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.alert-head .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.alert-head .t {
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: #c43d3d;
+}
+
+.alert-head .when,
+.alert-row .when {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  white-space: nowrap;
+  flex: none;
+}
+
+.alert-head .msg {
+  margin: 4px 0 0;
+  font-size: var(--text-body);
+  color: var(--ink);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.alert-detail {
+  min-height: 48px;
+  border-radius: var(--radius);
+  border: 1.5px solid #e05a5a;
+  background: #fff;
+  color: #c43d3d;
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.alert-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  min-height: var(--touch-min);
+  padding: 12px var(--gap-tight);
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+.alert-row + .alert-row {
+  margin-top: 8px;
+}
+
+.alert-row.read {
+  opacity: 0.6;
+}
+
+.alert-row img.lead {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.alert-row .body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-row .t {
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.alert-row .d {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ack-all {
+  align-self: center;
+  margin-top: var(--gap-tight);
+  min-height: 48px;
+  padding: 0 16px;
+  border: none;
+  background: none;
+  color: #3566b8;
+  font-size: var(--text-body);
+  font-weight: 700;
+}

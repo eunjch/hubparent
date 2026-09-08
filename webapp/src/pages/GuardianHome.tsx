@@ -3,17 +3,16 @@
  *  우리 부모님 전환 → 오늘의 건강 요약(링 + 4칸) → 최근 7일 추이 → 탭바 4개.
  *  탭은 홈 · 리포트 · 메시지 · 더보기 다.
  *
- *  건강 지수와 7일 추이는 지금 클라이언트가 계산한다.
- *  서버 리포트(M4)가 붙으면 그 값으로 바꾼다.
+ *  숫자는 전부 서버 리포트(/reports/family)가 준다. 화면은 계산하지 않는다.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
 import { Backdrop, Icon } from "../shared/icons";
-import type { Dose, Me, Senior } from "../shared/types";
+import type { ActivityLevel, FamilyReport, Me, MoodValue, Senior } from "../shared/types";
 import {
   BigButton,
   Card,
@@ -26,23 +25,8 @@ import {
   TileGrid,
 } from "../shared/ui";
 
-interface MealCheck {
-  slot: string;
-  status: "ate" | "skipped";
-}
-
-interface MoodCheck {
-  slot: string;
-  mood: "good" | "normal" | "bad";
-}
-
-const MOOD_LABEL: Record<string, string> = { good: "좋음", normal: "보통", bad: "힘듦" };
-
-function isoDate(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
-}
+const MOOD_LABEL: Record<MoodValue, string> = { good: "좋음", normal: "보통", bad: "힘듦" };
+const ACTIVITY_LABEL: Record<ActivityLevel, string> = { high: "활발", normal: "정상", low: "적음" };
 
 function shortDate(iso: string): string {
   const [, m, d] = iso.split("-");
@@ -61,11 +45,7 @@ export default function GuardianHome() {
   const [seniors, setSeniors] = useState<Senior[]>([]);
   const [seniorId, setSeniorId] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
-
-  const [meals, setMeals] = useState<MealCheck[] | null>(null);
-  const [moods, setMoods] = useState<MoodCheck[] | null>(null);
-  const [doses, setDoses] = useState<Dose[] | null>(null);
-  const [trend, setTrend] = useState<{ date: string; score: number }[]>([]);
+  const [report, setReport] = useState<FamilyReport | null>(null);
 
   const [error, setError] = useState("");
   const [tab, setTab] = useState("home");
@@ -84,44 +64,19 @@ export default function GuardianHome() {
     })();
   }, []);
 
-  useEffect(() => {
+  const loadReport = useCallback(async () => {
     if (!seniorId) return;
-    setMeals(null);
-    setMoods(null);
-    setDoses(null);
-
-    const day = isoDate();
-    Promise.all([
-      request<MealCheck[]>(`/checks/meals?check_date=${day}&user_id=${seniorId}`),
-      request<MoodCheck[]>(`/checks/moods?check_date=${day}&user_id=${seniorId}`),
-      request<Dose[]>(`/medications/today?user_id=${seniorId}`),
-    ])
-      .then(([m, o, d]) => {
-        setMeals(m);
-        setMoods(o);
-        setDoses(d);
-      })
-      .catch(() => setError("정보를 불러오지 못했습니다."));
+    try {
+      setReport(await request<FamilyReport>(`/reports/family/${seniorId}`));
+    } catch {
+      setError("정보를 불러오지 못했습니다.");
+    }
   }, [seniorId]);
 
-  // 최근 7일 추이. 하루치씩 모아 점수로 만든다.
   useEffect(() => {
-    if (!seniorId) return;
-    const days = [6, 5, 4, 3, 2, 1, 0].map((n) => isoDate(-n));
-
-    Promise.all(
-      days.map(async (day) => {
-        const [m, o] = await Promise.all([
-          request<MealCheck[]>(`/checks/meals?check_date=${day}&user_id=${seniorId}`),
-          request<MoodCheck[]>(`/checks/moods?check_date=${day}&user_id=${seniorId}`),
-        ]);
-        const done = m.filter((x) => x.status === "ate").length + o.length;
-        return { date: day, score: Math.round((done / 6) * 100) };
-      }),
-    )
-      .then(setTrend)
-      .catch(() => setTrend([]));
-  }, [seniorId]);
+    setReport(null);
+    void loadReport();
+  }, [loadReport]);
 
   async function signOut() {
     await clearTokens();
@@ -134,7 +89,7 @@ export default function GuardianHome() {
       items={[
         { key: "home", icon: "home", label: "홈", onClick: () => setTab("home") },
         { key: "report", icon: "report", label: "리포트", onClick: () => setTab("report") },
-        { key: "message", icon: "message", label: "메시지", onClick: () => setTab("message") },
+        { key: "message", icon: "message", label: "메시지", onClick: () => nav("/g/alerts") },
         { key: "more", icon: "more", label: "더보기", onClick: () => setTab("more") },
       ]}
     />
@@ -174,6 +129,9 @@ export default function GuardianHome() {
               <BigButton icon="calendar" onClick={() => nav("/g/schedules")}>
                 일정 관리
               </BigButton>
+              <BigButton icon="bell" onClick={() => nav("/g/alerts")}>
+                알림
+              </BigButton>
               <BigButton onClick={signOut}>로그아웃</BigButton>
             </div>
           )}
@@ -184,28 +142,28 @@ export default function GuardianHome() {
   }
 
   const current = seniors.find((s) => s.id === seniorId);
-  const mealDone = meals?.filter((m) => m.status === "ate").length;
-  const medTaken = doses?.filter((d) => d.status === "taken").length;
-  const latestMood = moods?.length ? MOOD_LABEL[moods[moods.length - 1].mood] : null;
+  const r = report;
+  const score = r?.score ?? 0;
+  const latestMood = r && r.moods.length > 0 ? MOOD_LABEL[r.moods[r.moods.length - 1].mood] : null;
 
-  const doneToday = (mealDone ?? 0) + (moods?.length ?? 0) + (medTaken ?? 0);
-  const totalToday = 3 + 3 + (doses?.length ?? 0);
-  const score = meals === null ? 0 : Math.round((doneToday / Math.max(totalToday, 1)) * 100);
-
-  const yesterday = trend.length >= 2 ? trend[trend.length - 2].score : null;
+  const yesterday = r && r.trend.length >= 2 ? r.trend[r.trend.length - 2].score : null;
   const scoreNote =
-    yesterday === null
+    !r
       ? "오늘 기록을 확인하세요."
-      : score > yesterday
-        ? "어제보다 조금 더 건강하세요!"
-        : score === yesterday
-          ? "어제와 비슷하게 지내고 계세요."
-          : "어제보다 기록이 적어요.";
+      : yesterday === null
+        ? "오늘 기록을 확인하세요."
+        : score > yesterday
+          ? "어제보다 조금 더 건강하세요!"
+          : score === yesterday
+            ? "어제와 비슷하게 지내고 계세요."
+            : "어제보다 기록이 적어요.";
 
+  const trend = r?.trend ?? [];
   const trendAvg = trend.length
     ? Math.round(trend.reduce((a, b) => a + b.score, 0) / trend.length)
     : 0;
   const trendLabel = trendAvg >= 70 ? "좋음" : trendAvg >= 40 ? "보통" : "주의";
+  const unread = r?.unread_alerts ?? 0;
 
   return (
     <div className="screen decorated">
@@ -228,8 +186,13 @@ export default function GuardianHome() {
               {todayLabel()}
             </span>
           </div>
-          <button className="bell-btn" onClick={() => setTab("message")} aria-label="알림">
+          <button
+            className="bell-btn"
+            onClick={() => nav("/g/alerts")}
+            aria-label={unread > 0 ? `알림 ${unread}건 미확인` : "알림"}
+          >
             <Icon name="bell" />
+            {unread > 0 && <span className="dot" aria-hidden="true" />}
           </button>
         </div>
 
@@ -277,28 +240,24 @@ export default function GuardianHome() {
                 <span className="summary-cell">
                   <Icon name="meal" />
                   <span className="k">식사</span>
-                  <span className="v">{mealDone === undefined ? "—" : `${mealDone}/3`}</span>
-                  <span className={`s ${mealDone === 3 ? "ok" : "mid"}`}>
-                    {mealDone === 3 ? "완료" : "진행"}
+                  <span className="v">{r ? `${r.meal_done}/${r.meal_total}` : "—"}</span>
+                  <span className={`s ${r && r.meal_done === r.meal_total ? "ok" : "mid"}`}>
+                    {r && r.meal_done === r.meal_total ? "완료" : "진행"}
                   </span>
                 </span>
 
                 <span className="summary-cell">
                   <Icon name="pills" />
                   <span className="k">약 복용</span>
-                  <span className="v">
-                    {doses === null || doses.length === 0 ? "—" : `${medTaken}/${doses.length}`}
-                  </span>
+                  <span className="v">{r && r.med_total > 0 ? `${r.med_taken}/${r.med_total}` : "—"}</span>
                   <span
-                    className={`s ${
-                      doses && doses.length > 0 && medTaken === doses.length ? "ok" : "none"
-                    }`}
+                    className={`s ${r && r.med_total > 0 && r.med_taken === r.med_total ? "ok" : "none"}`}
                   >
-                    {doses === null
+                    {!r
                       ? "확인 중"
-                      : doses.length === 0
+                      : r.med_total === 0
                         ? "등록 안 됨"
-                        : medTaken === doses.length
+                        : r.med_taken === r.med_total
                           ? "완료"
                           : "진행"}
                   </span>
@@ -307,8 +266,10 @@ export default function GuardianHome() {
                 <span className="summary-cell">
                   <Icon name="activity" />
                   <span className="k">활동</span>
-                  <span className="v">—</span>
-                  <span className="s none">기록 없음</span>
+                  <span className="v">{r?.activity_level ? ACTIVITY_LABEL[r.activity_level] : "—"}</span>
+                  <span className={`s ${r?.activity_level ? "ok" : "none"}`}>
+                    {r?.activity_level ? "기록됨" : "기록 없음"}
+                  </span>
                 </span>
 
                 <span className="summary-cell">
@@ -360,9 +321,9 @@ export default function GuardianHome() {
               <Tile
                 icon="alert"
                 label="이상 징후"
-                description="알림 확인하기"
+                description={unread > 0 ? `${unread}건 확인하기` : "알림 확인하기"}
                 tone="mood"
-                onClick={() => setTab("message")}
+                onClick={() => nav("/g/alerts")}
               />
               <Tile
                 icon="caregiver"

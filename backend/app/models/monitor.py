@@ -29,7 +29,10 @@ class ActivitySignal(Base, TimestampMixin):
 
     __tablename__ = "activity_signals"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # SQLite 는 INTEGER PRIMARY KEY 만 자동 증가한다 — 테스트용 variant
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     screen_on_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

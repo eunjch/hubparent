@@ -6,7 +6,10 @@ from app.api.v1.endpoints import (
     devices,
     families,
     medications,
+    alerts,
+    notifications,
     profile,
+    reports,
     schedules,
 )
 
@@ -18,7 +21,6 @@ api_router.include_router(checks.router)
 api_router.include_router(medications.router)
 api_router.include_router(schedules.router)
 api_router.include_router(profile.router)
-
-# M2~M4 에서 추가된다 — 계획서 6장 API 표 참고
-#   reports      (일일 리포트, 화면 6·7)        → M4
-#   alerts       (이상 징후, 화면 8)            → M4
+api_router.include_router(notifications.router)
+api_router.include_router(reports.router)
+api_router.include_router(alerts.router)

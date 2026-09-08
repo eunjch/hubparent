@@ -249,7 +249,7 @@ hubfamily/
 | GET PATCH | `/settings` | 설정 (7.4 확인 필요) |
 | CRUD | `/contacts` | 연락처 |
 
-### 6.4 남은 것 (M2~M4)
+### 6.4 M2~M4 (2026-09-08 구현 완료)
 
 | 메서드 | 경로 | 화면 | 시점 |
 |---|---|---|---|
@@ -265,6 +265,17 @@ hubfamily/
 | GET | `/reports/activity/{user_id}` | G1 **시간대별 활동량 그래프** | M4 |
 | GET | `/alerts?filter=` | G2 필터 탭 (전체·이상 징후·일반) | M4 |
 | POST | `/alerts/{id}/ack` · `/alerts/ack-all` | G2 확인 · `모두 확인했어요` | M4 |
+
+위 표는 전부 서버·웹에 들어갔다. 남은 것은 **단말·외부 연동** 두 가지다.
+
+- **푸시 실제 발송** — `services/push.py` 가 발송 시도와 이력(`notification_logs`)까지 남기지만,
+  `FCM_CREDENTIALS_PATH` 가 비어 있어 `event=skipped` 로 기록만 된다. Firebase 프로젝트가 생기면
+  `_deliver()` 하나만 채우면 된다 (15장 3번).
+- **로컬 알림 브릿지** — `GET /notifications/plan` 은 준비됐다. `mobile/android/` 를 만든 뒤
+  `@capacitor/local-notifications` 로 받은 대로 예약하고 `POST /notifications/report` 로 보고한다 (8.5.4).
+
+worker 작업: 복약 L0/L1/L2 푸시(5분) · 일정 사전 알림(5분) · 이상 징후(15분) · 일일 리포트(21:00) ·
+복약 마감 L3(00:10). 화면 G2 `/g/alerts` 추가.
 
 ### 6.5 공통 규약
 
