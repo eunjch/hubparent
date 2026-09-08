@@ -360,40 +360,69 @@ textarea:focus-visible {
 .tile {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 8px;
-  min-height: 104px;
+  min-height: 116px;
   border: none;
   border-radius: var(--radius-card);
-  padding: var(--gap-tight);
+  padding: var(--gap);
+  text-align: left;
   color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+.tile .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .tile img {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
+  flex: none;
 }
 
 .tile .t {
-  font-size: var(--text-body);
-  font-weight: 700;
+  font-size: var(--text-label);
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .tile.meal {
-  background: var(--meal-bg);
+  background: #f1faf5;
 }
+.tile.meal .t {
+  color: var(--meal-ink);
+}
+
 .tile.med {
-  background: var(--med-bg);
+  background: #fef4f8;
 }
+.tile.med .t {
+  color: var(--med-ink);
+}
+
 .tile.mood {
-  background: var(--mood-bg);
+  background: #f5f3fe;
 }
+.tile.mood .t {
+  color: var(--mood-ink);
+}
+
 .tile.plan {
-  background: var(--plan-bg);
+  background: #f1f6ff;
 }
+.tile.plan .t {
+  color: var(--plan-ink);
+}
+
 .tile.contact {
-  background: var(--contact-bg);
+  background: #f1faf5;
+}
+.tile.contact .t {
+  color: var(--contact-ink);
 }
 
 /* ── 목록 행 (식사 체크 · 리포트 · 연락처) ──────────────────── */
@@ -1244,27 +1273,26 @@ img {
 .answer-row {
   display: flex;
   align-items: center;
-  gap: var(--gap-tight);
-  flex-wrap: wrap;
-  padding: var(--gap-tight) 0;
-  border-top: 1px solid var(--line);
+  gap: 10px;
+  flex-wrap: nowrap;
+  padding: 10px 0;
 }
 
 .answer-row img.lead {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex: none;
 }
 
 .answer-row .body {
-  flex: 1 1 40%;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .answer-row .t {
   display: block;
   font-size: var(--text-label);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .answer-row .d {
@@ -1277,14 +1305,47 @@ img {
 .answer-row .answers {
   display: flex;
   gap: 8px;
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* 라벨은 한 줄. 좁으면 답 버튼이 먼저 줄어든다 */
+.answer-row .t {
+  white-space: nowrap;
+}
+
+.answer-row .t .time {
+  color: var(--ink-2);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.answer-row .t .d {
+  display: inline;
+  font-weight: 500;
+}
+
+/* 시안 ③ 약 복용 — "08:00 혈압약" 위에, 답 버튼은 아래 줄 가득 */
+.answer-row.stacked {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.answer-row.stacked .answers {
+  flex: 1 1 100%;
+  padding-left: 46px;
+}
+
+.answer-row.stacked .ans {
+  flex: 1 1 0;
 }
 
 /* 답 버튼. 고른 것은 채우고 안 고른 것은 비운다 —
    색만이 아니라 채움 여부로도 구분된다. */
 .ans {
   min-height: var(--touch-min);
-  padding: 0 14px;
+  min-width: 0;
+  padding: 0 10px;
   border-radius: var(--radius);
   border: 2px solid var(--line);
   background: var(--surface);
@@ -1295,15 +1356,15 @@ img {
 }
 
 .ans.yes.on {
-  background: var(--ok-ink);
-  border-color: var(--ok-ink);
+  background: #34a870;
+  border-color: #34a870;
   color: #fff;
 }
 
 .ans.no.on {
-  background: var(--ink-2);
-  border-color: var(--ink-2);
-  color: #fff;
+  background: var(--surface-2);
+  border-color: var(--ink-3);
+  color: var(--ink);
 }
 
 .ans:disabled {
@@ -1316,15 +1377,14 @@ img {
   display: flex;
   align-items: center;
   gap: var(--gap-tight);
-  padding: var(--gap-tight) 0;
-  border-top: 1px solid var(--line);
+  padding: 10px 0;
 }
 
 .mood-row .when {
   flex: none;
-  width: 56px;
+  width: 48px;
   font-size: var(--text-label);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .mood-row .faces {
@@ -1335,21 +1395,39 @@ img {
 
 .face-btn {
   flex: 1;
-  min-height: 84px;
-  border-radius: var(--radius);
-  border: 2px solid var(--line);
-  background: var(--surface);
+  min-height: 92px;
+  border: none;
+  background: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 6px;
   color: var(--ink-2);
+  padding: 4px 0;
+  border-radius: var(--radius);
 }
 
 .face-btn .face {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
   font-size: 1.75rem;
   line-height: 1;
+  border: 3px solid transparent;
+  transition: transform 120ms;
+}
+
+.face-btn.good .face {
+  background: #fff3c4;
+}
+.face-btn.normal .face {
+  background: #e3ecff;
+}
+.face-btn.bad .face {
+  background: #fde3ea;
 }
 
 .face-btn .cap {
@@ -1357,22 +1435,15 @@ img {
   font-weight: 700;
 }
 
-.face-btn.good.on {
-  background: var(--ok-soft);
-  border-color: var(--mint);
-  color: var(--ok-ink);
+/* 고른 것은 테두리와 굵기로도 구분된다 — 색만으로 알리지 않는다 */
+.face-btn.on .face {
+  border-color: var(--ink);
+  transform: scale(1.06);
 }
 
-.face-btn.normal.on {
-  background: var(--warn-soft);
-  border-color: var(--yellow);
-  color: var(--warn);
-}
-
-.face-btn.bad.on {
-  background: var(--brand-soft);
-  border-color: var(--brand);
-  color: var(--brand-deep);
+.face-btn.on .cap {
+  color: var(--ink);
+  font-weight: 800;
 }
 
 @media (max-width: 400px) {
@@ -1595,17 +1666,32 @@ img {
   color: #fff;
 }
 
-/* ── 건강 지수 링 ──────────────────────────────────────────── */
+.seg.blue .seg-item.on {
+  background: #5b8fe6;
+}
+
+/* ── 건강 지수 링 (CSS 로 그린다) ─────────────────────────── */
 
 .score-ring {
+  --pct: 0%;
   position: relative;
   display: grid;
   place-items: center;
   flex: none;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  line-height: 1.15;
+  border-radius: 50%;
+  background: conic-gradient(var(--mint) var(--pct), #e6ebf5 0);
+}
+
+.score-ring::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.score-ring.sm::before {
+  inset: 7px;
 }
 
 .score-ring.lg {
@@ -1619,20 +1705,16 @@ img {
 }
 
 .score-ring .value {
+  position: relative;
   font-size: var(--text-title);
   font-weight: 800;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .score-ring.sm .value {
   font-size: var(--text-label);
-}
-
-.score-ring .cap {
-  font-size: 0.6875rem;
-  color: var(--ink-2);
-  font-weight: 600;
 }
 
 /* ── 타일 부제 ─────────────────────────────────────────────── */
@@ -1746,7 +1828,7 @@ img {
 }
 
 .hello-text .d {
-  font-size: var(--text-body);
+  font-size: var(--text-sm);
   color: var(--ink-2);
   margin: 8px 0 0;
 }
@@ -2214,4 +2296,156 @@ input[type="datetime-local"] {
   margin: auto calc(var(--gap) * -1) calc(var(--gap-loose) * -1);
   opacity: 0.7;
   pointer-events: none;
+}
+
+/* ── 자녀 홈 상단 (시안: "우리 부모님 ⌄" + 아래 줄) ─────── */
+
+.whose-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.whose .whose-date {
+  flex: none;
+  align-self: auto;
+  padding-bottom: 0;
+  margin-top: -4px;
+}
+
+/* ── 일정 관리 (시안 G3) ───────────────────────────────────── */
+
+.next-head {
+  flex-wrap: nowrap;
+}
+
+.next-head .when {
+  font-size: var(--text-body);
+  white-space: nowrap;
+}
+
+.next-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  margin: 6px 0 var(--gap-tight);
+}
+
+/* 시안의 전송 버튼은 연파랑 아웃라인이다 */
+.notify-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius);
+  border: 1.5px solid #bcd3fb;
+  background: #eef4ff;
+  color: #3566b8;
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: var(--gap-tight);
+}
+
+.list-head .list-title {
+  margin: 0;
+}
+
+.list-more {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+}
+
+/* 자녀 일정 목록 행은 시안처럼 날짜·시간 한 줄 + 내용 */
+.sched-row .t {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 약 복용 관리 목록 (시안 G4: 시점 · 시각 · 이름 + 토글) ─── */
+
+.med-list {
+  padding: 4px var(--gap);
+}
+
+.med-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  border-top: 1px solid var(--line);
+}
+
+.med-line:first-child {
+  border-top: none;
+}
+
+.med-line img.lead {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
+.med-line .slot {
+  width: 40px;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--ink);
+  flex: none;
+}
+
+.med-line .time {
+  width: 58px;
+  font-size: var(--text-body);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.med-line .name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 토글. 켜짐은 색과 위치 둘 다로 구분된다 */
+.switch {
+  flex: none;
+  width: 52px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: #d9deec;
+  position: relative;
+  padding: 0;
+}
+
+.switch .knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(57, 74, 138, 0.3);
+  transition: left 120ms;
+}
+
+.switch.on {
+  background: #34a870;
+}
+
+.switch.on .knob {
+  left: 25px;
 }

@@ -32,6 +32,7 @@ export default function ScheduleView() {
   return (
     <Screen title="일정 확인" onBack={() => nav("/s/home")}>
       <SegTabs<Scope>
+        className="blue"
         current={scope}
         onChange={setScope}
         items={[
@@ -57,8 +58,7 @@ export default function ScheduleView() {
             <div className="body">
               <span className="t">{w.date}</span>
               <span className="d">{w.time}</span>
-              <span className="d strong">{r.title}</span>
-              {r.place && <span className="d">{r.place}</span>}
+              <span className="d">{r.place ? `${r.place} / ${r.title}` : r.title}</span>
             </div>
             <span className="chev" aria-hidden="true">
               ›

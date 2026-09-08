@@ -13,12 +13,6 @@ import { Backdrop } from "../shared/icons";
 import type { Me } from "../shared/types";
 import { BigButton, Notice, ScoreRing, Screen, Spinner, TabBar, Tile, TileGrid } from "../shared/ui";
 
-function todayLabel(): string {
-  const d = new Date();
-  const week = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${week})`;
-}
-
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -167,7 +161,6 @@ export default function SeniorHome() {
           />
         </TileGrid>
 
-        <p className="date-note">{todayLabel()}</p>
       </main>
 
       {tabs}

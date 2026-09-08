@@ -7,7 +7,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
-import { ICON, Icon, type IconName } from "./icons";
+import { Icon, type IconName } from "./icons";
 
 export type Tone = "meal" | "med" | "mood" | "plan" | "contact" | "warm";
 
@@ -196,8 +196,10 @@ export function Tile({
 }) {
   return (
     <button className={`tile ${tone}`} onClick={onClick}>
-      <Icon name={icon} />
-      <span className="t">{label}</span>
+      <span className="head">
+        <Icon name={icon} />
+        <span className="t">{label}</span>
+      </span>
       {description && (
         <span className="d">
           {description} <span aria-hidden="true">›</span>
@@ -276,13 +278,15 @@ export function SegTabs<T extends string>({
   items,
   current,
   onChange,
+  className,
 }: {
   items: { key: T; label: string }[];
   current: T;
   onChange: (key: T) => void;
+  className?: string;
 }) {
   return (
-    <div className="seg" role="tablist">
+    <div className={`seg${className ? ` ${className}` : ""}`} role="tablist">
       {items.map((it) => (
         <button
           key={it.key}
@@ -298,20 +302,24 @@ export function SegTabs<T extends string>({
   );
 }
 
-/** 건강 지수. 숫자와 문구를 항상 함께 쓴다 — 색·각도만으로 알리지 않는다 (계획서 9장). */
+/** 건강 지수. 링을 CSS 로 그려 숫자가 항상 실제 값이다.
+ *  숫자와 문구를 함께 쓴다 — 색·각도만으로 알리지 않는다 (계획서 9장). */
 export function ScoreRing({
   score,
   size = "lg",
-  caption,
 }: {
   score: number;
   size?: "lg" | "sm";
-  caption?: string;
 }) {
+  const clamped = Math.max(0, Math.min(100, score));
   return (
-    <span className={`score-ring ${size}`} style={{ backgroundImage: `url(${ICON.healthRing})` }}>
-      <span className="value">{score}</span>
-      {caption && <span className="cap">{caption}</span>}
+    <span
+      className={`score-ring ${size}`}
+      style={{ ["--pct" as string]: `${clamped}%` }}
+      role="img"
+      aria-label={`건강 지수 ${clamped}점`}
+    >
+      <span className="value">{clamped}</span>
     </span>
   );
 }

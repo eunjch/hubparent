@@ -11,7 +11,7 @@ import { request } from "../shared/api";
 import { Icon } from "../shared/icons";
 import { send } from "../shared/offlineQueue";
 import type { Dose, MedicationStatus } from "../shared/types";
-import { Banner, Cheer, Notice, Screen, Spinner } from "../shared/ui";
+import { Notice, Screen, Spinner } from "../shared/ui";
 
 export default function MedCheck() {
   const nav = useNavigate();
@@ -47,16 +47,8 @@ export default function MedCheck() {
     setBusy(null);
   }
 
-  const pending = doses?.filter((d) => d.status === "pending").length ?? 0;
-
   return (
     <Screen title="약 복용" onBack={() => nav("/s/home")}>
-      <Banner
-        icon="pills"
-        title="제시간에 드시는 약이"
-        description="더 건강한 내일을 만듭니다."
-        tone="med"
-      />
 
       {!doses && <Spinner />}
       <Notice tone="error">{error}</Notice>
@@ -79,13 +71,13 @@ export default function MedCheck() {
             {doses.map((d) => {
               const key = d.medication_id + d.scheduled_at;
               return (
-                <div className="answer-row" key={key}>
+                <div className="answer-row stacked" key={key}>
                 <Icon name="pills" className="lead" />
                 <span className="body">
                   <span className="t">
-                    {d.time} {d.name}
+                    <span className="time">{d.time}</span> {d.name}
+                    {d.dose ? <span className="d"> · {d.dose}</span> : null}
                   </span>
-                  {d.dose && <span className="d">{d.dose}</span>}
                 </span>
                 <span className="answers">
                   <button
@@ -94,7 +86,7 @@ export default function MedCheck() {
                     disabled={busy === key}
                     aria-pressed={d.status === "taken"}
                   >
-                    복용함
+                    먹었어요
                   </button>
                   <button
                     className={`ans no${d.status === "missed" ? " on" : ""}`}
@@ -109,12 +101,6 @@ export default function MedCheck() {
               );
             })}
           </section>
-
-          <Cheer icon="pills">
-            {pending > 0
-              ? `아직 ${pending}번 남았어요. 제때 드시면 더 건강하고 활기찬 일상을 유지할 수 있어요.`
-              : "오늘 약을 다 확인하셨어요. 정말 잘하셨습니다!"}
-          </Cheer>
         </>
       )}
     </Screen>

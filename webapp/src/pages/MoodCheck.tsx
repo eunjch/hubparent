@@ -8,10 +8,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { Icon } from "../shared/icons";
 import { send } from "../shared/offlineQueue";
 import type { CheckSlot, MoodCheck as Mood, MoodValue } from "../shared/types";
-import { Banner, Cheer, Notice, Screen, Spinner } from "../shared/ui";
+import { Notice, Screen, Spinner } from "../shared/ui";
 
 const SLOTS: { key: CheckSlot; label: string }[] = [
   { key: "breakfast", label: "아침" },
@@ -21,9 +20,9 @@ const SLOTS: { key: CheckSlot; label: string }[] = [
 
 /** 색만으로 구분하지 않는다. 글자를 항상 함께 쓴다 (계획서 9장). */
 const MOODS: { key: MoodValue; label: string; face: string }[] = [
-  { key: "good", label: "좋아요", face: "☺" },
-  { key: "normal", label: "보통이에요", face: "•" },
-  { key: "bad", label: "힘들어요", face: "☹" },
+  { key: "good", label: "좋아요", face: "😊" },
+  { key: "normal", label: "괜찮아요", face: "😐" },
+  { key: "bad", label: "힘들어요", face: "😟" },
 ];
 
 function today(): string {
@@ -66,13 +65,6 @@ export default function MoodCheck() {
 
   return (
     <Screen title="기분 체크" onBack={() => nav("/s/home")}>
-      <Banner
-        icon="mood"
-        title="오늘 기분은 어떠세요?"
-        description="당신의 마음도 소중해요."
-        tone="mood"
-        trailingIcon="heart"
-      />
 
       {!rows && <Spinner />}
       <Notice tone="error">{error}</Notice>
@@ -82,10 +74,9 @@ export default function MoodCheck() {
           <section className="ask-card">
             <div className="ask-head">
               <div>
-                <p className="ask">지금 기분은 어떠신가요?</p>
+                <p className="ask">오늘 기분은 어떠신가요?</p>
                 <p className="ask-sub">지금 이 순간, 솔직하게 알려주세요.</p>
               </div>
-              <Icon name="moodSet" className="ask-art" />
             </div>
 
             {SLOTS.map((s) => (
@@ -111,11 +102,6 @@ export default function MoodCheck() {
               </div>
             ))}
           </section>
-
-          <Cheer>
-            어떤 날이든, 당신의 마음은 소중합니다. 항상 응원할게요.
-            <Icon name="heart" size={16} />
-          </Cheer>
         </>
       )}
     </Screen>

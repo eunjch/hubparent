@@ -15,8 +15,5 @@
 <ellipse cx="1030" cy="118" rx="108" ry="70" fill="url(#b3)"/>
 <path d="M634 193 C674 150 737 130 787 149 C742 172 701 204 681 238" fill="none" stroke="#7BAEFF" stroke-opacity="0.25" stroke-width="18" stroke-linecap="round"/>
 <path d="M1112 206 C1065 150 1006 146 968 158 C1005 186 1047 214 1069 247" fill="none" stroke="#74D6A6" stroke-opacity="0.22" stroke-width="18" stroke-linecap="round"/>
-<text x="880" y="186" text-anchor="middle" font-family="Arial" font-size="42" fill="#FFFFFF" opacity="0.88">Care</text>
-<text x="880" y="232" text-anchor="middle" font-family="Arial" font-size="42" fill="#FFFFFF" opacity="0.88">Connects</text>
-<text x="880" y="278" text-anchor="middle" font-family="Arial" font-size="42" fill="#FFFFFF" opacity="0.88">Better Days</text>
 
 </svg>

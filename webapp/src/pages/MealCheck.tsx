@@ -14,12 +14,12 @@ import { ApiError, request, upload } from "../shared/api";
 import { Icon } from "../shared/icons";
 import { send } from "../shared/offlineQueue";
 import type { CheckSlot, MealCheck as Meal, MealStatus } from "../shared/types";
-import { Banner, BigButton, Cheer, Notice, Screen, Spinner } from "../shared/ui";
+import { BigButton, Notice, Screen, Spinner } from "../shared/ui";
 
-const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "leaf"; hint: string }[] = [
+const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon"; hint: string }[] = [
   { key: "breakfast", label: "아침", icon: "sun", hint: "든든한 하루의 시작" },
   { key: "lunch", label: "점심", icon: "sun", hint: "맛있는 점심 드셨어요?" },
-  { key: "dinner", label: "저녁", icon: "leaf", hint: "편안한 저녁 되세요" },
+  { key: "dinner", label: "저녁", icon: "moon", hint: "편안한 저녁 되세요" },
 ];
 
 function today(): string {
@@ -77,16 +77,9 @@ export default function MealCheck() {
   }
 
   const find = (slot: CheckSlot) => rows?.find((r) => r.slot === slot);
-  const done = rows?.filter((r) => r.status === "ate").length ?? 0;
 
   return (
     <Screen title="식사 체크" onBack={() => nav("/s/home")}>
-      <Banner
-        icon="meal"
-        title="오늘도 맛있게 드셨어요?"
-        description="건강한 식사가 힘이 됩니다."
-        tone="meal"
-      />
 
       {!rows && <Spinner />}
       <Notice tone="error">{error}</Notice>
@@ -109,7 +102,6 @@ export default function MealCheck() {
                 <Icon name={s.icon} className="lead" />
                 <span className="body">
                   <span className="t">{s.label}</span>
-                  <span className="d">{s.hint}</span>
                 </span>
                 <span className="answers">
                   <button
@@ -148,10 +140,6 @@ export default function MealCheck() {
               {photoNote && <p className="field-hint" style={{ marginTop: 8 }}>{photoNote}</p>}
             </div>
           )}
-
-          <Cheer icon="meal">
-            맛있는 식사가 건강한 오늘을 만듭니다. 오늘 {done}끼 드셨어요. 좋은 식습관, 늘 응원해요!
-          </Cheer>
         </>
       )}
     </Screen>

@@ -197,8 +197,18 @@ async def test_delete_keeps_history(client):
     listed = await client.get(
         "/api/v1/medications", headers={"Authorization": f"Bearer {st}"}
     )
-    assert listed.json() == []
+    # 목록에는 남되 꺼진 상태다 — 자녀가 토글로 다시 켤 수 있다
+    assert [m["is_active"] for m in listed.json()] == [False]
     assert await _today(client, st) == []
+
+    # 다시 켜면 오늘 목록에 돌아온다
+    back = await client.patch(
+        f"/api/v1/medications/{med['id']}",
+        headers={"Authorization": f"Bearer {gt}"},
+        json={"is_active": True},
+    )
+    assert back.status_code == 200
+    assert len(await _today(client, st)) == 2
 
 
 @pytest.mark.asyncio

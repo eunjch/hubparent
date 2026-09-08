@@ -214,15 +214,20 @@ export default function GuardianHome() {
       <main className="screen-body">
         {/* 우리 부모님 ⌄ + 날짜 + 알림 */}
         <div className="whose">
-          <button
-            className="whose-pick"
-            onClick={() => seniors.length > 1 && setPicking((v) => !v)}
-            aria-expanded={picking}
-          >
-            {current ? `${current.name} ${current.relation ?? "님"}` : "우리 부모님"}
-            {seniors.length > 1 && <span aria-hidden="true"> ⌄</span>}
-          </button>
-          <span className="whose-date">{todayLabel()}</span>
+          <div className="whose-text">
+            <button
+              className="whose-pick"
+              onClick={() => seniors.length > 1 && setPicking((v) => !v)}
+              aria-expanded={picking}
+            >
+              우리 부모님
+              {seniors.length > 1 && <span aria-hidden="true"> ⌄</span>}
+            </button>
+            <span className="whose-date">
+              {current ? `${current.name} ${current.relation ?? ""} · ` : ""}
+              {todayLabel()}
+            </span>
+          </div>
           <button className="bell-btn" onClick={() => setTab("message")} aria-label="알림">
             <Icon name="bell" />
           </button>
@@ -347,7 +352,7 @@ export default function GuardianHome() {
               />
               <Tile
                 icon="pills"
-                label="약 복용 시간"
+                label="복약 시간"
                 description="복용 시간 설정"
                 tone="med"
                 onClick={() => nav("/g/medications")}
@@ -361,7 +366,7 @@ export default function GuardianHome() {
               />
               <Tile
                 icon="caregiver"
-                label="부모님 관리"
+                label="부모님"
                 description="등록 · 수정"
                 tone="contact"
                 onClick={() => nav("/g/seniors")}

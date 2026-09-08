@@ -274,11 +274,10 @@ export default function ScheduleManage() {
               </span>
               <span className="badge">다가오는 일정</span>
             </div>
-            <p className="next-title">{next.title}</p>
-            {next.place && <p className="next-place">{next.place}</p>}
-            <BigButton tone="soft" onClick={() => notify(next)}>
+            <p className="next-title">{next.place ? `${next.place} / ${next.title}` : next.title}</p>
+            <button className="notify-btn" onClick={() => notify(next)}>
               부모님에게 알림 전송
-            </BigButton>
+            </button>
             {next.notified_at && (
               <p className="field-hint" style={{ marginTop: 6 }}>
                 마지막 전송 {formatWhen(next.notified_at).time}
@@ -291,7 +290,10 @@ export default function ScheduleManage() {
 
         {rest.length > 0 && (
           <>
-            <p className="list-title">전체 일정</p>
+            <div className="list-head">
+              <span className="list-title">전체 일정</span>
+              <span className="list-more">더보기 ›</span>
+            </div>
             {rest.map((r) => {
               const w = formatWhen(r.start_at);
               return (

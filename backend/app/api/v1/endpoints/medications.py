@@ -46,10 +46,10 @@ async def list_medications(
     target = user_id or user.id
     await assert_family_access(session, user, target)
 
+    # 내린 약도 함께 준다. 자녀 화면(G4)의 알림 토글로 다시 켤 수 있어야 한다.
+    # 오늘 복용할 약(/today)은 서비스 쪽에서 활성인 것만 편다.
     rows = await session.scalars(
-        select(Medication)
-        .where(Medication.user_id == target, Medication.is_active.is_(True))
-        .order_by(Medication.created_at)
+        select(Medication).where(Medication.user_id == target).order_by(Medication.created_at)
     )
     return [MedicationOut.model_validate(r) for r in rows]
 
@@ -99,10 +99,9 @@ async def update_medication(
 async def delete_medication(
     medication_id: uuid.UUID, user: CurrentUser, session: DBSession
 ) -> Ok:
-    """복용 이력이 남아야 하므로 지우지 않고 내린다."""
+    """복용 이력이 남아야 하므로 지우지 않고 내린다. 토글로 다시 켤 수 있다."""
     med = await _owned(session, user, medication_id)
     med.is_active = False
-    med.end_date = med_service.today_kst()
     await session.flush()
     return Ok()
 
