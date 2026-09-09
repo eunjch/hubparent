@@ -38,6 +38,8 @@ export default function MedManage() {
   const [meds, setMeds] = useState<Medication[] | null>(null);
   const [day, setDay] = useState(localDate());
   const [doses, setDoses] = useState<Dose[] | null>(null);
+  // 서버 저장이 끝난 뒤에만 올린다 — 낙관적 갱신 직후 읽으면 서버가 아직 옛 상태다
+  const [dosesVersion, setDosesVersion] = useState(0);
   const [error, setError] = useState("");
 
   const [editing, setEditing] = useState<Medication | null>(null);
@@ -73,8 +75,8 @@ export default function MedManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId]);
 
-  // 그날 먹어야 할 약 — 규칙을 날짜에 펼친 것. 규칙이 바뀌면(meds) 같이 다시 읽는다.
-  // 부모님·날짜가 바뀔 때만 비우고, 토글로 다시 읽을 때는 이전 목록을 그대로 둔다 — 깜빡임 방지
+  // 그날 먹어야 할 약 — 규칙을 날짜에 펼친 것. 규칙이 서버에 저장된 뒤(dosesVersion) 다시 읽는다.
+  // 부모님·날짜가 바뀔 때만 비우고, 갱신 때는 이전 목록을 그대로 둔다 — 깜빡임 방지
   const dosesKey = useRef("");
   useEffect(() => {
     if (!seniorId) return;
@@ -86,7 +88,7 @@ export default function MedManage() {
     request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`)
       .then(setDoses)
       .catch(() => setError("복용 현황을 불러오지 못했습니다."));
-  }, [seniorId, day, meds]);
+  }, [seniorId, day, dosesVersion]);
 
   function removeTime(t: string) {
     setTimes((prev) => prev.filter((x) => x !== t));
@@ -140,6 +142,7 @@ export default function MedManage() {
         await request<Medication>("/medications", { method: "POST", body: { user_id: seniorId, ...body } });
         await load();
       }
+      setDosesVersion((v) => v + 1);
       resetForm();
       setTab("list");
     } catch (e) {
@@ -162,7 +165,8 @@ export default function MedManage() {
       } else {
         await request(`/medications/${med.id}`, { method: "PATCH", body: { is_active: true } });
       }
-      // 화면은 이미 바뀌어 있다. 다시 읽으면 목록이 한 번 사라졌다 나타나므로 읽지 않는다
+      // 서버가 바뀐 뒤에 날짜별 목록만 조용히 다시 읽는다 (약 목록은 이미 맞다)
+      setDosesVersion((v) => v + 1);
     } catch {
       setError("잠시 후 다시 시도해 주세요.");
       await load();
