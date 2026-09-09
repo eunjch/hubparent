@@ -3335,3 +3335,55 @@ input[type="datetime-local"] {
   background: var(--brand-soft);
   color: var(--ink-3);
 }
+
+/* ── 약 복용 관리 — 날짜별 현황 ─────────────────────────────── */
+
+.med-line .name .dose {
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* 이름 아래 한 줄로 상태를 쓴다 — 알약을 옆에 두면 390px 에서 이름이 잘린다 */
+.med-line .name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.med-line .name .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.med-line .status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.med-line .status.done {
+  color: var(--ok-ink);
+}
+
+.med-line .status.mid {
+  color: var(--warn);
+}
+
+.med-list.off {
+  opacity: 0.85;
+}
+
+.med-list-title {
+  margin: 0 0 4px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+@media (max-width: 360px) {
+  .med-line .slot {
+    display: none;
+  }
+}

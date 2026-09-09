@@ -1,7 +1,8 @@
 /** 화면 G4 — 약 복용 관리 (자녀). 시안 "④ 약 복용 시간 설정".
  *
  *  세그먼트 탭 `복용 약 목록 / 복용 설정`.
- *  목록: 시점 · 시각 · 약 이름 + 알림 토글. 설정: 약 추가 폼.
+ *  목록: 날짜를 넘기며 그날 먹어야 할 약과 응답(먹었어요/안 먹었어요/아직) + 알림 토글.
+ *  설정: 약 추가 폼. 부모 화면(S3)은 오늘 것만 본다 — 여기는 지난 날도 돌아볼 수 있다.
  *  계획서 7.3: 약 복용 시간은 자녀가 설정한다. 어르신은 응답만 한다.
  */
 
@@ -10,7 +11,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
 import { Backdrop, Icon } from "../shared/icons";
-import type { Medication, Senior } from "../shared/types";
+import { dateLabel, localDate, shiftDate } from "../shared/tabs";
+import type { Dose, Medication, Senior } from "../shared/types";
 import { BigButton, Cheer, Field, Notice, SegTabs, Spinner } from "../shared/ui";
 
 type Tab = "list" | "settings";
@@ -33,6 +35,8 @@ export default function MedManage() {
   const [seniors, setSeniors] = useState<Senior[]>([]);
   const [seniorId, setSeniorId] = useState<string | null>(params.get("user_id"));
   const [meds, setMeds] = useState<Medication[] | null>(null);
+  const [day, setDay] = useState(localDate());
+  const [doses, setDoses] = useState<Dose[] | null>(null);
   const [error, setError] = useState("");
 
   const [name, setName] = useState("");
@@ -66,6 +70,15 @@ export default function MedManage() {
     if (seniorId) setParams({ user_id: seniorId }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId]);
+
+  // 그날 먹어야 할 약 — 규칙을 날짜에 펼친 것. 규칙이 바뀌면(meds) 같이 다시 읽는다
+  useEffect(() => {
+    if (!seniorId) return;
+    setDoses(null);
+    request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`)
+      .then(setDoses)
+      .catch(() => setError("복용 현황을 불러오지 못했습니다."));
+  }, [seniorId, day, meds]);
 
   function removeTime(t: string) {
     setTimes((prev) => prev.filter((x) => x !== t));
@@ -134,11 +147,16 @@ export default function MedManage() {
   const current = seniors.find((s) => s.id === seniorId);
   const canSave = name.trim().length > 0 && times.length > 0 && !busy;
 
-  // 시안은 약 하나가 아니라 "시점·시각" 한 건이 한 행이다
-  const rows = (meds ?? []).flatMap((m) =>
-    m.times.map((t) => ({ med: m, time: t, ...slotOf(t) })),
-  );
-  rows.sort((a, b) => a.time.localeCompare(b.time));
+  const isToday = day === localDate();
+  const isFuture = day > localDate();
+  const medById = new Map((meds ?? []).map((m) => [m.id, m]));
+  const inactive = (meds ?? []).filter((m) => !m.is_active);
+
+  function doseLabel(d: Dose): { tone: "done" | "mid" | "none"; text: string } {
+    if (d.status === "taken") return { tone: "done", text: "먹었어요" };
+    if (d.status === "missed") return { tone: "mid", text: "안 먹었어요" };
+    return { tone: "none", text: isFuture ? "예정" : "아직" };
+  }
 
   return (
     <div className="screen decorated">
@@ -186,22 +204,76 @@ export default function MedManage() {
 
         {tab === "list" && meds && (
           <>
-            {rows.length === 0 ? (
+            {/* 날짜 이동 — 지난 날 복용 현황을 돌아보고, 앞날 예정도 본다 */}
+            <div className="date-nav">
+              <button className="icon-btn" onClick={() => setDay(shiftDate(day, -1))} aria-label="하루 전">
+                ‹
+              </button>
+              <span className="date-nav-label">
+                {dateLabel(day)}
+                {isToday && <span className="today-tag">오늘</span>}
+              </span>
+              <button className="icon-btn" onClick={() => setDay(shiftDate(day, 1))} aria-label="하루 뒤">
+                ›
+              </button>
+            </div>
+
+            {meds.length === 0 ? (
               <Notice>아직 등록된 약이 없습니다. `복용 설정`에서 추가해 주세요.</Notice>
+            ) : !doses ? (
+              <Spinner />
+            ) : doses.length === 0 ? (
+              <Notice>이날 먹을 약이 없어요.</Notice>
             ) : (
               <section className="card med-list">
-                {rows.map((r) => (
-                  <div className="med-line" key={r.med.id + r.time}>
-                    <Icon name={r.icon} className="lead" />
-                    <span className="slot">{r.label}</span>
-                    <span className="time">{r.time}</span>
-                    <span className="name">{r.med.name}</span>
+                {doses.map((d) => {
+                  const med = medById.get(d.medication_id);
+                  const slot = slotOf(d.time);
+                  const st = doseLabel(d);
+                  return (
+                    <div className="med-line" key={d.medication_id + d.scheduled_at}>
+                      <Icon name={slot.icon} className="lead" />
+                      <span className="slot">{slot.label}</span>
+                      <span className="time">{d.time}</span>
+                      <span className="name">
+                        <span className="nm">
+                          {d.name}
+                          {d.dose ? <span className="dose"> {d.dose}</span> : null}
+                        </span>
+                        <span className={`status ${st.tone}`}>{st.text}</span>
+                      </span>
+                      {med && (
+                        <button
+                          className={`switch${med.is_active ? " on" : ""}`}
+                          role="switch"
+                          aria-checked={med.is_active}
+                          aria-label={`${med.name} 알림`}
+                          onClick={() => toggleActive(med)}
+                        >
+                          <span className="knob" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+
+            {/* 꺼 둔 약은 날짜 목록에 안 나온다. 다시 켤 수 있게 따로 보여 준다 */}
+            {inactive.length > 0 && (
+              <section className="card med-list off">
+                <p className="med-list-title">알림 꺼 둔 약</p>
+                {inactive.map((m) => (
+                  <div className="med-line" key={m.id}>
+                    <Icon name="pills" className="lead" />
+                    <span className="time">{m.times.join(" · ")}</span>
+                    <span className="name">{m.name}</span>
                     <button
-                      className={`switch${r.med.is_active ? " on" : ""}`}
+                      className="switch"
                       role="switch"
-                      aria-checked={r.med.is_active}
-                      aria-label={`${r.med.name} ${r.time} 알림`}
-                      onClick={() => toggleActive(r.med)}
+                      aria-checked={false}
+                      aria-label={`${m.name} 알림 켜기`}
+                      onClick={() => toggleActive(m)}
                     >
                       <span className="knob" />
                     </button>
