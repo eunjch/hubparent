@@ -47,6 +47,7 @@ class NotificationLog(Base, UUIDPKMixin):
     channel: Mapped[str | None] = mapped_column(String(20))
     title: Mapped[str | None] = mapped_column(String(100))
     local_id: Mapped[int | None] = mapped_column(Integer)
-    dedupe_key: Mapped[str | None] = mapped_column(String(80), index=True)
+    # 보호자 키는 "med-guardian:{약}:{시각}:{보호자}" 로 110자를 넘는다. 80 이었을 때 워커가 죽었다
+    dedupe_key: Mapped[str | None] = mapped_column(String(200), index=True)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     detail: Mapped[str | None] = mapped_column(Text)

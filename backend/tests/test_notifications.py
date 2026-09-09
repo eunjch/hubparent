@@ -243,3 +243,23 @@ async def test_push_sends_when_configured_and_prunes_dead_tokens(client, session
 
     left = list(await session.scalars(_select(Device.push_token)))
     assert left == ["tok-live"]
+
+
+@pytest.mark.asyncio
+async def test_dedupe_key_fits_column():
+    """운영 장애 재현: 보호자 키 112자 → 80자 컬럼에 안 들어가 워커가 죽었다."""
+    import uuid as _uuid
+
+    from app.models.notify import NotificationLog
+    from app.services.push import DEDUPE_MAX, fit_key
+
+    key = f"med-guardian:{_uuid.uuid4()}:2026-09-08T23:00:00+00:00:{_uuid.uuid4()}"
+    assert len(key) > 80
+    assert len(key) <= DEDUPE_MAX
+    assert NotificationLog.__table__.c.dedupe_key.type.length >= len(key)
+
+    # 그보다 더 길어도 컬럼 안으로 줄이고, 같은 입력은 같은 결과
+    huge = "x" * 500
+    assert len(fit_key(huge)) <= DEDUPE_MAX
+    assert fit_key(huge) == fit_key(huge)
+    assert fit_key(key) == key

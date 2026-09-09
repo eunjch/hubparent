@@ -7,6 +7,7 @@ payload 는 알림(title/body) + 데이터(route/channel) 다. 앱은 data.route
 안드로이드 채널 ID 는 앱이 만든 4개와 같아야 한다 (8.5.7): medication · anomaly · schedule · report.
 """
 
+import hashlib
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -84,6 +85,17 @@ async def _deliver(tokens: list[str], title: str, body: str, channel: str, route
     return dead
 
 
+DEDUPE_MAX = 200
+
+
+def fit_key(key: str | None) -> str | None:
+    """컬럼 길이를 넘는 키는 앞부분 + 해시로 줄인다. 같은 입력이면 같은 결과라 중복 방지는 유지된다."""
+    if key is None or len(key) <= DEDUPE_MAX:
+        return key
+    digest = hashlib.sha1(key.encode()).hexdigest()[:16]
+    return f"{key[: DEDUPE_MAX - 17]}#{digest}"
+
+
 async def already_sent(session: AsyncSession, dedupe_key: str) -> bool:
     row = await session.scalar(
         select(NotificationLog.id).where(NotificationLog.dedupe_key == dedupe_key).limit(1)
@@ -105,6 +117,7 @@ async def send(
 
     dedupe_key 가 있으면 같은 키로 이미 보낸 건은 다시 보내지 않는다.
     """
+    dedupe_key = fit_key(dedupe_key)
     if dedupe_key and await already_sent(session, dedupe_key):
         existing = await session.scalar(
             select(NotificationLog).where(NotificationLog.dedupe_key == dedupe_key).limit(1)
