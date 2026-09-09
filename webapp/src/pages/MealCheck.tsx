@@ -1,4 +1,4 @@
-/** 화면 S2 — 식사 체크.
+/** 화면 S2 — 식사 체크 (리디자인 11_s_meal).
  *
  *  아침·점심·저녁 각각 "먹었어요 / 안 먹었어요" 두 버튼. 1탭으로 끝난다.
  *  이미 누른 것도 다시 누르면 바뀐다 — 잘못 눌렀을 때 되돌릴 수 있어야 한다 (계획서 9장).
@@ -11,15 +11,16 @@ import { useNavigate } from "react-router-dom";
 
 import { pickMealPhoto } from "../native/bridge";
 import { ApiError, request, upload } from "../shared/api";
-import { Icon } from "../shared/icons";
+import { Art } from "../shared/art";
+import { Glyph } from "../shared/glyphs";
 import { send } from "../shared/offlineQueue";
 import type { CheckSlot, MealCheck as Meal, MealStatus } from "../shared/types";
-import { BigButton, Notice, Screen, Spinner } from "../shared/ui";
+import { Notice, Screen, Spinner } from "../shared/ui";
 
-const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon"; hint: string }[] = [
-  { key: "breakfast", label: "아침", icon: "sun", hint: "든든한 하루의 시작" },
-  { key: "lunch", label: "점심", icon: "sun", hint: "맛있는 점심 드셨어요?" },
-  { key: "dinner", label: "저녁", icon: "moon", hint: "편안한 저녁 되세요" },
+const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
+  { key: "breakfast", label: "아침", icon: "sun" },
+  { key: "lunch", label: "점심", icon: "sun" },
+  { key: "dinner", label: "저녁", icon: "moon" },
 ];
 
 function today(): string {
@@ -77,87 +78,100 @@ export default function MealCheck() {
   }
 
   const find = (slot: CheckSlot) => rows?.find((r) => r.slot === slot);
+  const eaten = SLOTS.filter((s) => find(s.key)?.status === "ate" && find(s.key)?.id);
+  const withPhoto = SLOTS.filter((s) => find(s.key)?.photo_path);
 
   return (
     <Screen title="식사 체크" onBack={() => nav("/s/home")}>
-
       {!rows && <Spinner />}
       <Notice tone="error">{error}</Notice>
 
       {rows && (
         <>
-          <section className="ask-card">
-            <div className="ask-head">
-              <div>
-                <p className="ask">식사하셨나요?</p>
-                <p className="ask-sub">맛있게 드셨어요?</p>
-              </div>
-              <Icon name="meal" className="ask-art" />
+          {/* 질문은 카드 밖에, 그림은 오른쪽 (시안) */}
+          <div className="ask-head">
+            <div>
+              <p className="ask">식사하셨나요?</p>
+              <p className="ask-sub">맛있게 드셨어요?</p>
             </div>
+            <Art name="bowl" className="ask-art" />
+          </div>
 
+          <section className="ask-card">
             {SLOTS.map((s) => {
               const row = find(s.key);
               return (
                 <div className="answer-row" key={s.key}>
-                <Icon name={s.icon} className="lead" />
-                <span className="body">
-                  <span className="t">{s.label}</span>
-                </span>
-                <span className="answers">
-                  <button
-                    className={`ans yes${row?.status === "ate" ? " on" : ""}`}
-                    onClick={() => answer(s.key, "ate")}
-                    disabled={busy === s.key}
-                    aria-pressed={row?.status === "ate"}
-                  >
-                    먹었어요
-                  </button>
-                  <button
-                    className={`ans no${row?.status === "skipped" ? " on" : ""}`}
-                    onClick={() => answer(s.key, "skipped")}
-                    disabled={busy === s.key}
-                    aria-pressed={row?.status === "skipped"}
-                  >
-                    안 먹었어요
-                  </button>
-                </span>
+                  <span className={`slot-ic ${s.icon}`} aria-hidden="true">
+                    <Glyph name={s.icon} size={20} />
+                  </span>
+                  <span className="body">
+                    <span className="t">{s.label}</span>
+                  </span>
+                  <span className="answers">
+                    <button
+                      className={`ans yes${row?.status === "ate" ? " on" : ""}`}
+                      onClick={() => answer(s.key, "ate")}
+                      disabled={busy === s.key}
+                      aria-pressed={row?.status === "ate"}
+                    >
+                      먹었어요
+                    </button>
+                    <button
+                      className={`ans no${row?.status === "skipped" ? " on" : ""}`}
+                      onClick={() => answer(s.key, "skipped")}
+                      disabled={busy === s.key}
+                      aria-pressed={row?.status === "skipped"}
+                    >
+                      안 먹었어요
+                    </button>
+                  </span>
                 </div>
               );
             })}
           </section>
 
           {/* 사진은 이미 체크한 끼니에만 붙일 수 있다 */}
-          {rows.some((r) => r.status === "ate" && r.id) && (
-            <div className="card" style={{ textAlign: "center" }}>
-              <p className="sub" style={{ marginBottom: "var(--gap-tight)" }}>
-                사진을 추가하고 싶으신가요?
-              </p>
-              {SLOTS.filter((s) => find(s.key)?.status === "ate" && find(s.key)?.id).map((s) => (
-                <BigButton key={s.key} icon="plus" onClick={() => addPhoto(find(s.key)!)}>
-                  {s.label} 사진 {find(s.key)?.photo_path ? "바꾸기" : "추가"}
-                </BigButton>
-              ))}
-              <p className="field-hint" style={{ marginTop: 4 }}>
+          {eaten.length > 0 && (
+            <section className="card photo-card">
+              <p className="q">사진을 추가하고 싶으신가요?</p>
+              <div className="photo-row">
+                {withPhoto.length > 0 && (
+                  <div className="thumbs">
+                    {withPhoto.map((s) => (
+                      <span className="thumb-item" key={s.key}>
+                        <img className="thumb" src={`/uploads/${find(s.key)!.photo_path}`} alt={`${s.label} 식사 사진`} />
+                        <span className="cap">{s.label}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="btns">
+                  {eaten.map((s) => {
+                    const has = Boolean(find(s.key)?.photo_path);
+                    return (
+                      <button
+                        key={s.key}
+                        className={`photo-btn${has ? "" : " soft"}`}
+                        onClick={() => addPhoto(find(s.key)!)}
+                      >
+                        <Glyph name={has ? "camera" : "plus"} size={20} />
+                        {s.label} 사진 {has ? "바꾸기" : "추가"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="field-hint" style={{ marginTop: 10 }}>
                 찍기 대신 앨범에서 고르려면:{" "}
-                {SLOTS.filter((s) => find(s.key)?.status === "ate" && find(s.key)?.id).map((s) => (
+                {eaten.map((s) => (
                   <button key={s.key} className="inline-link" onClick={() => addPhoto(find(s.key)!, "gallery")}>
                     {s.label}
                   </button>
                 ))}
               </p>
-              {/* 올린 사진은 바로 보인다 — "올라갔나?" 를 묻지 않게 */}
-              {rows.some((r) => r.photo_path) && (
-                <div className="thumb-row">
-                  {SLOTS.filter((s) => find(s.key)?.photo_path).map((s) => (
-                    <span className="thumb-item" key={s.key}>
-                      <img className="thumb lg" src={`/uploads/${find(s.key)!.photo_path}`} alt={`${s.label} 식사 사진`} />
-                      <span className="cap">{s.label}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {photoNote && <p className="field-hint" style={{ marginTop: 8 }}>{photoNote}</p>}
-            </div>
+              {photoNote && <p className="field-hint">{photoNote}</p>}
+            </section>
           )}
         </>
       )}

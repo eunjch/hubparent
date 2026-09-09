@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, request } from "../shared/api";
 import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
-import { Backdrop, Icon } from "../shared/icons";
+import { Art } from "../shared/art";
+import { Glyph } from "../shared/glyphs";
 import type { TokenPair } from "../shared/types";
 import { BigButton, Field, Notice } from "../shared/ui";
 
@@ -43,26 +44,29 @@ export default function GuardianLogin() {
   const canSubmit = email.trim().length > 3 && password.length > 0 && !busy;
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
-
+    <div className="screen">
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/")} aria-label="뒤로 가기">
-          ‹
+          <Glyph name="back" size={26} />
         </button>
         <h1>로그인</h1>
         <span className="icon-btn-space" />
       </header>
 
       <main className="screen-body">
-        <div className="hero" style={{ paddingBottom: "var(--gap-tight)" }}>
-          <span className="hero-badge">
-            <Icon name="caregiver" />
-          </span>
-          <h2 style={{ fontSize: "var(--text-action)" }}>다시 오셨네요</h2>
+        <div className="brand-inline" aria-hidden="true">
+          <Art name="logo" />
+          MEDIC
         </div>
 
-        <section className="form-card">
+        <div className="hero" style={{ padding: "8px 0 4px" }}>
+          <span className="hero-badge">
+            <Art name="tilePerson" />
+          </span>
+          <h2>다시 오셨네요</h2>
+        </div>
+
+        <section className="form-card bare">
           <Field
             label="이메일"
             value={email}
@@ -70,6 +74,7 @@ export default function GuardianLogin() {
             placeholder="minsu@example.com"
             type="email"
             inputMode="email"
+            icon="mail"
             autoFocus
           />
           <Field
@@ -78,17 +83,14 @@ export default function GuardianLogin() {
             onChange={setPassword}
             placeholder="비밀번호"
             type="password"
+            icon="lock"
           />
         </section>
 
         <Notice tone="error">{error}</Notice>
 
-        <button
-          className="text-link"
-          onClick={() => nav("/signup")}
-          style={{ marginTop: "var(--gap-tight)" }}
-        >
-          아직 계정이 없으신가요? 회원가입
+        <button className="text-link" onClick={() => nav("/signup")}>
+          <span className="muted">아직 계정이 없으신가요? </span>회원가입
         </button>
       </main>
 

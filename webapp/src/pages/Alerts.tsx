@@ -9,8 +9,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { Icon } from "../shared/icons";
-import type { IconName } from "../shared/icons";
+import { Art, type ArtName } from "../shared/art";
+import { Glyph, type GlyphName } from "../shared/glyphs";
 import type { Alert, AlertList, AlertType } from "../shared/types";
 import { Notice, Screen, SegTabs, Spinner } from "../shared/ui";
 
@@ -22,11 +22,23 @@ const TYPE_LABEL: Record<AlertType, string> = {
   missed_med: "약 복용 미체크",
 };
 
-const TYPE_ICON: Record<AlertType, IconName> = {
-  no_response: "alert",
-  no_checks: "mood",
-  missed_med: "pills",
+const TYPE_ART: Record<AlertType, ArtName> = {
+  no_response: "bellRed",
+  no_checks: "smileySm",
+  missed_med: "capsuleSm",
 };
+
+const DISCLAIMER = "의료적 진단이 아닌 참고용 정보입니다.";
+
+/** 서버 문구 끝의 면책 문장은 따로 작게 보여 준다 (시안) */
+function splitMessage(message: string): { body: string; note: string | null } {
+  const i = message.indexOf(DISCLAIMER);
+  if (i < 0) return { body: message, note: null };
+  return { body: message.slice(0, i).trim(), note: DISCLAIMER };
+}
+
+const _glyphs: GlyphName[] = ["warning"];
+void _glyphs;
 
 /** "오늘 11:23" · "9/7 08:30" */
 export function whenLabel(iso: string): string {
@@ -103,15 +115,18 @@ export default function Alerts() {
       {cards.map((a) => (
         <section className="alert-card" key={a.id} aria-label="이상 징후">
           <div className="alert-head">
-            <Icon name="alert" className="lead" />
             <div className="body">
               <div className="row">
-                <span className="t">이상 징후 감지</span>
+                <span className="t">
+                  <Glyph name="warning" size={26} />
+                  이상 징후 감지
+                </span>
                 <span className="when">{whenLabel(a.occurred_at)}</span>
               </div>
               <p className="msg">
-                {a.target_name} — {a.message}
+                {a.target_name} — {splitMessage(a.message).body}
               </p>
+              {splitMessage(a.message).note && <p className="disclaimer">{splitMessage(a.message).note}</p>}
             </div>
           </div>
           <button className="alert-detail" onClick={() => ack(a)}>
@@ -127,7 +142,7 @@ export default function Alerts() {
           onClick={() => !a.ack_at && ack(a)}
           aria-label={`${TYPE_LABEL[a.type]} ${a.ack_at ? "확인함" : "확인하기"}`}
         >
-          <Icon name={TYPE_ICON[a.type]} className="lead" />
+          <Art name={TYPE_ART[a.type]} blend />
           <span className="body">
             <span className="t">
               {TYPE_LABEL[a.type]}

@@ -11,7 +11,8 @@ import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
-import { Backdrop, Icon } from "../shared/icons";
+import { Art } from "../shared/art";
+import { Glyph } from "../shared/glyphs";
 import { GuardianTabs } from "../shared/tabs";
 import type { ActivityLevel, FamilyReport, Me, MoodValue, Senior } from "../shared/types";
 import {
@@ -124,9 +125,7 @@ export default function GuardianHome() {
   const unread = r?.unread_alerts ?? 0;
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
-
+    <div className="screen">
       <main className="screen-body">
         {/* 우리 부모님 ⌄ + 날짜 + 알림 */}
         <div className="whose">
@@ -137,21 +136,24 @@ export default function GuardianHome() {
               aria-expanded={picking}
             >
               우리 부모님
-              {seniors.length > 1 && <span aria-hidden="true"> ⌄</span>}
+              {seniors.length > 1 && <Glyph name="chevron" size={20} style={{ transform: "rotate(90deg)" }} />}
             </button>
             <span className="whose-date">
               {current ? `${current.name} ${current.relation ?? ""} · ` : ""}
               {todayLabel()}
             </span>
           </div>
-          <button
-            className="bell-btn"
-            onClick={() => nav("/g/alerts")}
-            aria-label={unread > 0 ? `알림 ${unread}건 미확인` : "알림"}
-          >
-            <Icon name="bell" />
-            {unread > 0 && <span className="dot" aria-hidden="true" />}
-          </button>
+          <div className="right">
+            <Art name="avatarPair" className="pair" />
+            <button
+              className="bell-btn"
+              onClick={() => nav("/g/alerts")}
+              aria-label={unread > 0 ? `알림 ${unread}건 미확인` : "알림"}
+            >
+              <Glyph name="bell" size={26} />
+              {unread > 0 && <span className="dot" aria-hidden="true" />}
+            </button>
+          </div>
         </div>
 
         {picking && seniors.length > 1 && (
@@ -196,7 +198,7 @@ export default function GuardianHome() {
 
               <div className="summary-grid">
                 <span className="summary-cell">
-                  <Icon name="meal" />
+                  <Art name="bowlSm" blend />
                   <span className="k">식사</span>
                   <span className="v">{r ? `${r.meal_done}/${r.meal_total}` : "—"}</span>
                   <span className={`s ${r && r.meal_done === r.meal_total ? "ok" : "mid"}`}>
@@ -205,7 +207,7 @@ export default function GuardianHome() {
                 </span>
 
                 <span className="summary-cell">
-                  <Icon name="pills" />
+                  <Art name="capsuleSm" blend />
                   <span className="k">약 복용</span>
                   <span className="v">{r && r.med_total > 0 ? `${r.med_taken}/${r.med_total}` : "—"}</span>
                   <span
@@ -222,7 +224,7 @@ export default function GuardianHome() {
                 </span>
 
                 <span className="summary-cell">
-                  <Icon name="activity" />
+                  <Art name="runnerSm" blend />
                   <span className="k">활동</span>
                   <span className="v">{r?.activity_level ? ACTIVITY_LABEL[r.activity_level] : "—"}</span>
                   <span className={`s ${r?.activity_level ? "ok" : "none"}`}>
@@ -231,7 +233,7 @@ export default function GuardianHome() {
                 </span>
 
                 <span className="summary-cell">
-                  <Icon name="mood" />
+                  <Art name="smileySm" blend />
                   <span className="k">기분</span>
                   <span className="v">{latestMood ?? "—"}</span>
                   <span className={`s ${latestMood ? "ok" : "none"}`}>
@@ -262,34 +264,17 @@ export default function GuardianHome() {
             </Card>
 
             <TileGrid>
+              <Tile variant="guardian" art="calendarTile" label="일정 관리" description="병원 일정 등록" tone="plan" onClick={() => nav("/g/schedules")} />
+              <Tile variant="guardian" art="capsuleTile" label="복약 시간" description="복용 시간 설정" tone="med" onClick={() => nav("/g/medications")} />
               <Tile
-                icon="calendar"
-                label="일정 관리"
-                description="병원 일정 등록"
-                tone="plan"
-                onClick={() => nav("/g/schedules")}
-              />
-              <Tile
-                icon="pills"
-                label="복약 시간"
-                description="복용 시간 설정"
-                tone="med"
-                onClick={() => nav("/g/medications")}
-              />
-              <Tile
-                icon="alert"
+                variant="guardian"
+                art="bellRed"
                 label="이상 징후"
                 description={unread > 0 ? `${unread}건 확인하기` : "알림 확인하기"}
                 tone="mood"
                 onClick={() => nav("/g/alerts")}
               />
-              <Tile
-                icon="caregiver"
-                label="부모님"
-                description="등록 · 수정"
-                tone="contact"
-                onClick={() => nav("/g/seniors")}
-              />
+              <Tile variant="guardian" art="personBlue" label="부모님" description="등록 · 수정" tone="contact" onClick={() => nav("/g/seniors")} />
             </TileGrid>
           </>
         )}

@@ -8,11 +8,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { Icon } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
+import { Art, scheduleArt } from "../shared/art";
 import type { Schedule } from "../shared/types";
 import { Notice, Screen, SegTabs, Spinner } from "../shared/ui";
 
-import { formatWhen, kindIcon } from "./ScheduleManage";
+import { formatWhen } from "./ScheduleManage";
 
 type Scope = "upcoming" | "all";
 
@@ -54,15 +55,13 @@ export default function ScheduleView() {
         const w = formatWhen(r.start_at);
         return (
           <div className="sched-row big" key={r.id}>
-            <Icon name={kindIcon(r.kind)} className="lead" />
+            <Art name={scheduleArt(r.kind)} blend />
             <div className="body">
               <span className="t">{w.date}</span>
               <span className="d">{w.time}</span>
               <span className="d">{r.place ? `${r.place} / ${r.title}` : r.title}</span>
             </div>
-            <span className="chev" aria-hidden="true">
-              ›
-            </span>
+            <span className="chev" aria-hidden="true"><Glyph name="chevron" size={20} /></span>
           </div>
         );
       })}

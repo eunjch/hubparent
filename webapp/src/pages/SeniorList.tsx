@@ -8,10 +8,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { Glyph } from "../shared/glyphs";
 import { prettyPhone } from "../shared/format";
-import { Backdrop, Icon } from "../shared/icons";
+import { Art } from "../shared/art";
 import type { Me, Senior } from "../shared/types";
-import { BigButton, Notice, Spinner } from "../shared/ui";
+import { BigButton, Notice, Spinner, avatarFor } from "../shared/ui";
 
 export default function SeniorList() {
   const nav = useNavigate();
@@ -47,13 +48,9 @@ export default function SeniorList() {
   }
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
-
+    <div className="screen">
       <header className="screen-head">
-        <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기">
-          ‹
-        </button>
+        <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기"><Glyph name="back" size={26} /></button>
         <h1>부모님 관리</h1>
         <span className="icon-btn-space" />
       </header>
@@ -76,21 +73,24 @@ export default function SeniorList() {
         <div className="senior-list">
           {seniors?.map((s) => (
             <div key={s.id} className="senior-row">
-              <span className="face">
-                <Icon name="heart" size={36} />
-              </span>
-              <div className="body">
-                <span className="t">
-                  {s.name}
-                  {s.relation && <span className="rel">{s.relation}</span>}
+              <div className="top">
+                <span className="face">
+                  <Art name={avatarFor(s.relation)} />
                 </span>
-                <span className="d">{prettyPhone(s.phone)}</span>
-                <span className={`state ${s.joined ? "in" : "out"}`}>
-                  {s.joined ? "앱 사용 중" : "아직 안 들어오셨어요"}
-                </span>
+                <div className="body">
+                  <span className="t">
+                    {s.name}
+                    {s.relation && <span className="rel">{s.relation}</span>}
+                  </span>
+                  <span className="d">{prettyPhone(s.phone)}</span>
+                  <span className={`state ${s.joined ? "in" : "out"}`}>
+                    {s.joined ? "앱 사용 중" : "아직 안 들어오셨어요"}
+                  </span>
+                </div>
               </div>
               <span className="row-actions">
                 <button className="row-edit" onClick={() => nav(`/g/seniors/${s.id}`)} aria-label={`${s.name} 정보 수정`}>
+                  <Glyph name="pencil" size={20} />
                   수정
                 </button>
                 <button className="row-del" onClick={() => remove(s)} aria-label={`${s.name} 빼기`}>
@@ -104,7 +104,8 @@ export default function SeniorList() {
 
       <div className="sticky-cta">
         <BigButton tone="primary" onClick={() => nav("/g/seniors/new")}>
-          부모님 추가
+          <Glyph name="plus" size={22} />
+          &nbsp;부모님 추가
         </BigButton>
       </div>
     </div>

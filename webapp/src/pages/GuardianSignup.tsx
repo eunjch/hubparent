@@ -10,9 +10,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
+import { Glyph } from "../shared/glyphs";
 import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
-import { Backdrop } from "../shared/icons";
 import type { TokenPair } from "../shared/types";
 import { BigButton, Check, Field, Notice } from "../shared/ui";
 
@@ -74,13 +74,9 @@ export default function GuardianSignup() {
   }
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
-
+    <div className="screen">
       <header className="screen-head">
-        <button className="icon-btn" onClick={() => nav("/login")} aria-label="뒤로 가기">
-          ‹
-        </button>
+        <button className="icon-btn" onClick={() => nav("/login")} aria-label="뒤로 가기"><Glyph name="back" size={26} /></button>
         <h1>회원가입</h1>
         <span className="icon-btn-space" />
       </header>

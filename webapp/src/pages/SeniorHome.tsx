@@ -1,15 +1,15 @@
-/** 화면 S1 — 부모용 메인 (시안 "① 메인 화면 (4가지 메뉴)").
+/** 화면 S1 — 부모용 메인 (리디자인 10_s_home).
  *
- *  인사 + 건강지수(오른쪽 카드) → 2×2 타일 4개 → 탭바 4개.
- *  탭은 홈 · 건강기록 · 일정 · 더보기 다.
+ *  아바타 + 인사 + 톱니 → 건강지수 카드(민트) → 2×2 타일 → 자녀에게 전화하기 → 탭바.
  */
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { Art } from "../shared/art";
 import { clearTokens } from "../shared/auth";
-import { Backdrop, Icon } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
 import { SeniorTabs } from "../shared/tabs";
 import type { Me, Member } from "../shared/types";
 import { BigButton, Notice, ScoreRing, Screen, Spinner, Tile, TileGrid } from "../shared/ui";
@@ -36,7 +36,6 @@ export default function SeniorHome() {
   }, []);
 
   // 오늘 얼마나 체크했는지 — 건강 지수의 근거.
-  // M4 에서 서버 리포트가 붙으면 그 값으로 바꾼다.
   useEffect(() => {
     const day = today();
     Promise.all([
@@ -77,20 +76,20 @@ export default function SeniorHome() {
   }
 
   const score = checked ? Math.round((checked.done / Math.max(checked.total, 1)) * 100) : 0;
+  const remaining = checked ? checked.total - checked.done : 0;
   const condition =
     !checked || checked.done === 0
       ? "오늘을 시작해 볼까요?"
-      : checked.done === checked.total
-        ? "좋은 컨디션이에요!"
-        : `${checked.total - checked.done}가지 남았어요`;
+      : remaining === 0
+        ? "오늘 기록을 다 하셨어요!"
+        : `${remaining}가지 남았어요`;
 
   return (
-    <div className="screen decorated">
-      <Backdrop variant="leaf" />
-
+    <div className="screen">
       <main className="screen-body">
-        {/* 인사와 건강지수가 한 줄에 나란히 선다 (시안) */}
+        {/* 아바타 · 인사 · 톱니 (시안) */}
         <div className="hello">
+          <Art name="avatarGrandma" className="avatar" />
           <div className="hello-text">
             <p className="t">
               안녕하세요,
@@ -99,42 +98,26 @@ export default function SeniorHome() {
             </p>
             <p className="d">오늘도 건강한 하루 보내세요!</p>
           </div>
-          <div className="hello-score">
-            <span className="label">오늘의 건강지수</span>
-            <ScoreRing score={score} size="sm" />
-            <span className="cond">{condition}</span>
-          </div>
+          <button className="gear" onClick={() => nav("/s/more")} aria-label="더보기">
+            <Glyph name="gear" size={26} />
+          </button>
         </div>
 
+        {/* 건강지수 — 민트 카드, 링은 오른쪽 */}
+        <section className="score-card">
+          <div>
+            <p className="t">오늘의 건강지수</p>
+            <p className="d">오늘의 기록을 채워주세요</p>
+            <p className="cond">{condition}</p>
+          </div>
+          <ScoreRing score={score} size="sm" />
+        </section>
+
         <TileGrid>
-          <Tile
-            icon="meal"
-            label="식사 체크"
-            description="오늘 식사 기록하기"
-            tone="meal"
-            onClick={() => nav("/s/meal")}
-          />
-          <Tile
-            icon="pills"
-            label="약 복용"
-            description="지금 체크하기"
-            tone="med"
-            onClick={() => nav("/s/med")}
-          />
-          <Tile
-            icon="mood"
-            label="기분 체크"
-            description="오늘 기분 기록하기"
-            tone="mood"
-            onClick={() => nav("/s/mood")}
-          />
-          <Tile
-            icon="calendar"
-            label="일정 확인"
-            description="병원 일정 보기"
-            tone="plan"
-            onClick={() => nav("/s/schedule")}
-          />
+          <Tile art="bowl" label="식사 체크" description="오늘 식사 기록하기" tone="meal" onClick={() => nav("/s/meal")} />
+          <Tile art="capsuleRed" label="약 복용" description="지금 체크하기" tone="med" onClick={() => nav("/s/med")} />
+          <Tile art="smileyPurple" label="기분 체크" description="오늘 기분 기록하기" tone="mood" onClick={() => nav("/s/mood")} />
+          <Tile art="calendar" label="일정 확인" description="병원 일정 보기" tone="plan" onClick={() => nav("/s/schedule")} />
         </TileGrid>
 
         {/* 별도 연락처 화면 없이 여기서 바로 건다 (계획서 7.2 S1) */}
@@ -142,7 +125,7 @@ export default function SeniorHome() {
           <div className="help-bar">
             <span className="q">도움이 필요하신가요?</span>
             <a className="call" href={`tel:${guardian.phone}`}>
-              <Icon name="phone" />
+              <Glyph name="phone" size={24} />
               자녀에게 전화하기
             </a>
           </div>

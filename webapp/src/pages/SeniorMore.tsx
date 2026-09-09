@@ -1,6 +1,6 @@
-/** 화면 S1-더보기 탭 — 어르신. 설정 화면은 없다 (계획서 7.4).
+/** 화면 S1-더보기 탭 — 어르신 (리디자인 16_s_more). 설정 화면은 없다 (계획서 7.4).
  *
- *  자녀에게 전화하기가 첫 줄이다. 그 다음 내 정보, 로그아웃.
+ *  자녀에게 전화하기(민트 카드)가 첫 줄이다. 그 다음 내 정보, 로그아웃.
  *  글자 크기는 기기 설정을 따르므로 여기서 바꾸지 않는다 (계획서 9.1).
  */
 
@@ -10,10 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
 import { prettyPhone } from "../shared/format";
-import { Backdrop, Icon } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
 import { SeniorTabs } from "../shared/tabs";
 import type { Me, Member } from "../shared/types";
-import { BigButton, Card, Notice, Spinner } from "../shared/ui";
+import { Card, Notice, Spinner } from "../shared/ui";
 
 export default function SeniorMore() {
   const nav = useNavigate();
@@ -36,8 +36,7 @@ export default function SeniorMore() {
   }
 
   return (
-    <div className="screen decorated">
-      <Backdrop variant="leaf" />
+    <div className="screen">
       <header className="screen-head">
         <span className="icon-btn-space" />
         <h1>더보기</h1>
@@ -49,10 +48,13 @@ export default function SeniorMore() {
         {!me && !error && <Spinner />}
 
         {guardians.length > 0 && (
-          <Card title="자녀에게 전화하기">
+          <section className="call-card">
+            <h2>자녀에게 전화하기</h2>
             {guardians.map((g) => (
               <a className="call-row" href={`tel:${g.phone}`} key={g.user_id}>
-                <Icon name="phone" className="lead" />
+                <span className="lead-ic" aria-hidden="true">
+                  <Glyph name="phone" size={22} />
+                </span>
                 <span className="body">
                   <span className="t">{g.name}</span>
                   <span className="d">{prettyPhone(g.phone)}</span>
@@ -60,7 +62,7 @@ export default function SeniorMore() {
                 <span className="call-tag">전화</span>
               </a>
             ))}
-          </Card>
+          </section>
         )}
 
         {me && (
@@ -84,7 +86,10 @@ export default function SeniorMore() {
         )}
 
         <div style={{ marginTop: "auto" }}>
-          <BigButton onClick={signOut}>로그아웃</BigButton>
+          <button className="big-btn plain" onClick={signOut}>
+            <Glyph name="logout" size={22} />
+            로그아웃
+          </button>
         </div>
       </main>
 

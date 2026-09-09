@@ -8,10 +8,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
-import { Backdrop, Icon } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
+import { Art, scheduleArt } from "../shared/art";
 import type { IconName } from "../shared/icons";
 import type { Schedule, ScheduleKind, Senior } from "../shared/types";
-import { BigButton, Field, Notice, Spinner } from "../shared/ui";
+import { BigButton, Field, Notice, SeniorChips, Spinner } from "../shared/ui";
 
 const KINDS: { key: ScheduleKind; label: string; icon: IconName }[] = [
   { key: "hospital", label: "병원 진료", icon: "stethoscope" },
@@ -188,39 +189,19 @@ export default function ScheduleManage() {
   const canSave = title.trim().length > 0 && when.length > 0 && !busy;
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
-
+    <div className="screen">
       <header className="screen-head">
-        <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기">
-          ‹
-        </button>
+        <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기"><Glyph name="back" size={26} /></button>
         <h1>병원 일정</h1>
         <button
           className="icon-btn"
           onClick={() => (adding ? resetForm() : setAdding(true))}
           aria-label={adding ? "취소" : "일정 추가"}
-        >
-          {adding ? "×" : "+"}
-        </button>
+        >{adding ? <Glyph name="close" size={24} /> : <Glyph name="plus" size={26} />}</button>
       </header>
 
       <main className="screen-body">
-        {seniors.length > 1 && (
-          <div className="senior-tabs">
-            {seniors.map((s) => (
-              <button
-                key={s.id}
-                className="senior-chip"
-                aria-pressed={s.id === seniorId}
-                onClick={() => setSeniorId(s.id)}
-              >
-                {s.name}
-                {s.relation ? ` (${s.relation})` : ""}
-              </button>
-            ))}
-          </div>
-        )}
+        <SeniorChips seniors={seniors} current={seniorId} onChange={setSeniorId} />
 
         <Notice tone="error">{error}</Notice>
         {note && <Notice>{note}</Notice>}
@@ -244,7 +225,7 @@ export default function ScheduleManage() {
                     onClick={() => setKind(k.key)}
                     aria-pressed={kind === k.key}
                   >
-                    <Icon name={k.icon} />
+                    <Art name={scheduleArt(k.key)} blend />
                     <span>{k.label}</span>
                   </button>
                 ))}
@@ -255,15 +236,18 @@ export default function ScheduleManage() {
 
             <label className="field">
               <span className="field-label">날짜와 시간</span>
-              <input
-                className="field-input"
-                type="datetime-local"
-                value={when}
-                onChange={(e) => setWhen(e.target.value)}
-              />
+              <span className="field-wrap tail">
+                <input
+                  className="field-input"
+                  type="datetime-local"
+                  value={when}
+                  onChange={(e) => setWhen(e.target.value)}
+                />
+                <Glyph name="calendar" size={20} />
+              </span>
             </label>
 
-            <Field label="장소" value={place} onChange={setPlace} placeholder="서울○○병원 (선택)" />
+            <Field label="장소" value={place} onChange={setPlace} placeholder="서울○○병원 (선택)" icon="pin" />
 
             <div className="field">
               <span className="field-label">알림</span>
@@ -294,14 +278,22 @@ export default function ScheduleManage() {
         {/* 다가오는 일정 — 시안은 이 카드가 가장 크다 */}
         {next && !adding && (
           <section className="card next-card">
-            <div className="next-head">
-              <span className="when">
-                {formatWhen(next.start_at).date} {formatWhen(next.start_at).time}
+            <div className="next-grid">
+              <span className="dnum" aria-hidden="true">
+                <span className="m">{new Date(next.start_at).getMonth() + 1}월</span>
+                <span className="d">{new Date(next.start_at).getDate()}</span>
               </span>
+              <div>
+                <span className="when">{formatWhen(next.start_at).date}</span>
+                <div className="sub">
+                  <span>{formatWhen(next.start_at).time}</span>
+                  <span>{next.place ? `${next.place} / ${next.title}` : next.title}</span>
+                </div>
+              </div>
               <span className="badge">다가오는 일정</span>
             </div>
-            <p className="next-title">{next.place ? `${next.place} / ${next.title}` : next.title}</p>
             <button className="notify-btn" onClick={() => notify(next)}>
+              <Glyph name="bell" size={22} />
               부모님에게 알림 전송
             </button>
             <div className="next-actions">
@@ -332,7 +324,7 @@ export default function ScheduleManage() {
               const w = formatWhen(r.start_at);
               return (
                 <div className="sched-row" key={r.id}>
-                  <Icon name={kindIcon(r.kind)} className="lead" />
+                  <Art name={scheduleArt(r.kind)} blend />
                   <div className="body">
                     <span className="t">{w.date}</span>
                     <span className="d">

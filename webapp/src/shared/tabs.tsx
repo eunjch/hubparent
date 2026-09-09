@@ -18,9 +18,9 @@ export function SeniorTabs({ current }: { current: SeniorTab }) {
       current={current}
       items={[
         { key: "home", icon: "home", label: "홈", onClick: () => nav("/s/home") },
-        { key: "record", icon: "yes", label: "건강기록", onClick: () => nav("/s/record") },
+        { key: "record", icon: "report", label: "건강기록", onClick: () => nav("/s/record") },
         { key: "schedule", icon: "calendar", label: "일정", onClick: () => nav("/s/schedule") },
-        { key: "more", icon: "more", label: "더보기", onClick: () => nav("/s/more") },
+        { key: "more", icon: "grid", label: "더보기", onClick: () => nav("/s/more") },
       ]}
     />
   );
@@ -35,7 +35,7 @@ export function GuardianTabs({ current }: { current: GuardianTab }) {
         { key: "home", icon: "home", label: "홈", onClick: () => nav("/g/home") },
         { key: "report", icon: "report", label: "리포트", onClick: () => nav("/g/report") },
         { key: "message", icon: "message", label: "메시지", onClick: () => nav("/g/alerts") },
-        { key: "more", icon: "more", label: "더보기", onClick: () => nav("/g/more") },
+        { key: "more", icon: "grid", label: "더보기", onClick: () => nav("/g/more") },
       ]}
     />
   );

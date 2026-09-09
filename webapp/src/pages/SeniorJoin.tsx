@@ -12,7 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, request } from "../shared/api";
 import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
-import { Backdrop, Icon } from "../shared/icons";
+import { Art } from "../shared/art";
+import { Glyph } from "../shared/glyphs";
 import type { SeniorLookupResult, TokenPair } from "../shared/types";
 import { BigButton, Field, Notice, Spinner } from "../shared/ui";
 
@@ -67,12 +68,10 @@ export default function SeniorJoin() {
   /* ── 2단계 — 본인 선택 ── */
   if (found) {
     return (
-      <div className="screen decorated">
-      <Backdrop variant="leaf" />
-
+      <div className="screen">
         <header className="screen-head">
           <button className="icon-btn" onClick={() => setFound(null)} aria-label="뒤로 가기">
-            ‹
+            <Glyph name="back" size={26} />
           </button>
           <h1>확인</h1>
           <span className="icon-btn-space" />
@@ -94,15 +93,13 @@ export default function SeniorJoin() {
                 disabled={busy}
               >
                 <span className="face">
-                  <Icon name="heart" size={44} />
+                  <Art name="avatarGrandma" size={52} />
                 </span>
                 <span className="body">
                   <span className="t">{s.name}</span>
                   {s.relation && <span className="d">{s.relation}</span>}
                 </span>
-                <span className="chev" aria-hidden="true">
-                  ›
-                </span>
+                <span className="chev" aria-hidden="true"><Glyph name="chevron" size={20} /></span>
               </button>
             ))}
           </div>
@@ -116,23 +113,21 @@ export default function SeniorJoin() {
 
   /* ── 1단계 — 자녀 정보 입력 ── */
   return (
-    <div className="screen decorated">
-      <Backdrop variant="leaf" />
-
+    <div className="screen">
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/")} aria-label="뒤로 가기">
-          ‹
+          <Glyph name="back" size={26} />
         </button>
         <h1>시작하기</h1>
         <span className="icon-btn-space" />
       </header>
 
       <main className="screen-body">
-        <div className="hero" style={{ paddingBottom: "var(--gap-tight)" }}>
+        <div className="hero" style={{ padding: "12px 0 4px" }}>
           <span className="hero-badge">
-            <Icon name="heart" />
+            <Art name="tileHeart" />
           </span>
-          <h2 style={{ fontSize: "var(--text-action)" }}>
+          <h2>
             자녀분의 이름과
             <br />
             전화번호를 넣어주세요
@@ -145,6 +140,7 @@ export default function SeniorJoin() {
             value={guardianName}
             onChange={setGuardianName}
             placeholder="김민수"
+            icon="user"
             autoFocus
           />
           <Field
@@ -153,6 +149,7 @@ export default function SeniorJoin() {
             onChange={setGuardianPhone}
             placeholder="010-1234-5678"
             inputMode="tel"
+            icon="phone"
           />
         </section>
 

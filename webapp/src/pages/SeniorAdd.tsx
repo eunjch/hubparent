@@ -12,7 +12,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
 import { prettyPhone } from "../shared/format";
-import { Backdrop, Icon } from "../shared/icons";
+import { Art } from "../shared/art";
 import type { Senior } from "../shared/types";
 import { BigButton, Field, Notice, Spinner } from "../shared/ui";
 
@@ -79,9 +79,7 @@ export default function SeniorAdd() {
   }
 
   return (
-    <div className="screen decorated">
-      <Backdrop variant="leaf" />
-
+    <div className="screen">
       <header className="screen-head">
         <button
           className="icon-btn"
@@ -98,9 +96,9 @@ export default function SeniorAdd() {
         {!editing && (
           <div className="hero" style={{ paddingBottom: "var(--gap-tight)" }}>
             <span className="hero-badge">
-              <Icon name="heart" />
+              <Art name="tileHeart" />
             </span>
-            <h2 style={{ fontSize: "var(--text-action)" }}>
+            <h2>
               {first ? "먼저 부모님을 등록해 주세요" : "부모님을 추가합니다"}
             </h2>
             <p>부모님은 따로 가입하지 않으셔도 됩니다.</p>
@@ -121,7 +119,8 @@ export default function SeniorAdd() {
             />
             <Field label="관계" value={relation} onChange={setRelation} placeholder="어머니" />
             <Field
-              label="출생연도 (선택)"
+              label="출생연도"
+              labelNote="(선택)"
               value={birthYear}
               onChange={setBirthYear}
               placeholder="1950"

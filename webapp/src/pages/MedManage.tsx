@@ -10,10 +10,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
-import { Backdrop, Icon } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
+import { Art, capsuleFor } from "../shared/art";
 import { dateLabel, localDate, shiftDate } from "../shared/tabs";
 import type { Dose, Medication, Senior } from "../shared/types";
-import { BigButton, Cheer, Field, Notice, SegTabs, Spinner } from "../shared/ui";
+import { BigButton, Cheer, Field, Notice, SegTabs, SeniorChips, Spinner } from "../shared/ui";
 
 type Tab = "list" | "settings";
 
@@ -159,35 +160,15 @@ export default function MedManage() {
   }
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
-
+    <div className="screen">
       <header className="screen-head">
-        <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기">
-          ‹
-        </button>
+        <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기"><Glyph name="back" size={26} /></button>
         <h1>약 복용 관리</h1>
-        <button className="icon-btn" onClick={() => setTab("settings")} aria-label="약 추가">
-          +
-        </button>
+        <button className="icon-btn" onClick={() => setTab("settings")} aria-label="약 추가"><Glyph name="plus" size={26} /></button>
       </header>
 
       <main className="screen-body">
-        {seniors.length > 1 && (
-          <div className="senior-tabs">
-            {seniors.map((s) => (
-              <button
-                key={s.id}
-                className="senior-chip"
-                aria-pressed={s.id === seniorId}
-                onClick={() => setSeniorId(s.id)}
-              >
-                {s.name}
-                {s.relation ? ` (${s.relation})` : ""}
-              </button>
-            ))}
-          </div>
-        )}
+        <SeniorChips seniors={seniors} current={seniorId} onChange={setSeniorId} />
 
         <SegTabs<Tab>
           current={tab}
@@ -206,9 +187,7 @@ export default function MedManage() {
           <>
             {/* 날짜 이동 — 지난 날 복용 현황을 돌아보고, 앞날 예정도 본다 */}
             <div className="date-nav">
-              <button className="icon-btn" onClick={() => setDay(shiftDate(day, -1))} aria-label="하루 전">
-                ‹
-              </button>
+              <button className="icon-btn" onClick={() => setDay(shiftDate(day, -1))} aria-label="하루 전"><Glyph name="back" size={26} /></button>
               <span className="date-nav-label">
                 {dateLabel(day)}
                 {isToday && <span className="today-tag">오늘</span>}
@@ -226,21 +205,22 @@ export default function MedManage() {
               <Notice>이날 먹을 약이 없어요.</Notice>
             ) : (
               <section className="card med-list">
-                {doses.map((d) => {
+                {doses.map((d, i) => {
                   const med = medById.get(d.medication_id);
                   const slot = slotOf(d.time);
                   const st = doseLabel(d);
                   return (
                     <div className="med-line" key={d.medication_id + d.scheduled_at}>
-                      <Icon name={slot.icon} className="lead" />
-                      <span className="slot">{slot.label}</span>
-                      <span className="time">{d.time}</span>
+                      <Art name={capsuleFor(i)} blend />
                       <span className="name">
                         <span className="nm">
                           {d.name}
                           {d.dose ? <span className="dose"> {d.dose}</span> : null}
                         </span>
-                        <span className={`status ${st.tone}`}>{st.text}</span>
+                        <span className="meta">
+                          {slot.label}&nbsp;&nbsp;{d.time}
+                          <span className={`status ${st.tone}`}> · {st.text}</span>
+                        </span>
                       </span>
                       {med && (
                         <button
@@ -263,11 +243,13 @@ export default function MedManage() {
             {inactive.length > 0 && (
               <section className="card med-list off">
                 <p className="med-list-title">알림 꺼 둔 약</p>
-                {inactive.map((m) => (
+                {inactive.map((m, i) => (
                   <div className="med-line" key={m.id}>
-                    <Icon name="pills" className="lead" />
-                    <span className="time">{m.times.join(" · ")}</span>
-                    <span className="name">{m.name}</span>
+                    <Art name={capsuleFor(i)} blend style={{ opacity: 0.6 }} />
+                    <span className="name">
+                      <span className="nm">{m.name}</span>
+                      <span className="meta">{m.times.join(" · ")}</span>
+                    </span>
                     <button
                       className="switch"
                       role="switch"
@@ -282,10 +264,9 @@ export default function MedManage() {
               </section>
             )}
 
-            <Cheer icon="leafBranch">
-              잊지 않으셔도 돼요
-              <br />
-              MEDIC이 함께 기억할게요.
+            <Cheer>
+              잊지 않으셔도 돼요.
+              <b>MEDIC이 함께 기억할게요.</b>
             </Cheer>
           </>
         )}

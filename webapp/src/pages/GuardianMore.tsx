@@ -5,10 +5,10 @@ import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { clearTokens } from "../shared/auth";
-import { Backdrop } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
 import { GuardianTabs } from "../shared/tabs";
 import type { Me } from "../shared/types";
-import { BigButton, Card, Notice, RowCard, Spinner } from "../shared/ui";
+import { Card, Notice, RowCard, Spinner } from "../shared/ui";
 import { prettyPhone } from "../shared/format";
 
 export default function GuardianMore() {
@@ -28,8 +28,7 @@ export default function GuardianMore() {
   }
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
+    <div className="screen">
       <header className="screen-head">
         <span className="icon-btn-space" />
         <h1>더보기</h1>
@@ -41,10 +40,10 @@ export default function GuardianMore() {
         {!me && !error && <Spinner />}
 
         <div className="more-list">
-          <RowCard icon="caregiver" title="부모님 관리" description="등록 · 수정 · 로그인 안내" chevron onClick={() => nav("/g/seniors")} />
-          <RowCard icon="pills" title="약 복용 시간 설정" description="약 추가 · 알림 켜고 끄기" chevron onClick={() => nav("/g/medications")} />
-          <RowCard icon="calendar" title="일정 관리" description="병원 일정 등록 · 알림 전송" chevron onClick={() => nav("/g/schedules")} />
-          <RowCard icon="bell" title="알림" description="이상 징후 · 일반 알림" chevron onClick={() => nav("/g/alerts")} />
+          <RowCard lead={<span className="lead-ic blue"><Glyph name="users" size={24} /></span>} title="부모님 관리" description="등록 · 수정 · 로그인 안내" chevron onClick={() => nav("/g/seniors")} />
+          <RowCard lead={<span className="lead-ic pink"><Glyph name="heart" size={24} /></span>} title="약 복용 시간 설정" description="약 추가 · 알림 켜고 끄기" chevron onClick={() => nav("/g/medications")} />
+          <RowCard lead={<span className="lead-ic blue"><Glyph name="calendar" size={24} /></span>} title="일정 관리" description="병원 일정 등록 · 알림 전송" chevron onClick={() => nav("/g/schedules")} />
+          <RowCard lead={<span className="lead-ic violet"><Glyph name="bell" size={24} /></span>} title="알림" description="이상 징후 · 일반 알림" chevron onClick={() => nav("/g/alerts")} />
         </div>
 
         {me && (
@@ -66,7 +65,10 @@ export default function GuardianMore() {
         )}
 
         <div style={{ marginTop: "auto" }}>
-          <BigButton onClick={signOut}>로그아웃</BigButton>
+          <button className="big-btn plain" onClick={signOut}>
+            <Glyph name="logout" size={22} />
+            로그아웃
+          </button>
         </div>
       </main>
 

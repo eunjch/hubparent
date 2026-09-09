@@ -7,6 +7,8 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
+import { Art, type ArtName } from "./art";
+import { Glyph, type GlyphName } from "./glyphs";
 import { Icon, type IconName } from "./icons";
 
 export type Tone = "meal" | "med" | "mood" | "plan" | "contact" | "warm";
@@ -31,9 +33,7 @@ export function Screen({
       {title && (
         <header className="screen-head">
           {onBack ? (
-            <button className="icon-btn" onClick={onBack} aria-label="뒤로 가기">
-              ‹
-            </button>
+            <button className="icon-btn" onClick={onBack} aria-label="뒤로 가기"><Glyph name="back" size={26} /></button>
           ) : (
             <span className="icon-btn-space" />
           )}
@@ -136,10 +136,10 @@ export function Banner({
 }
 
 /** 화면 맨 아래 응원 문구. 어르신 화면의 마무리 (시안 공통). */
-export function Cheer({ icon = "heart", children }: { icon?: IconName; children: ReactNode }) {
+export function Cheer({ children }: { icon?: IconName; children: ReactNode }) {
   return (
     <div className="cheer">
-      <Icon name={icon} />
+      <Art name="heartRed" />
       <p>{children}</p>
     </div>
   );
@@ -182,27 +182,35 @@ export function TileGrid({ children }: { children: ReactNode }) {
 
 export function Tile({
   icon,
+  art,
   label,
   description,
   tone,
   onClick,
+  variant = "senior",
 }: {
-  icon: IconName;
+  icon?: IconName;
+  /** 리디자인 3D 그림. 있으면 icon 대신 쓴다 */
+  art?: ArtName;
   label: string;
   /** 시안의 "오늘 식사 기록하기 ›" 같은 한 줄 안내 */
   description?: string;
   tone: Tone;
   onClick?: () => void;
+  /** senior: 그림 가운데 · guardian: 그림 왼쪽 위 + 화살표 */
+  variant?: "senior" | "guardian";
 }) {
   return (
-    <button className={`tile ${tone}`} onClick={onClick}>
+    <button className={`tile ${tone}${variant === "guardian" ? " guardian" : ""}`} onClick={onClick}>
+      {art ? <Art name={art} /> : icon ? <Icon name={icon} /> : null}
+      {variant === "guardian" && <Glyph name="chevron" className="chev" size={20} />}
       <span className="head">
-        <Icon name={icon} />
         <span className="t">{label}</span>
       </span>
       {description && (
         <span className="d">
-          {description} <span aria-hidden="true">›</span>
+          {description}
+          {variant === "guardian" && <span aria-hidden="true"> ›</span>}
         </span>
       )}
     </button>
@@ -233,6 +241,7 @@ export function StatusPill({
 
 export function RowCard({
   icon,
+  lead,
   title,
   description,
   right,
@@ -240,6 +249,8 @@ export function RowCard({
   chevron,
 }: {
   icon?: IconName;
+  /** icon 대신 넣는 임의의 앞 요소 (리디자인 아이콘 타일) */
+  lead?: ReactNode;
   title: string;
   description?: string;
   right?: ReactNode;
@@ -248,16 +259,15 @@ export function RowCard({
 }) {
   const inner = (
     <>
-      {icon && <Icon name={icon} className="lead" />}
+      {lead}
+      {!lead && icon && <Icon name={icon} className="lead" />}
       <span className="body">
         <span className="t">{title}</span>
         {description && <span className="d">{description}</span>}
       </span>
       {right}
       {chevron && (
-        <span className="chev" aria-hidden="true">
-          ›
-        </span>
+        <span className="chev" aria-hidden="true"><Glyph name="chevron" size={20} /></span>
       )}
     </>
   );
@@ -328,7 +338,7 @@ export function ScoreRing({
 
 export interface TabItem {
   key: string;
-  icon: IconName;
+  icon: GlyphName;
   label: string;
   onClick?: () => void;
 }
@@ -343,7 +353,7 @@ export function TabBar({ items, current }: { items: TabItem[]; current: string }
           aria-current={it.key === current ? "page" : undefined}
           onClick={it.onClick}
         >
-          <Icon name={it.icon} />
+          <Glyph name={it.icon} size={26} />
           <span>{it.label}</span>
         </button>
       ))}
@@ -397,6 +407,8 @@ export function Field({
   hint,
   inputMode,
   autoFocus,
+  icon,
+  labelNote,
 }: {
   label: string;
   value: string;
@@ -406,19 +418,36 @@ export function Field({
   hint?: string;
   inputMode?: "text" | "tel" | "email" | "numeric";
   autoFocus?: boolean;
+  /** 입력 앞의 선 아이콘 (리디자인 로그인·시작하기) */
+  icon?: GlyphName;
+  /** 라벨 옆 작은 글씨 — "(선택)" */
+  labelNote?: string;
 }) {
+  const input = (
+    <input
+      className="field-input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      type={type}
+      inputMode={inputMode}
+      autoFocus={autoFocus}
+    />
+  );
   return (
     <label className="field">
-      <span className="field-label">{label}</span>
-      <input
-        className="field-input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        type={type}
-        inputMode={inputMode}
-        autoFocus={autoFocus}
-      />
+      <span className="field-label">
+        {label}
+        {labelNote && <small>{labelNote}</small>}
+      </span>
+      {icon ? (
+        <span className="field-wrap">
+          <Glyph name={icon} size={20} />
+          {input}
+        </span>
+      ) : (
+        input
+      )}
       {hint && <span className="field-hint">{hint}</span>}
     </label>
   );
@@ -458,7 +487,7 @@ export function Notice({
   if (!children) return null;
   return (
     <p className={`notice ${tone}`} role={tone === "error" ? "alert" : undefined}>
-      <Icon name={tone === "error" ? "alert" : "leaf"} />
+      <Glyph name={tone === "error" ? "warning" : "link"} size={20} />
       <span>{children}</span>
     </p>
   );
@@ -469,5 +498,42 @@ export function Spinner({ label = "잠시만 기다려 주세요" }: { label?: s
     <p className="spinner" role="status">
       {label}
     </p>
+  );
+}
+
+
+/* ── 부모님 선택 칩 (리디자인: 아바타 + 이름 + 관계) ─────────── */
+
+/** 관계 문구로 아바타를 고른다. 어머니·할머니 계열은 할머니 그림, 그 밖은 할아버지. */
+export function avatarFor(relation: string | null | undefined): ArtName {
+  const r = relation ?? "";
+  return /어머니|엄마|할머니|장모|시어머니|이모|고모/.test(r) ? "avatarGrandma" : "avatarGrandpa";
+}
+
+export function SeniorChips({
+  seniors,
+  current,
+  onChange,
+}: {
+  seniors: { id: string; name: string; relation: string | null }[];
+  current: string | null;
+  onChange: (id: string) => void;
+}) {
+  if (seniors.length <= 1) return null;
+  return (
+    <div className="senior-tabs">
+      {seniors.map((s) => (
+        <button
+          key={s.id}
+          className="senior-chip"
+          aria-pressed={s.id === current}
+          onClick={() => onChange(s.id)}
+        >
+          <Art name={avatarFor(s.relation)} className="avatar" />
+          {s.name}
+          {s.relation && <span className="rel">({s.relation})</span>}
+        </button>
+      ))}
+    </div>
   );
 }

@@ -1,6 +1,6 @@
-/** 화면 S4 — 기분 체크.
+/** 화면 S4 — 기분 체크 (리디자인 13_s_mood).
  *
- *  아침·점심·저녁 각각 이모지 세 개 중 하나를 고른다. 고르는 즉시 저장된다 —
+ *  아침·점심·저녁 카드마다 이모지 세 개 중 하나를 고른다. 고르는 즉시 저장된다 —
  *  "저장하기" 를 따로 누르게 하지 않는다 (계획서 9장: 체크는 1탭 완료).
  */
 
@@ -8,21 +8,23 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { Art, type ArtName } from "../shared/art";
+import { Glyph } from "../shared/glyphs";
 import { send } from "../shared/offlineQueue";
 import type { CheckSlot, MoodCheck as Mood, MoodValue } from "../shared/types";
 import { Notice, Screen, Spinner } from "../shared/ui";
 
-const SLOTS: { key: CheckSlot; label: string }[] = [
-  { key: "breakfast", label: "아침" },
-  { key: "lunch", label: "점심" },
-  { key: "dinner", label: "저녁" },
+const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
+  { key: "breakfast", label: "아침", icon: "sun" },
+  { key: "lunch", label: "점심", icon: "sun" },
+  { key: "dinner", label: "저녁", icon: "moon" },
 ];
 
 /** 색만으로 구분하지 않는다. 글자를 항상 함께 쓴다 (계획서 9장). */
-const MOODS: { key: MoodValue; label: string; face: string }[] = [
-  { key: "good", label: "좋아요", face: "😊" },
-  { key: "normal", label: "괜찮아요", face: "😐" },
-  { key: "bad", label: "힘들어요", face: "😟" },
+const MOODS: { key: MoodValue; label: string; art: ArtName }[] = [
+  { key: "good", label: "좋아요", art: "emojiGood" },
+  { key: "normal", label: "괜찮아요", art: "emojiNormal" },
+  { key: "bad", label: "힘들어요", art: "emojiBad" },
 ];
 
 function today(): string {
@@ -65,43 +67,47 @@ export default function MoodCheck() {
 
   return (
     <Screen title="기분 체크" onBack={() => nav("/s/home")}>
-
       {!rows && <Spinner />}
       <Notice tone="error">{error}</Notice>
 
       {rows && (
         <>
-          <section className="ask-card">
-            <div className="ask-head">
-              <div>
-                <p className="ask">오늘 기분은 어떠신가요?</p>
-                <p className="ask-sub">지금 이 순간, 솔직하게 알려주세요.</p>
-              </div>
+          <div className="ask-head">
+            <div>
+              <p className="ask">오늘 기분은 어떠신가요?</p>
+              <p className="ask-sub">지금 이 순간, 솔직하게 알려주세요.</p>
             </div>
+          </div>
 
-            {SLOTS.map((s) => (
-              <div className="mood-row" key={s.key}>
-              <span className="when">{s.label}</span>
-              <span className="faces">
-                {MOODS.map((m) => (
-                  <button
-                    key={m.key}
-                    className={`face-btn ${m.key}${find(s.key) === m.key ? " on" : ""}`}
-                    onClick={() => choose(s.key, m.key)}
-                    disabled={busy === s.key}
-                    aria-pressed={find(s.key) === m.key}
-                    aria-label={`${s.label} ${m.label}`}
-                  >
-                    <span className="face" aria-hidden="true">
-                      {m.face}
-                    </span>
-                    <span className="cap">{m.label}</span>
-                  </button>
-                ))}
-              </span>
+          {SLOTS.map((s) => (
+            <section className="card mood-card" key={s.key}>
+              <div className="slot">
+                <Glyph name={s.icon} size={22} />
+                {s.label}
               </div>
-            ))}
-          </section>
+              <div className="faces">
+                {MOODS.map((m) => {
+                  const on = find(s.key) === m.key;
+                  return (
+                    <button
+                      key={m.key}
+                      className={`face-btn ${m.key}${on ? " on" : ""}`}
+                      onClick={() => choose(s.key, m.key)}
+                      disabled={busy === s.key}
+                      aria-pressed={on}
+                      aria-label={`${s.label} ${m.label}`}
+                    >
+                      <span className="tick" aria-hidden="true">
+                        <Glyph name="check" size={12} stroke={3} />
+                      </span>
+                      <Art name={m.art} />
+                      <span className="cap">{m.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </>
       )}
     </Screen>

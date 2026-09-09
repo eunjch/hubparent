@@ -1,39 +1,29 @@
-/** S0 시작 화면 — 역할 선택 (시안 "첫 페이지").
+/** S0 시작 화면 — 역할 선택 (리디자인 00_start).
  *
- *  심볼 + MEDIC + 한 줄 소개 → 헤드라인 → 자녀예요 / 부모예요 카드 → 로그인 링크 →
- *  하단 "EVERYDAY WELLNESS, TOGETHER" + 물결.
+ *  문구 → 심볼 + MEDIC + 한 줄 소개 → 헤드라인 → 자녀예요 / 부모예요 카드 → 로그인 링크 →
+ *  하단 "Care Connects Better Days".
  *  부모와 자녀가 같은 번들을 쓴다(계획서 3장). 첫 화면에서 갈라진다.
  */
 
 import { useNavigate } from "react-router-dom";
 
-import { BG, Backdrop, Icon, LOGO } from "../shared/icons";
+import { Art } from "../shared/art";
+import { Glyph } from "../shared/glyphs";
 
 export default function Start() {
   const nav = useNavigate();
 
   return (
-    <div className="screen decorated start">
-      <Backdrop variant="leaf" />
+    <div className="screen start">
       <main className="screen-body">
-        <div className="start-hero">
-          {/* 시안의 손글씨 문구 — 장식이다 */}
-          <span className="start-note left" aria-hidden="true">
-            가까이 있어도,
-            <br />
-            멀리 있어도,
-            <br />
-            언제나, 함께.
-          </span>
-          <span className="start-note right" aria-hidden="true">
-            Care
-            <br />
-            Connects
-            <br />
-            Better Days
-          </span>
+        <p className="start-tagline">
+          가까이 있어도, 멀리 있어도
+          <br />
+          언제나, 함께.
+        </p>
 
-          <img className="start-logo" src={LOGO.petals} alt="" aria-hidden="true" />
+        <div className="start-hero">
+          <Art name="logo" className="start-logo" />
           <h1 className="start-brand">MEDIC</h1>
           <p className="start-sub">
             가족의 건강을 이어주는
@@ -43,7 +33,7 @@ export default function Start() {
         </div>
 
         <p className="start-lede">
-          <span className="accent">사랑하는 가족의 건강</span>을
+          사랑하는 가족의 건강을
           <br />
           쉽고 따뜻하게 연결해요
         </p>
@@ -51,27 +41,27 @@ export default function Start() {
         <div className="role-list">
           <button className="role-card child" onClick={() => nav("/login")}>
             <span className="face">
-              <Icon name="caregiver" />
+              <Art name="avatarFamily" />
             </span>
             <span className="body">
               <span className="t">자녀예요</span>
               <span className="d">로그인 · 회원가입</span>
             </span>
             <span className="chev" aria-hidden="true">
-              ›
+              <Glyph name="chevron" size={22} />
             </span>
           </button>
 
           <button className="role-card parent" onClick={() => nav("/join")}>
             <span className="face">
-              <Icon name="heart" />
+              <Art name="avatarGrandmaLg" />
             </span>
             <span className="body">
               <span className="t">부모예요</span>
               <span className="d">자녀 이름과 전화번호로 시작</span>
             </span>
             <span className="chev" aria-hidden="true">
-              ›
+              <Glyph name="chevron" size={22} />
             </span>
           </button>
         </div>
@@ -81,14 +71,12 @@ export default function Start() {
         </button>
 
         <div className="start-foot" aria-hidden="true">
-          <img className="mini-logo" src={LOGO.petals} alt="" />
           <span>
-            EVERYDAY WELLNESS,
+            Care Connects
             <br />
-            TOGETHER
+            Better Days
           </span>
         </div>
-        <img className="bottom-wave" src={BG.bottomWave} alt="" aria-hidden="true" />
       </main>
     </div>
   );

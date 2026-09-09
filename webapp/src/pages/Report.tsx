@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { Backdrop, Icon } from "../shared/icons";
+import { Glyph } from "../shared/glyphs";
+import { Art, type ArtName, capsuleFor } from "../shared/art";
 import { GuardianTabs, dateLabel, localDate, shiftDate } from "../shared/tabs";
 import type {
   ActivityLevel,
@@ -19,7 +20,7 @@ import type {
   MoodValue,
   Senior,
 } from "../shared/types";
-import { Card, Notice, ScoreRing, Spinner, StatusPill } from "../shared/ui";
+import { Card, Notice, ScoreRing, SeniorChips, Spinner, StatusPill } from "../shared/ui";
 
 interface ActivityReport {
   activity_level: ActivityLevel | null;
@@ -33,7 +34,7 @@ const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
   { key: "dinner", label: "저녁", icon: "moon" },
 ];
 
-const FACE: Record<MoodValue, string> = { good: "😊", normal: "😐", bad: "😟" };
+const FACE: Record<MoodValue, ArtName> = { good: "emojiGood", normal: "emojiNormal", bad: "emojiBad" };
 const MOOD_LABEL: Record<MoodValue, string> = { good: "좋아요", normal: "괜찮아요", bad: "힘들어요" };
 const ACTIVITY_LABEL: Record<ActivityLevel, string> = { high: "활발", normal: "보통", low: "적음" };
 
@@ -91,8 +92,7 @@ export default function Report() {
   const maxSteps = Math.max(1, ...(activity?.hours.map((h) => h.steps) ?? [0]));
 
   return (
-    <div className="screen decorated">
-      <Backdrop />
+    <div className="screen">
       <header className="screen-head">
         <span className="icon-btn-space" />
         <h1>리포트</h1>
@@ -100,27 +100,11 @@ export default function Report() {
       </header>
 
       <main className="screen-body">
-        {seniors.length > 1 && (
-          <div className="senior-tabs">
-            {seniors.map((s) => (
-              <button
-                key={s.id}
-                className="senior-chip"
-                aria-pressed={s.id === seniorId}
-                onClick={() => setSeniorId(s.id)}
-              >
-                {s.name}
-                {s.relation ? ` (${s.relation})` : ""}
-              </button>
-            ))}
-          </div>
-        )}
+        <SeniorChips seniors={seniors} current={seniorId} onChange={setSeniorId} />
 
         {/* 날짜 이동. 오늘 이후로는 못 간다 */}
         <div className="date-nav">
-          <button className="icon-btn" onClick={() => setDay(shiftDate(day, -1))} aria-label="하루 전">
-            ‹
-          </button>
+          <button className="icon-btn" onClick={() => setDay(shiftDate(day, -1))} aria-label="하루 전"><Glyph name="back" size={26} /></button>
           <span className="date-nav-label">
             {dateLabel(day)}
             {isToday && <span className="today-tag">오늘</span>}
@@ -151,24 +135,24 @@ export default function Report() {
               </div>
               <div className="summary-grid">
                 <span className="summary-cell">
-                  <Icon name="meal" />
+                  <Art name="bowlSm" blend />
                   <span className="k">식사</span>
                   <span className="v">
                     {r.meal_done}/{r.meal_total}
                   </span>
                 </span>
                 <span className="summary-cell">
-                  <Icon name="pills" />
+                  <Art name="capsuleSm" blend />
                   <span className="k">약 복용</span>
                   <span className="v">{r.med_total ? `${r.med_taken}/${r.med_total}` : "—"}</span>
                 </span>
                 <span className="summary-cell">
-                  <Icon name="activity" />
+                  <Art name="runnerSm" blend />
                   <span className="k">활동</span>
                   <span className="v">{r.activity_level ? ACTIVITY_LABEL[r.activity_level] : "—"}</span>
                 </span>
                 <span className="summary-cell">
-                  <Icon name="mood" />
+                  <Art name="smileySm" blend />
                   <span className="k">기분</span>
                   <span className="v">{r.moods.length}/3</span>
                 </span>
@@ -183,7 +167,7 @@ export default function Report() {
                   return (
                     <span className={`mood-slot${m ? ` ${m}` : ""}`} key={s.key}>
                       <span className="face" aria-hidden="true">
-                        {m ? FACE[m] : "·"}
+                        {m ? <Art name={FACE[m]} /> : "·"}
                       </span>
                       <span className="k">{s.label}</span>
                       <span className="v">{m ? MOOD_LABEL[m] : "미기록"}</span>
@@ -198,7 +182,9 @@ export default function Report() {
                 const m = mealOf(s.key);
                 return (
                   <div className="detail-row" key={s.key}>
-                    <Icon name={s.icon} className="lead" />
+                    <span className={`slot-ic ${s.icon}`} aria-hidden="true">
+                      <Glyph name={s.icon} size={20} />
+                    </span>
                     <span className="t">{s.label}</span>
                     {m?.photo_path && (
                       <img className="thumb" src={`/uploads/${m.photo_path}`} alt={`${s.label} 식사 사진`} />
@@ -213,9 +199,9 @@ export default function Report() {
 
             <Card title="약 복용">
               {doses && doses.length === 0 && <p className="sub">등록된 약이 없어요.</p>}
-              {doses?.map((d) => (
+              {doses?.map((d, i) => (
                 <div className="detail-row" key={d.medication_id + d.scheduled_at}>
-                  <Icon name="pills" className="lead" />
+                  <Art name={capsuleFor(i)} blend />
                   <span className="t">
                     <span className="time">{d.time}</span> {d.name}
                   </span>
