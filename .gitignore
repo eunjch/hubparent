@@ -60,3 +60,7 @@ desktop.ini
 
 # 화면 캡처 — 로컬 확인용. 필요하면 scratchpad shoot.mjs 로 다시 만든다
 docs/screenshots/
+
+# Play 업로드 서명 (잃어버리면 앱 업데이트 불가 — 따로 백업)
+mobile/android/keystore.properties
+mobile/android/keystore/
