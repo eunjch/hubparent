@@ -2055,3 +2055,10 @@ body {
   place-items: center;
   margin-right: 2px;
 }
+
+/* 약 이름이 길면 잘라내지 말고 두 줄로 */
+.med-line .name .nm {
+  white-space: normal;
+  line-height: 1.25;
+  word-break: keep-all;
+}
