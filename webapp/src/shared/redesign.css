@@ -2020,3 +2020,10 @@ body {
     white-space: nowrap;
   }
 }
+
+/* hidden 은 .screen 을 스크롤 컨테이너로 만들어 sticky 탭바가 뷰포트 아래에 붙지 못한다.
+   clip 은 가로 넘침만 자르고 스크롤 컨테이너를 만들지 않는다 (실기기에서 탭바가 안 보이던 원인). */
+.screen,
+.screen-body {
+  overflow-x: clip;
+}
