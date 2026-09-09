@@ -16,6 +16,8 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { request } from "../shared/api";
 import type { Role } from "../shared/types";
 
+import { AlarmChannel, channelIdFor } from "./alarm-channel";
+
 export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
 }
@@ -49,6 +51,8 @@ async function ensureChannels(): Promise<void> {
   for (const ch of CHANNELS) {
     await LocalNotifications.createChannel({ ...ch, visibility: 1 });
   }
+  // 복약은 알람 채널(USAGE_ALARM · 30초 알람음) — 네이티브에서 만든다
+  await AlarmChannel.ensure().catch(() => undefined);
 }
 
 /* ── 푸시 (계획서 8.5.1) ─────────────────────────────────── */
@@ -157,7 +161,7 @@ export async function syncLocalNotifications(): Promise<number> {
         id: it.local_id,
         title: it.title,
         body: it.body,
-        channelId: it.channel,
+        channelId: channelIdFor(it.channel),
         // Doze 상태에서도 정각에 울린다 (8.5.4)
         schedule: { at: new Date(it.at), allowWhileIdle: true },
         extra: { route: it.route },

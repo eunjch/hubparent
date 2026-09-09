@@ -62,7 +62,8 @@ async def _deliver(tokens: list[str], title: str, body: str, channel: str, route
         data={"route": route, "channel": channel},
         android=messaging.AndroidConfig(
             priority="high",
-            notification=messaging.AndroidNotification(channel_id=channel, sound="default"),
+            # 복약은 앱의 알람 채널(USAGE_ALARM · 30초 알람음)로. 채널이 소리를 정하므로 sound 는 비운다
+            notification=messaging.AndroidNotification(channel_id=android_channel(channel)),
         ),
         apns=messaging.APNSConfig(
             payload=messaging.APNSPayload(aps=messaging.Aps(sound="default", badge=1)),
@@ -83,6 +84,11 @@ async def _deliver(tokens: list[str], title: str, body: str, channel: str, route
     if result.success_count == 0:
         raise RuntimeError(f"모든 단말 실패 ({result.failure_count}건)")
     return dead
+
+
+def android_channel(channel: str) -> str:
+    """서버 채널 이름 → 안드로이드 채널 ID. 앱의 native/alarm-channel.ts 와 같은 규칙."""
+    return "medication_alarm" if channel == "medication" else channel
 
 
 DEDUPE_MAX = 200
