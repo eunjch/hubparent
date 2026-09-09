@@ -2032,3 +2032,12 @@ body {
 .tabbar {
   background: #ffffff;
 }
+
+/* 토글은 미끄러지듯 — 뚝뚝 바뀌면 덜그럭거려 보인다 */
+.switch {
+  transition: background 0.2s ease;
+}
+
+.switch .knob {
+  transition: transform 0.2s ease;
+}

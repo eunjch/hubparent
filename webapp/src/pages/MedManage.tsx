@@ -6,7 +6,7 @@
  *  계획서 7.3: 약 복용 시간은 자녀가 설정한다. 어르신은 응답만 한다.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
@@ -72,10 +72,16 @@ export default function MedManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId]);
 
-  // 그날 먹어야 할 약 — 규칙을 날짜에 펼친 것. 규칙이 바뀌면(meds) 같이 다시 읽는다
+  // 그날 먹어야 할 약 — 규칙을 날짜에 펼친 것. 규칙이 바뀌면(meds) 같이 다시 읽는다.
+  // 부모님·날짜가 바뀔 때만 비우고, 토글로 다시 읽을 때는 이전 목록을 그대로 둔다 — 깜빡임 방지
+  const dosesKey = useRef("");
   useEffect(() => {
     if (!seniorId) return;
-    setDoses(null);
+    const key = `${seniorId}|${day}`;
+    if (dosesKey.current !== key) {
+      dosesKey.current = key;
+      setDoses(null);
+    }
     request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`)
       .then(setDoses)
       .catch(() => setError("복용 현황을 불러오지 못했습니다."));
@@ -138,7 +144,7 @@ export default function MedManage() {
       } else {
         await request(`/medications/${med.id}`, { method: "PATCH", body: { is_active: true } });
       }
-      await load();
+      // 화면은 이미 바뀌어 있다. 다시 읽으면 목록이 한 번 사라졌다 나타나므로 읽지 않는다
     } catch {
       setError("잠시 후 다시 시도해 주세요.");
       await load();
