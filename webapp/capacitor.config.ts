@@ -8,7 +8,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "kr.co.mangotree.hubfamily",
-  appName: "HUB FAMILY",
+  appName: "허브패밀리",
   webDir: "dist",
 
   android: {
