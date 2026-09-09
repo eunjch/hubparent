@@ -204,3 +204,42 @@ async def test_schedule_notify_sends_push(client, session):
     assert len(logs) == 1
     assert logs[0].channel == "schedule"
     assert logs[0].title.endswith("일정이 있어요")
+
+
+@pytest.mark.asyncio
+async def test_push_sends_when_configured_and_prunes_dead_tokens(client, session, monkeypatch):
+    """FCM 이 설정되면 _deliver 를 타고, 만료 토큰은 지운다. 실제 FCM 은 부르지 않는다."""
+    from sqlalchemy import select as _select
+
+    from app.models.user import Device
+    from app.services import push
+
+    gt, st, senior_id = await _family(client)
+    # 단말 두 개 등록 — 같은 플랫폼이면 토큰이 덮어써지므로(upsert) 플랫폼을 달리한다
+    for tok, platform in (("tok-live", "android"), ("tok-dead", "ios")):
+        res = await client.post(
+            "/api/v1/devices",
+            headers={"Authorization": f"Bearer {st}"},
+            json={"platform": platform, "push_token": tok, "app_version": "0.1.0"},
+        )
+        assert res.status_code == 200, res.text
+
+    calls: list[dict] = []
+
+    async def fake_deliver(tokens, title, body, channel, route):
+        calls.append({"tokens": sorted(tokens), "title": title, "channel": channel, "route": route})
+        return ["tok-dead"]
+
+    monkeypatch.setattr(push, "configured", lambda: True)
+    monkeypatch.setattr(push, "_deliver", fake_deliver)
+
+    import uuid as _uuid
+
+    row = await push.send(
+        session, _uuid.UUID(senior_id), title="약 드실 시간이에요", body="혈압약", channel="medication", route="/s/med"
+    )
+    assert row.event == "sent"
+    assert calls == [{"tokens": ["tok-dead", "tok-live"], "title": "약 드실 시간이에요", "channel": "medication", "route": "/s/med"}]
+
+    left = list(await session.scalars(_select(Device.push_token)))
+    assert left == ["tok-live"]

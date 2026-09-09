@@ -40,6 +40,8 @@ services:
       - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
     volumes:
       - uploads:/data/uploads
+      # Firebase 서비스 계정 키. deploy/ 에 두고 git 에는 올리지 않는다 (.gitignore)
+      - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
     depends_on:
       db:
         condition: service_healthy
@@ -55,6 +57,7 @@ services:
     env_file: .env
     volumes:
       - uploads:/data/uploads
+      - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
     depends_on:
       db:
         condition: service_healthy

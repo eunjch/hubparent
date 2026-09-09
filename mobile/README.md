@@ -14,7 +14,8 @@ webapp/  ─ npm run build:app ─▶ dist/ ─ npx cap sync android ─▶ mobi
 | Android Studio | `C:\Program Files\Android\Android Studio1` |
 | Android SDK | `C:\Android\Sdk` (platform 36 · build-tools 36.0.0 설치됨) |
 | **Java 21** | Android Studio 동봉 JBR `…\Android Studio1\jbr` — Capacitor 8 은 21 이 필요하다. 시스템 JDK 17 로는 빌드가 안 된다 |
-| `google-services.json` | `mobile/android/app/` 에 넣는다. **git 에 올리지 않는다.** 없으면 `vite.config.ts` 가 `VITE_PUSH_ENABLED=false` 로 빌드해 푸시 코드를 아예 타지 않는다 — 없는 채로 `register()` 를 부르면 네이티브가 죽는다(2026-09-08 실기기에서 확인) |
+| `google-services.json` | Firebase 프로젝트 `hubfamily-b1353` 의 안드로이드 앱 키. `mobile/android/app/` 에 넣는다. **git 에 올리지 않는다.** 없으면 `vite.config.ts` 가 `VITE_PUSH_ENABLED=false` 로 빌드해 푸시 코드를 아예 타지 않는다 — 없는 채로 `register()` 를 부르면 네이티브가 죽는다(2026-09-08 실기기에서 확인) |
+| `deploy/firebase-adminsdk.json` | 서버 발송용 서비스 계정 키. 서버의 `/opt/hubfamily/deploy/` 에도 같은 이름으로 두고 `.env` 의 `FCM_CREDENTIALS_PATH=/run/secrets/firebase-adminsdk.json` |
 
 ## 빌드 · 실행
 

@@ -853,7 +853,7 @@ MVP 는 결제를 붙이지 않는다. 15일 체험 상태만 `subscriptions` �
 
 ~~1. HTTPS 인증서~~ → 2026-09-09 완료. 실도메인 **https://hubfamily.co.kr** (Sectigo DV, 2027-03-25 만료). 앱 번들의 API 주소도 이 도메인으로 고정
 2. 스토어 결제 정책 확정 — M6 전까지 (12.3)
-3. **Firebase 프로젝트 생성 + `google-services.json`** — M3 착수 전까지 (8.5.9)
+~~3. Firebase 프로젝트 생성 + `google-services.json`~~ → 2026-09-09 완료. 프로젝트 `hubfamily-b1353`. 앱은 `mobile/android/app/google-services.json`, 서버는 `deploy/firebase-adminsdk.json` (둘 다 git 제외). 실기기로 FCM 푸시 도착 확인
 4. iOS 개발자 계정(연 $99) 등록 시점 — APNs 인증키(`.p8`)가 여기서 나온다
 5. 디자인 산출물 수급 — 시안 변경 예정 (2026-09-08)
 ~~6. Android SDK 환경 구성~~ → 2026-09-08 완료. `mobile/android/` 생성, 디버그 APK 빌드 확인. 절차는 `mobile/README.md`. **주의: Capacitor 8 은 Java 21** — Android Studio 동봉 JBR 로 빌드한다
