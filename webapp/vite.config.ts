@@ -12,8 +12,8 @@ const proxy = {
 };
 
 // 앱 빌드(--mode app)에서만 API 절대 주소를 박는다. 앱 오리진은 https://localhost 라
-// 상대 경로가 서버를 못 찾는다. HTTPS 가 붙으면 기본값을 https 로 바꾼다.
-const APP_API_BASE = process.env.VITE_API_BASE_URL ?? "http://hubfamily.mangotree.co.kr";
+// 상대 경로가 서버를 못 찾는다. 실도메인 + HTTPS (2026-09-09).
+const APP_API_BASE = process.env.VITE_API_BASE_URL ?? "https://hubfamily.co.kr";
 
 // 푸시는 google-services.json 이 있을 때만 켠다. 없는 채로 register() 를 부르면
 // 네이티브에서 "Default FirebaseApp is not initialized" 로 앱이 죽는다 — JS 로는 못 막는다.

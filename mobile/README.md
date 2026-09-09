@@ -39,18 +39,16 @@ cd mobile\android
 
 앱 안의 오리진은 `https://localhost` 라 상대 경로가 서버를 못 찾는다.
 `npm run build:app` 이 `VITE_API_BASE_URL` 을 번들에 박는다 — 기본값은 `webapp/vite.config.ts` 의
-`http://hubfamily.mangotree.co.kr`. 다른 서버로 붙이려면:
+`https://hubfamily.co.kr` (실도메인 · HTTPS, 2026-09-09). 다른 서버로 붙이려면:
 
 ```powershell
 $env:VITE_API_BASE_URL = "https://…"; npm run cap:sync
 ```
 
-## HTTPS 전환 시 되돌릴 것
+## HTTPS
 
-지금은 서버가 HTTP 라 평문 통신을 열어 두었다. 인증서가 붙으면:
-
-- `webapp/capacitor.config.ts` — `server.cleartext: true`, `android.allowMixedContent: true` 제거
-- `webapp/vite.config.ts` — 기본 주소를 `https://` 로
+서버가 HTTPS 라 평문 허용(`cleartext`, `allowMixedContent`)은 두지 않는다. 안드로이드는 HTTP 를 기본 차단하므로
+로컬 HTTP 서버에 붙여 테스트하려면 그때만 `capacitor.config.ts` 에 `server.cleartext: true` 를 잠시 넣는다.
 
 ## 아이콘 · 스플래시
 

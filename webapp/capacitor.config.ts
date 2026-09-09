@@ -13,8 +13,6 @@ const config: CapacitorConfig = {
 
   android: {
     path: "../mobile/android",
-    // HTTPS 가 붙기 전까지만. 인증서가 나오면 false 로 되돌린다 (계획서 15장 1번)
-    allowMixedContent: true,
   },
   ios: {
     path: "../mobile/ios",
@@ -22,9 +20,8 @@ const config: CapacitorConfig = {
 
   server: {
     // 앱 안의 오리진. API 는 VITE_API_BASE_URL 로 절대 주소를 쓴다 (shared/api.ts)
+    // 서버가 https://hubfamily.co.kr 이라 평문 허용은 두지 않는다
     androidScheme: "https",
-    // HTTP 서버에 붙는 동안만 평문 허용. HTTPS 전환 후 제거
-    cleartext: true,
   },
 
   plugins: {
