@@ -309,7 +309,7 @@ export default function MedManage() {
 
             <Cheer>
               잊지 않으셔도 돼요.
-              <b>MEDIC이 함께 기억할게요.</b>
+              <b>함께 기억할게요.</b>
             </Cheer>
           </>
         )}

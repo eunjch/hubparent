@@ -56,7 +56,6 @@ export default function GuardianLogin() {
       <main className="screen-body">
         <div className="brand-inline" aria-hidden="true">
           <Art name="logo" />
-          MEDIC
         </div>
 
         <div className="hero" style={{ padding: "8px 0 4px" }}>

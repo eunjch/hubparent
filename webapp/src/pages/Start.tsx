@@ -1,6 +1,6 @@
 /** S0 시작 화면 — 역할 선택 (리디자인 00_start).
  *
- *  문구 → 심볼 + MEDIC + 한 줄 소개 → 헤드라인 → 자녀예요 / 부모예요 카드 → 로그인 링크 →
+ *  문구 → 심볼 + 한 줄 소개 → 헤드라인 → 자녀예요 / 부모예요 카드 → 로그인 링크 →
  *  하단 "Care Connects Better Days".
  *  부모와 자녀가 같은 번들을 쓴다(계획서 3장). 첫 화면에서 갈라진다.
  */
@@ -24,7 +24,6 @@ export default function Start() {
 
         <div className="start-hero">
           <Art name="logo" className="start-logo" />
-          <h1 className="start-brand">MEDIC</h1>
           <p className="start-sub">
             가족의 건강을 이어주는
             <br />

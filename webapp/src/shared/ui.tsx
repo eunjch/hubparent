@@ -60,7 +60,6 @@ export function BrandBar({
     <div className="brandbar">
       <span className="logo">
         <Icon name="logo" />
-        MEDIC
       </span>
       {onBell && (
         <button
