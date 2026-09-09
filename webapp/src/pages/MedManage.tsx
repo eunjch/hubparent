@@ -40,6 +40,7 @@ export default function MedManage() {
   const [doses, setDoses] = useState<Dose[] | null>(null);
   const [error, setError] = useState("");
 
+  const [editing, setEditing] = useState<Medication | null>(null);
   const [name, setName] = useState("");
   const [dose, setDose] = useState("");
   const [times, setTimes] = useState<string[]>([]);
@@ -106,10 +107,23 @@ export default function MedManage() {
   }
 
   function resetForm() {
+    setEditing(null);
     setName("");
     setDose("");
     setTimes([]);
     setCustomTime("");
+  }
+
+  /** 등록된 약을 폼에 채워 설정 탭으로 */
+  function startEdit(med: Medication) {
+    setEditing(med);
+    setName(med.name);
+    setDose(med.dose ?? "");
+    setTimes([...med.times]);
+    setCustomTime("");
+    setError("");
+    setTab("settings");
+    window.scrollTo({ top: 0 });
   }
 
   async function save() {
@@ -117,12 +131,16 @@ export default function MedManage() {
     setBusy(true);
     setError("");
     try {
-      await request<Medication>("/medications", {
-        method: "POST",
-        body: { user_id: seniorId, name: name.trim(), dose: dose.trim() || null, times },
-      });
+      const body = { name: name.trim(), dose: dose.trim() || null, times };
+      if (editing) {
+        const saved = await request<Medication>(`/medications/${editing.id}`, { method: "PATCH", body });
+        // 목록을 다시 읽지 않고 그 자리만 바꾼다 — 깜빡임 방지
+        setMeds((prev) => (prev ?? []).map((m) => (m.id === saved.id ? saved : m)));
+      } else {
+        await request<Medication>("/medications", { method: "POST", body: { user_id: seniorId, ...body } });
+        await load();
+      }
       resetForm();
-      await load();
       setTab("list");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "저장하지 못했습니다.");
@@ -170,7 +188,14 @@ export default function MedManage() {
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/g/home")} aria-label="뒤로 가기"><Glyph name="back" size={26} /></button>
         <h1>약 복용 관리</h1>
-        <button className="icon-btn" onClick={() => setTab("settings")} aria-label="약 추가"><Glyph name="plus" size={26} /></button>
+        <button
+          className="icon-btn"
+          onClick={() => {
+            resetForm();
+            setTab("settings");
+          }}
+          aria-label="약 추가"
+        ><Glyph name="plus" size={26} /></button>
       </header>
 
       <main className="screen-body">
@@ -229,6 +254,11 @@ export default function MedManage() {
                         </span>
                       </span>
                       {med && (
+                        <button className="edit-ic" onClick={() => startEdit(med)} aria-label={`${med.name} 수정`}>
+                          <Glyph name="pencil" size={20} />
+                        </button>
+                      )}
+                      {med && (
                         <button
                           className={`switch${med.is_active ? " on" : ""}`}
                           role="switch"
@@ -256,6 +286,9 @@ export default function MedManage() {
                       <span className="nm">{m.name}</span>
                       <span className="meta">{m.times.join(" · ")}</span>
                     </span>
+                    <button className="edit-ic" onClick={() => startEdit(m)} aria-label={`${m.name} 수정`}>
+                      <Glyph name="pencil" size={20} />
+                    </button>
                     <button
                       className="switch"
                       role="switch"
@@ -281,7 +314,11 @@ export default function MedManage() {
           <section className="form-card">
             <h2>
               <span className="tagcolor me" aria-hidden="true" />
-              {current ? `${current.name} ${current.relation ?? ""} 약 추가` : "약 추가"}
+              {editing
+                ? `${editing.name} 수정`
+                : current
+                  ? `${current.name} ${current.relation ?? ""} 약 추가`
+                  : "약 추가"}
             </h2>
 
             <Field label="약 이름" value={name} onChange={setName} placeholder="혈압약" autoFocus />
@@ -321,8 +358,18 @@ export default function MedManage() {
             </div>
 
             <BigButton tone="primary" onClick={save} disabled={!canSave}>
-              {busy ? "저장하는 중…" : "저장"}
+              {busy ? "저장하는 중…" : editing ? "수정 저장" : "저장"}
             </BigButton>
+            {editing && (
+              <BigButton
+                onClick={() => {
+                  resetForm();
+                  setTab("list");
+                }}
+              >
+                취소
+              </BigButton>
+            )}
           </section>
         )}
       </main>
