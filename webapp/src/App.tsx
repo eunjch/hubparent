@@ -10,7 +10,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
-import { afterLogin, bindBackButton, bindNavigator, isNativeApp, onResume, syncLocalNotifications } from "./native/bridge";
+import { afterLogin, bindBackButton, bindNavigator, isNativeApp, onResume } from "./native/bridge";
 import { request } from "./shared/api";
 import { clearTokens, hasSession, refreshSession } from "./shared/auth";
 import type { Me } from "./shared/types";
@@ -55,7 +55,7 @@ function Landing() {
       try {
         const me = await request<Me>("/me");
         if (alive) setBoot({ state: "signed-in", me });
-        // 앱을 다시 열 때마다 푸시 토큰과 로컬 알림 예약을 맞춘다 (계획서 8.5.4)
+        // 앱을 다시 열 때마다 푸시 토큰을 맞춘다
         void afterLogin(me.user.role);
       } catch {
         // access 가 만료됐을 수 있다. refresh 로 한 번 더 시도한다.
@@ -102,7 +102,6 @@ function NativeBoot() {
     const offResume = onResume(() => {
       if (!hasSession()) return;
       void request("/heartbeat", { method: "POST" }).catch(() => undefined);
-      void syncLocalNotifications().catch(() => undefined);
     });
     return () => {
       offBack();

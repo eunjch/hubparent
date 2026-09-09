@@ -38,6 +38,8 @@ cd mobile\android
 
 ## API 주소
 
+알림은 서버 푸시(FCM) 하나다. 로컬 알람은 같은 약이 두 번 울려 2026-09-09 에 뺐다 — `webapp/src/native/bridge.ts` 의 `clearLocalAlarms` 가 옛 예약을 지운다.
+
 앱 안의 오리진은 `https://localhost` 라 상대 경로가 서버를 못 찾는다.
 `npm run build:app` 이 `VITE_API_BASE_URL` 을 번들에 박는다 — 기본값은 `webapp/vite.config.ts` 의
 `https://hubfamily.co.kr` (실도메인 · HTTPS, 2026-09-09). 다른 서버로 붙이려면:

@@ -3,8 +3,7 @@
  *  플러그인 호출을 여기 한 곳에 모아 둔다. 웹(브라우저)에서는 안전한 기본값을 돌려주고,
  *  앱에서만 실제 플러그인을 쓴다. 화면 코드는 앱인지 웹인지 몰라도 된다.
  *
- *  알림 원칙 (계획서 8.5): 푸시가 주, 로컬은 통신이 끊겼을 때의 보험.
- *  둘 다 건다. 중복 방지 장치는 두지 않는다.
+ *  알림은 서버 푸시 하나다 (2026-09-09 결정). 로컬 알람은 두 번 울리는 문제로 뺐다.
  */
 
 import { App } from "@capacitor/app";
@@ -16,7 +15,7 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { request } from "../shared/api";
 import type { Role } from "../shared/types";
 
-import { AlarmChannel, channelIdFor } from "./alarm-channel";
+import { AlarmChannel } from "./alarm-channel";
 
 export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
@@ -109,83 +108,18 @@ export async function registerPush(): Promise<string | null> {
   });
 }
 
-/* ── 로컬 알림 (계획서 8.5.4 · 8.5.5) ───────────────────────
- *  서버가 2주치 계획과 int ID 를 준다. 받은 대로 예약하고 결과를 보고한다. */
-
-interface PlanItem {
-  local_id: number;
-  at: string;
-  title: string;
-  body: string;
-  channel: string;
-  route: string;
-}
-
-interface Plan {
-  items: PlanItem[];
-  revoked_ids: number[];
-}
-
-let localListenerBound = false;
-
-export async function syncLocalNotifications(): Promise<number> {
-  if (!isNativeApp()) return 0;
-
-  let perm = await LocalNotifications.checkPermissions();
-  if (perm.display === "prompt" || perm.display === "prompt-with-rationale") {
-    perm = await LocalNotifications.requestPermissions();
+/* ── 로컬 알람은 쓰지 않는다 (2026-09-09 결정) ─────────────────
+ *  같은 약이 로컬·푸시로 두 번 울리는 문제로 서버 푸시 하나로 통일했다.
+ *  예전 버전이 폰에 걸어 둔 알람이 남아 있을 수 있어 로그인 때 전부 지운다. */
+async function clearLocalAlarms(): Promise<void> {
+  try {
+    const pending = await LocalNotifications.getPending();
+    if (pending.notifications.length > 0) {
+      await LocalNotifications.cancel({ notifications: pending.notifications.map((n) => ({ id: n.id })) });
+    }
+  } catch {
+    /* 권한이 없거나 플러그인이 없는 환경 — 지울 것도 없다 */
   }
-  if (perm.display !== "granted") return 0;
-
-  await ensureChannels();
-
-  const plan = await request<Plan>("/notifications/plan?days=14");
-  const now = new Date().toISOString();
-  const events: { local_id: number; event: "scheduled" | "canceled"; at: string }[] = [];
-
-  // 취소분 + 이미 걸려 있는 것 전부 지우고 다시 건다 — 상태를 맞추는 가장 단순한 길
-  const pending = await LocalNotifications.getPending();
-  const toCancel = [
-    ...pending.notifications.map((n) => ({ id: n.id })),
-    ...plan.revoked_ids.map((id) => ({ id })),
-  ];
-  if (toCancel.length > 0) {
-    await LocalNotifications.cancel({ notifications: toCancel });
-    for (const id of plan.revoked_ids) events.push({ local_id: id, event: "canceled", at: now });
-  }
-
-  const future = plan.items.filter((it) => new Date(it.at).getTime() > Date.now());
-  if (future.length > 0) {
-    await LocalNotifications.schedule({
-      notifications: future.map((it) => ({
-        id: it.local_id,
-        title: it.title,
-        body: it.body,
-        channelId: channelIdFor(it.channel),
-        // Doze 상태에서도 정각에 울린다 (8.5.4)
-        schedule: { at: new Date(it.at), allowWhileIdle: true },
-        extra: { route: it.route },
-      })),
-    });
-    for (const it of future) events.push({ local_id: it.local_id, event: "scheduled", at: now });
-  }
-
-  if (!localListenerBound) {
-    localListenerBound = true;
-    void LocalNotifications.addListener("localNotificationActionPerformed", ({ notification }) => {
-      void request("/notifications/report", {
-        method: "POST",
-        body: { events: [{ local_id: notification.id, event: "fired", at: new Date().toISOString() }] },
-      }).catch(() => undefined);
-      const route = (notification.extra as { route?: string } | undefined)?.route;
-      if (route) navigateTo(route);
-    });
-  }
-
-  if (events.length > 0) {
-    await request("/notifications/report", { method: "POST", body: { events } }).catch(() => undefined);
-  }
-  return future.length;
 }
 
 /* ── 앱 생명주기 ────────────────────────────────────────────── */
@@ -202,7 +136,7 @@ function navigateTo(route: string): void {
   else window.location.href = route;
 }
 
-/** 앱이 다시 앞으로 올 때마다 (하트비트 + 로컬 알림 재동기화). */
+/** 앱이 다시 앞으로 올 때마다 (하트비트). */
 export function onResume(fn: () => void): () => void {
   if (!isNativeApp()) return () => undefined;
   const handle = App.addListener("appStateChange", ({ isActive }) => {
@@ -225,13 +159,10 @@ export function bindBackButton(canGoBack: () => boolean, goBack: () => void): ()
   };
 }
 
-/** 로그인 직후 한 번. 푸시 등록 → 어르신이면 로컬 알림 2주치 예약. */
-export async function afterLogin(role: Role): Promise<void> {
+/** 로그인 직후 한 번. 푸시 토큰 등록 + 옛 로컬 알람 정리. */
+export async function afterLogin(_role: Role): Promise<void> {
   if (!isNativeApp()) return;
-  // 로컬 예약이 먼저다 — Firebase 가 없어도 이건 되어야 한다 (계획서 8.5: 로컬은 보험)
-  if (role === "senior") {
-    await syncLocalNotifications().catch(() => undefined);
-  }
+  await clearLocalAlarms();
   await registerPush().catch(() => undefined);
 }
 

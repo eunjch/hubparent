@@ -4,8 +4,8 @@ api 와 별도 컨테이너로 뜬다 (deploy/docker-compose.yml 의 worker 서�
 실행:  python -m app.workers.scheduler
 
 작업
-  복약 알림       5분 주기   L0/L1/L2 푸시 (services.medication_reminder)
-  일정 알림       5분 주기   사전 알림 시각이 된 일정을 푸시
+  복약 알림       1분 주기   정각 푸시 (재알림 L1/L2 는 MED_ESCALATION 로 보류)
+  일정 알림       1분 주기   사전 알림 시각이 된 일정을 푸시
   이상 징후       15분 주기  감지 후 보호자 푸시 (services.alert_engine)
   일일 리포트     21:00 KST  집계 + 보호자 요약 푸시
   복약 마감       00:10 KST  전날 미응답 건 missed 확정 (L3)
@@ -35,7 +35,8 @@ logging.basicConfig(
 log = logging.getLogger("hubfamily.worker")
 
 KST = ZoneInfo(settings.APP_TIMEZONE)
-REMIND_INTERVAL_MINUTES = 5
+# 알림은 서버 푸시 하나뿐이라(로컬 알람 없음) 정각에 가깝게 1분 주기
+REMIND_INTERVAL_MINUTES = 1
 
 # 방해 금지 — 하루 요약 같은 일반 알림은 이 시간을 피한다 (계획서 8.5.10)
 QUIET_START, QUIET_END = 22, 7
@@ -73,9 +74,6 @@ async def remind_schedules() -> None:
             for minutes in sch.reminder_minutes or []:
                 fire_at = start - timedelta(minutes=minutes)
                 if fire_at <= now < fire_at + window:
-                    # 단말이 이 시각 알람을 걸어 뒀으면 그쪽이 울린다
-                    if await notification_plan.device_has_alarm(session, sch.target_user_id, "schedule", sch.id, fire_at):
-                        continue
                     await push.send(
                         session,
                         sch.target_user_id,

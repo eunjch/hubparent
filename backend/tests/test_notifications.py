@@ -192,6 +192,29 @@ async def test_answer_stops_escalation(client, session, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_changed_time_pushes_at_new_time(client, session):
+    """복용 시각을 바꾸면 옛 시각엔 안 가고 새 시각에 간다 (worker 가 매 분 현재 규칙을 다시 읽는다)."""
+    gt, _st, senior_id = await _family(client)
+    med = await _add_med(client, gt, senior_id, times=["08:00"])
+    today = med_service.today_kst()
+    old_at = med_service.to_utc(today, "08:00")
+    new_at = med_service.to_utc(today, "09:30")
+
+    res = await client.patch(
+        f"/api/v1/medications/{med['id']}",
+        headers={"Authorization": f"Bearer {gt}"},
+        json={"times": ["09:30"]},
+    )
+    assert res.status_code == 200, res.text
+
+    assert await medication_reminder.remind(session, now=old_at + timedelta(minutes=1)) == 0
+    assert await medication_reminder.remind(session, now=new_at + timedelta(seconds=30)) == 1
+    pushed = list(await session.scalars(select(NotificationLog).where(NotificationLog.kind == "push")))
+    assert len(pushed) == 1
+    assert new_at.isoformat() in pushed[0].dedupe_key
+
+
+@pytest.mark.asyncio
 async def test_schedule_notify_sends_push(client, session):
     gt, _st, senior_id = await _family(client)
     start = datetime.now(UTC) + timedelta(days=1)
@@ -269,54 +292,3 @@ async def test_dedupe_key_fits_column():
     assert len(fit_key(huge)) <= DEDUPE_MAX
     assert fit_key(huge) == fit_key(huge)
     assert fit_key(key) == key
-
-
-@pytest.mark.asyncio
-async def test_no_push_at_dose_time_when_device_has_local_alarm(client, session):
-    """단말이 로컬 알람을 걸어 뒀다고 보고하면 정각 푸시는 건너뛴다. 보고가 없으면 보낸다."""
-    import uuid as _uuid
-
-    from app.services.notification_plan import device_has_alarm
-
-    gt, st, senior_id = await _family(client)
-    med = await _add_med(client, gt, senior_id, times=["08:00"])
-    # 오늘 08:00 은 지났을 수 있으니 내일 건으로
-    day = med_service.today_kst() + timedelta(days=1)
-    at = med_service.to_utc(day, "08:00")
-
-    # 보고 전: 푸시가 간다
-    assert await medication_reminder.remind(session, now=at + timedelta(minutes=1)) == 1
-
-    # 다른 약 하나 더 — 단말이 이 건은 알람을 걸었다고 보고
-    med2 = await _add_med(client, gt, senior_id, name="영양제", times=["09:00"])
-    at2 = med_service.to_utc(day, "09:00")
-    plan = await _plan(client, st)
-    mine = [i for i in plan["items"] if i["body"].startswith("영양제") and i["at"].startswith(day.isoformat()[:10]) or False]
-    mine = [i for i in plan["items"] if i["body"].startswith("영양제")]
-    assert mine
-    local_id = min(mine, key=lambda i: i["at"])["local_id"]
-    res = await client.post(
-        "/api/v1/notifications/report",
-        headers={"Authorization": f"Bearer {st}"},
-        json={"events": [{"local_id": local_id, "event": "scheduled", "at": datetime.now(UTC).isoformat()}]},
-    )
-    assert res.status_code == 200
-    assert await device_has_alarm(session, _uuid.UUID(senior_id), "medication", _uuid.UUID(med2["id"]), at2)
-
-    # 정각: 푸시 0건, 이력에는 skipped
-    assert await medication_reminder.remind(session, now=at2 + timedelta(minutes=1)) == 0
-    logs = list(await session.scalars(select(NotificationLog).where(NotificationLog.kind == "push")))
-    assert ("skipped", "단말에 로컬 알람 있음") in [(lg.event, lg.detail) for lg in logs]
-
-    # 재알림은 보류(기본 꺼짐) — +30분에도 아무것도 안 간다
-    assert await medication_reminder.remind(session, now=at2 + timedelta(minutes=31)) == 0
-
-    # 단말이 취소했다고 보고하면 다시 푸시 대상
-    res = await client.post(
-        "/api/v1/notifications/report",
-        headers={"Authorization": f"Bearer {st}"},
-        json={"events": [{"local_id": local_id, "event": "canceled", "at": datetime.now(UTC).isoformat()}]},
-    )
-    assert res.status_code == 200
-    assert not await device_has_alarm(session, _uuid.UUID(senior_id), "medication", _uuid.UUID(med2["id"]), at2)
-    assert med["id"] != med2["id"]
