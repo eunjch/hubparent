@@ -2027,3 +2027,8 @@ body {
 .screen-body {
   overflow-x: clip;
 }
+
+/* 탭바는 불투명하게 — 비치면 아래 글자가 겹쳐 보인다 (실기기 확인) */
+.tabbar {
+  background: #ffffff;
+}
