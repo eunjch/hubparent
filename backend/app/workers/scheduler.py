@@ -73,6 +73,9 @@ async def remind_schedules() -> None:
             for minutes in sch.reminder_minutes or []:
                 fire_at = start - timedelta(minutes=minutes)
                 if fire_at <= now < fire_at + window:
+                    # 단말이 이 시각 알람을 걸어 뒀으면 그쪽이 울린다
+                    if await notification_plan.device_has_alarm(session, sch.target_user_id, "schedule", sch.id, fire_at):
+                        continue
                     await push.send(
                         session,
                         sch.target_user_id,

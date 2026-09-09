@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     # 알림 임계값 — 계획서 8장
     MED_REMIND_L1_MINUTES: int = 30
     MED_REMIND_L2_MINUTES: int = 120
+    # 재알림(L1·L2) 푸시. 2026-09-09 보류 — 정각 알람 하나만 울린다. 켜려면 .env 에 true
+    MED_ESCALATION: bool = False
     NO_RESPONSE_HOURS: int = 24
     ALERT_SCAN_INTERVAL_MINUTES: int = 15
     DAILY_REPORT_HOUR: int = 21

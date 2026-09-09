@@ -20,8 +20,9 @@ from app.models.care import MedicationLog
 from app.models.enums import AlertSeverity, AlertType, MedicationStatus, UserRole
 from app.models.monitor import Alert
 from app.models.user import FamilyMember
+from app.models.notify import NotificationLog
 from app.services import medication as med_service
-from app.services import push
+from app.services import notification_plan, push
 
 TITLE = {
     0: "약 드실 시간이에요",
@@ -61,6 +62,9 @@ async def remind(session: AsyncSession, now: datetime | None = None) -> int:
             due = _level_due(occ.scheduled_at, now)
             if due is None:
                 continue
+            # 재알림 보류 — 정각(L0)만 다룬다
+            if due > 0 and not settings.MED_ESCALATION:
+                continue
 
             log = await session.scalar(
                 select(MedicationLog).where(
@@ -87,6 +91,27 @@ async def remind(session: AsyncSession, now: datetime | None = None) -> int:
 
             med = occ.medication
             body = f"{med.name} {med.dose}" if med.dose else med.name
+
+            # 정각(L0)은 단말 알람이 있으면 그쪽이 울린다 — 푸시까지 보내면 두 번 울린다.
+            # 재알림(L1·L2)은 단말에 없으므로 늘 푸시다.
+            if due == 0 and await notification_plan.device_has_alarm(
+                session, user_id, "medication", med.id, occ.scheduled_at
+            ):
+                session.add(
+                    NotificationLog(
+                        user_id=user_id,
+                        kind="push",
+                        event="skipped",
+                        channel="medication",
+                        title=TITLE[0],
+                        dedupe_key=f"med:{med.id}:{occ.scheduled_at.isoformat()}:L0",
+                        at=now,
+                        detail="단말에 로컬 알람 있음",
+                    )
+                )
+                log.reminder_level = 0
+                continue
+
             await push.send(
                 session,
                 user_id,

@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.timeutil import as_utc
 from app.models.care import Schedule
-from app.models.notify import LocalNotification
+from app.models.notify import LocalNotification, NotificationLog
 from app.services import medication as med_service
 
 MAX_ITEMS = 60
@@ -99,6 +99,39 @@ async def desired(session: AsyncSession, user_id: uuid.UUID, days: int) -> list[
                 )
 
     return sorted(found, key=lambda p: p.fire_at)
+
+
+async def device_has_alarm(
+    session: AsyncSession, user_id: uuid.UUID, source: str, source_id: uuid.UUID, fire_at: datetime
+) -> bool:
+    """단말이 이 건의 로컬 알람을 걸어 뒀다고 보고했는가.
+
+    걸려 있으면 정각 푸시는 보내지 않는다 — 같은 약이 두 번 울리던 것을 막는다.
+    단말의 마지막 보고가 scheduled 이면 걸려 있는 것이고, canceled 가 뒤에 오면 없는 것이다.
+    보고가 아예 없으면(앱을 안 열었다) 없는 것으로 보고 푸시를 보낸다.
+    """
+    row = await session.scalar(
+        select(LocalNotification).where(
+            LocalNotification.user_id == user_id,
+            LocalNotification.source == source,
+            LocalNotification.source_id == source_id,
+            LocalNotification.fire_at == fire_at,
+            LocalNotification.revoked.is_(False),
+        )
+    )
+    if row is None:
+        return False
+    last = await session.scalar(
+        select(NotificationLog.event)
+        .where(
+            NotificationLog.kind == "local",
+            NotificationLog.local_id == row.id,
+            NotificationLog.event.in_(["scheduled", "canceled"]),
+        )
+        .order_by(NotificationLog.at.desc())
+        .limit(1)
+    )
+    return last == "scheduled"
 
 
 async def sync(

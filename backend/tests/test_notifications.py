@@ -118,8 +118,11 @@ async def test_device_report_is_logged(client, session):
 
 
 @pytest.mark.asyncio
-async def test_medication_escalation(client, session):
-    """L0 → L1(+30분) → L2(+2시간, 보호자) → L3(마감, missed)."""
+async def test_medication_escalation(client, session, monkeypatch):
+    """L0 → L1(+30분) → L2(+2시간, 보호자) → L3(마감, missed). 재알림은 플래그를 켜야 돈다."""
+    from app.core.config import settings as _settings
+
+    monkeypatch.setattr(_settings, "MED_ESCALATION", True)
     gt, st, senior_id = await _family(client)
     await _add_med(client, gt, senior_id, times=["08:00"])
     today = med_service.today_kst()
@@ -166,7 +169,10 @@ async def test_medication_escalation(client, session):
 
 
 @pytest.mark.asyncio
-async def test_answer_stops_escalation(client, session):
+async def test_answer_stops_escalation(client, session, monkeypatch):
+    from app.core.config import settings as _settings
+
+    monkeypatch.setattr(_settings, "MED_ESCALATION", True)
     gt, st, senior_id = await _family(client)
     await _add_med(client, gt, senior_id, times=["08:00"])
     today = med_service.today_kst()
@@ -263,3 +269,54 @@ async def test_dedupe_key_fits_column():
     assert len(fit_key(huge)) <= DEDUPE_MAX
     assert fit_key(huge) == fit_key(huge)
     assert fit_key(key) == key
+
+
+@pytest.mark.asyncio
+async def test_no_push_at_dose_time_when_device_has_local_alarm(client, session):
+    """단말이 로컬 알람을 걸어 뒀다고 보고하면 정각 푸시는 건너뛴다. 보고가 없으면 보낸다."""
+    import uuid as _uuid
+
+    from app.services.notification_plan import device_has_alarm
+
+    gt, st, senior_id = await _family(client)
+    med = await _add_med(client, gt, senior_id, times=["08:00"])
+    # 오늘 08:00 은 지났을 수 있으니 내일 건으로
+    day = med_service.today_kst() + timedelta(days=1)
+    at = med_service.to_utc(day, "08:00")
+
+    # 보고 전: 푸시가 간다
+    assert await medication_reminder.remind(session, now=at + timedelta(minutes=1)) == 1
+
+    # 다른 약 하나 더 — 단말이 이 건은 알람을 걸었다고 보고
+    med2 = await _add_med(client, gt, senior_id, name="영양제", times=["09:00"])
+    at2 = med_service.to_utc(day, "09:00")
+    plan = await _plan(client, st)
+    mine = [i for i in plan["items"] if i["body"].startswith("영양제") and i["at"].startswith(day.isoformat()[:10]) or False]
+    mine = [i for i in plan["items"] if i["body"].startswith("영양제")]
+    assert mine
+    local_id = min(mine, key=lambda i: i["at"])["local_id"]
+    res = await client.post(
+        "/api/v1/notifications/report",
+        headers={"Authorization": f"Bearer {st}"},
+        json={"events": [{"local_id": local_id, "event": "scheduled", "at": datetime.now(UTC).isoformat()}]},
+    )
+    assert res.status_code == 200
+    assert await device_has_alarm(session, _uuid.UUID(senior_id), "medication", _uuid.UUID(med2["id"]), at2)
+
+    # 정각: 푸시 0건, 이력에는 skipped
+    assert await medication_reminder.remind(session, now=at2 + timedelta(minutes=1)) == 0
+    logs = list(await session.scalars(select(NotificationLog).where(NotificationLog.kind == "push")))
+    assert ("skipped", "단말에 로컬 알람 있음") in [(lg.event, lg.detail) for lg in logs]
+
+    # 재알림은 보류(기본 꺼짐) — +30분에도 아무것도 안 간다
+    assert await medication_reminder.remind(session, now=at2 + timedelta(minutes=31)) == 0
+
+    # 단말이 취소했다고 보고하면 다시 푸시 대상
+    res = await client.post(
+        "/api/v1/notifications/report",
+        headers={"Authorization": f"Bearer {st}"},
+        json={"events": [{"local_id": local_id, "event": "canceled", "at": datetime.now(UTC).isoformat()}]},
+    )
+    assert res.status_code == 200
+    assert not await device_has_alarm(session, _uuid.UUID(senior_id), "medication", _uuid.UUID(med2["id"]), at2)
+    assert med["id"] != med2["id"]
