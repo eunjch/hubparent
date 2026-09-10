@@ -40,8 +40,10 @@ services:
       - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
     volumes:
       - uploads:/data/uploads
-      # Firebase 서비스 계정 키. deploy/ 에 두고 git 에는 올리지 않는다 (.gitignore)
+      # 푸시 키. deploy/ 에 두고 git 에는 올리지 않는다 (.gitignore)
+      # 안드로이드=Firebase 서비스 계정, iOS=애플 .p8. 없으면 deploy.sh 가 빈 자리를 만든다
       - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
+      - ./apns-key.p8:/run/secrets/apns-key.p8:ro
     depends_on:
       db:
         condition: service_healthy
@@ -58,6 +60,7 @@ services:
     volumes:
       - uploads:/data/uploads
       - ./firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
+      - ./apns-key.p8:/run/secrets/apns-key.p8:ro
     depends_on:
       db:
         condition: service_healthy

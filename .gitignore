@@ -9,6 +9,7 @@
 google-services.json
 GoogleService-Info.plist
 firebase-adminsdk*.json
+*.p8
 
 # ── Python ────────────────────────────────────────────
 __pycache__/

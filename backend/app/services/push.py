@@ -5,6 +5,10 @@ FCM(firebase-admin)으로 보낸다. 자격증명(FCM_CREDENTIALS_PATH)이 없�
 
 payload 는 알림(title/body) + 데이터(route/channel) 다. 앱은 data.route 로 화면을 연다 (8.5.9).
 안드로이드 채널 ID 는 앱이 만든 4개와 같아야 한다 (8.5.7): medication · anomaly · schedule · report.
+
+플랫폼마다 "알람처럼 울리게" 하는 방법이 다르다.
+  안드로이드  채널이 소리를 정한다 → 복약은 medication_alarm (USAGE_ALARM · 30초)
+  iOS         채널이 없다 → 알림마다 소리 파일과 interruption-level 을 직접 얹는다
 """
 
 import hashlib
@@ -17,9 +21,10 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models.enums import UserRole
+from app.models.enums import DevicePlatform, UserRole
 from app.models.notify import NotificationLog
 from app.models.user import Device, FamilyMember
+from app.services import apns
 
 log = logging.getLogger("hubfamily.push")
 
@@ -66,7 +71,16 @@ async def _deliver(tokens: list[str], title: str, body: str, channel: str, route
             notification=messaging.AndroidNotification(channel_id=android_channel(channel)),
         ),
         apns=messaging.APNSConfig(
-            payload=messaging.APNSPayload(aps=messaging.Aps(sound="default", badge=1)),
+            # priority 10 = 지금 바로. 약 시간은 미뤄서 받을 이유가 없다
+            headers={"apns-priority": "10", "apns-push-type": "alert"},
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    sound=ios_sound(channel),
+                    badge=1,
+                    # Aps 에 없는 키는 custom_data 로 aps 딕셔너리에 그대로 실린다
+                    custom_data={"interruption-level": ios_interruption_level(channel)},
+                ),
+            ),
         ),
     )
     result = messaging.send_each_for_multicast(message, app=app)
@@ -89,6 +103,25 @@ async def _deliver(tokens: list[str], title: str, body: str, channel: str, route
 def android_channel(channel: str) -> str:
     """서버 채널 이름 → 안드로이드 채널 ID. 앱의 native/alarm-channel.ts 와 같은 규칙."""
     return "medication_alarm" if channel == "medication" else channel
+
+
+# 앱 번들에 든 알람음. 안드로이드용 30초를 29초로 잘라 넣었다 — 애플 제한이 "30초 미만" 이라
+# 딱 30.0 이면 무시되고 기본음이 난다. mobile/ios/App/App/medic_alarm.wav
+IOS_ALARM_SOUND = "medic_alarm.wav"
+
+
+def ios_sound(channel: str) -> str:
+    """복약만 알람음, 나머지는 시스템 기본음."""
+    return IOS_ALARM_SOUND if channel == "medication" else "default"
+
+
+def ios_interruption_level(channel: str) -> str:
+    """알림이 얼마나 세게 끼어드는가.
+
+    time-sensitive 는 집중 모드를 뚫고 잠금화면에 크게 뜬다. 애플 승인이 필요 없는 선이 여기까지다.
+    무음 스위치까지 무시하려면 Critical Alerts 를 따로 신청해야 한다 — 지금은 안 쓴다.
+    """
+    return "time-sensitive" if channel in {"medication", "anomaly"} else "active"
 
 
 DEDUPE_MAX = 200
@@ -131,30 +164,67 @@ async def send(
         assert existing is not None
         return existing
 
-    tokens = list(
-        await session.scalars(
-            select(Device.push_token).where(Device.user_id == user_id, Device.push_token.is_not(None))
+    rows = (
+        await session.execute(
+            select(Device.platform, Device.push_token).where(
+                Device.user_id == user_id, Device.push_token.is_not(None)
+            )
         )
-    )
+    ).all()
+    android = [t for p, t in rows if p != DevicePlatform.IOS]
+    ios = [t for p, t in rows if p == DevicePlatform.IOS]
 
     event = "skipped"
     detail: str | None = None
-    if not tokens:
+    if not rows:
         detail = "등록된 단말 없음"
-    elif not configured():
-        detail = "FCM 미설정"
     else:
-        try:
-            dead = await _deliver(tokens, title, body, channel, route)
+        dead: list[str] = []
+        notes: list[str] = []
+        sent_any = False
+
+        # 안드로이드 — FCM. 채널이 소리를 정한다
+        if android:
+            if configured():
+                try:
+                    dead += await _deliver(android, title, body, channel, route)
+                    sent_any = True
+                except Exception as exc:  # noqa: BLE001 — 발송 실패는 이력으로만 남긴다
+                    notes.append(f"FCM: {exc}")
+                    log.warning("FCM 실패 user=%s: %s", user_id, exc)
+            else:
+                notes.append("FCM 미설정")
+
+        # iOS — 애플에 직접. 소리와 끼어드는 세기를 알림마다 얹는다
+        if ios:
+            if apns.configured():
+                try:
+                    dead += await apns.send(
+                        ios,
+                        title=title,
+                        body=body,
+                        sound=ios_sound(channel),
+                        level=ios_interruption_level(channel),
+                        channel=channel,
+                        route=route,
+                    )
+                    sent_any = True
+                except Exception as exc:  # noqa: BLE001
+                    notes.append(f"APNs: {exc}")
+                    log.warning("APNs 실패 user=%s: %s", user_id, exc)
+            else:
+                notes.append("APNs 미설정")
+
+        if dead:
+            # 지운 앱의 토큰은 버린다. 다음 로그인 때 새 토큰이 올라온다
+            await session.execute(delete(Device).where(Device.push_token.in_(dead)))
+            notes.append(f"만료 토큰 {len(dead)}개 정리")
+
+        if sent_any:
             event = "sent"
-            if dead:
-                # 지운 앱의 토큰은 버린다. 다음 로그인 때 새 토큰이 올라온다
-                await session.execute(delete(Device).where(Device.push_token.in_(dead)))
-                detail = f"만료 토큰 {len(dead)}개 정리"
-        except Exception as exc:  # noqa: BLE001 — 발송 실패는 이력으로만 남긴다
+        elif any(n.startswith(("FCM:", "APNs:")) for n in notes):
             event = "failed"
-            detail = str(exc)[:200]
-            log.warning("푸시 실패 user=%s: %s", user_id, exc)
+        detail = " · ".join(notes)[:200] or None
 
     row = NotificationLog(
         user_id=user_id,

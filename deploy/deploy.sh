@@ -33,6 +33,12 @@ fail() { printf '\033[1;31m실패: %s\033[0m\n' "$1"; exit 1; }
 
 [ -f .env ] || fail ".env 가 없습니다. cp .env.example .env 후 값을 채우세요."
 
+# 없는 파일을 bind mount 하면 도커가 그 자리에 디렉터리를 만들어 버린다.
+# 아직 없는 푸시 키는 빈 파일로 자리만 잡아 둔다 — 서버는 빈 파일을 "미설정" 으로 본다.
+for secret in firebase-adminsdk.json apns-key.p8; do
+  [ -e "$secret" ] || { : > "$secret"; echo "  자리만 만듦: $secret (이 플랫폼 푸시는 이력만 남습니다)"; }
+done
+
 # .env 에서 포트와 호스트를 읽는다
 PORT="$(grep -E '^API_HOST_PORT=' .env | cut -d= -f2 | cut -d'#' -f1 | tr -d ' \r')"
 PORT="${PORT:-8000}"

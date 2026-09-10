@@ -62,8 +62,9 @@ let pushListenersBound = false;
  *  거부하면 null — 화면이 "알림이 꺼져 있어요" 를 보여 줄 수 있다. */
 export async function registerPush(): Promise<string | null> {
   if (!isNativeApp()) return null;
-  // google-services.json 없이 register() 를 부르면 네이티브가 죽는다. 빌드 때 정해진다 (vite.config)
-  if (!import.meta.env.VITE_PUSH_ENABLED) return null;
+  // 안드로이드는 google-services.json 없이 register() 를 부르면 네이티브가 죽는다 (vite.config 에서 정해진다).
+  // iOS 는 Firebase 를 안 타고 애플에 바로 등록하므로 이 확인이 필요 없다 — 서버가 APNs 로 직접 보낸다.
+  if (platform() === "android" && !import.meta.env.VITE_PUSH_ENABLED) return null;
 
   let perm = await PushNotifications.checkPermissions();
   if (perm.receive === "prompt" || perm.receive === "prompt-with-rationale") {

@@ -55,9 +55,13 @@ class Settings(BaseSettings):
     SMS_API_KEY: str = ""
     SMS_SENDER_NUMBER: str = ""
     FCM_CREDENTIALS_PATH: str = ""
+    # iOS 는 FCM 을 거치지 않고 애플에 직접 보낸다 (services/apns.py). 키는 .p8 한 개.
     APNS_KEY_PATH: str = ""
     APNS_KEY_ID: str = ""
     APNS_TEAM_ID: str = ""
+    APNS_TOPIC: str = "kr.co.mangotree.hubfamily"
+    # Xcode 로 폰에 직접 설치한 빌드는 sandbox. TestFlight·App Store 는 production
+    APNS_SANDBOX: bool = False
 
     @property
     def is_prod(self) -> bool:

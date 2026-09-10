@@ -9,14 +9,17 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "build:app": "tsc -b && vite build --mode app",
-    "cap:sync": "npm run build:app && npx cap sync android",
-    "cap:open": "npx cap open android"
+    "cap:sync": "npm run build:app && npx cap sync",
+    "cap:sync:android": "npm run build:app && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
     "@capacitor/app": "^8.1.1",
     "@capacitor/camera": "^8.2.4",
     "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
     "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/push-notifications": "^8.1.2",
     "react": "^19.2.8",

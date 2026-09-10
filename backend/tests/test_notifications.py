@@ -235,17 +235,69 @@ async def test_schedule_notify_sends_push(client, session):
     assert logs[0].title.endswith("일정이 있어요")
 
 
+def test_platform_specific_alarm_payload():
+    """복약만 알람음 + 집중 모드 관통. 안드로이드는 채널로, iOS 는 알림마다 얹어서 같은 결과를 낸다."""
+    from firebase_admin import messaging
+    from firebase_admin._messaging_encoder import MessageEncoder
+
+    from app.services import push
+
+    assert push.android_channel("medication") == "medication_alarm"
+    assert push.android_channel("schedule") == "schedule"
+    assert push.ios_sound("medication") == push.IOS_ALARM_SOUND
+    assert push.ios_sound("report") == "default"
+    assert push.ios_interruption_level("medication") == "time-sensitive"
+    assert push.ios_interruption_level("anomaly") == "time-sensitive"
+    assert push.ios_interruption_level("schedule") == "active"
+
+    # interruption-level 은 aps 딕셔너리 안에 있어야 애플이 읽는다
+    message = messaging.Message(
+        token="t",
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    sound=push.ios_sound("medication"),
+                    custom_data={"interruption-level": push.ios_interruption_level("medication")},
+                )
+            )
+        ),
+    )
+    aps = MessageEncoder().default(message)["apns"]["payload"]["aps"]
+    assert aps["sound"] == "medic_alarm.wav"
+    assert aps["interruption-level"] == "time-sensitive"
+
+
+def test_ios_alarm_sound_is_bundled_and_under_apple_limit():
+    """음원이 Xcode 리소스로 등록돼 있고 30초 미만인지. 둘 중 하나만 틀려도 기본음이 난다."""
+    import wave
+    from pathlib import Path
+
+    from app.services import push
+
+    root = Path(__file__).resolve().parents[2]
+    sound = root / "mobile" / "ios" / "App" / "App" / push.IOS_ALARM_SOUND
+    assert sound.is_file(), f"{sound} 없음"
+
+    with wave.open(str(sound), "rb") as f:
+        seconds = f.getnframes() / f.getframerate()
+    assert seconds < 30, f"{seconds}초 — 애플 제한은 30초 미만"
+
+    project = root / "mobile" / "ios" / "App" / "App.xcodeproj" / "project.pbxproj"
+    pbxproj = project.read_text(encoding="utf-8")
+    assert f"{push.IOS_ALARM_SOUND} in Resources" in pbxproj, "Xcode 리소스로 등록되지 않았다"
+
+
 @pytest.mark.asyncio
-async def test_push_sends_when_configured_and_prunes_dead_tokens(client, session, monkeypatch):
-    """FCM 이 설정되면 _deliver 를 타고, 만료 토큰은 지운다. 실제 FCM 은 부르지 않는다."""
+async def test_push_splits_by_platform_and_prunes_dead_tokens(client, session, monkeypatch):
+    """안드로이드는 FCM, iOS 는 애플로 직접. 양쪽에서 죽은 토큰은 함께 지운다. 실제 발송은 안 한다."""
     from sqlalchemy import select as _select
 
     from app.models.user import Device
-    from app.services import push
+    from app.services import apns, push
 
-    gt, st, senior_id = await _family(client)
-    # 단말 두 개 등록 — 같은 플랫폼이면 토큰이 덮어써지므로(upsert) 플랫폼을 달리한다
-    for tok, platform in (("tok-live", "android"), ("tok-dead", "ios")):
+    _gt, st, senior_id = await _family(client)
+    # 같은 플랫폼이면 토큰이 덮어써지므로(upsert) 플랫폼을 달리한다
+    for tok, platform in (("tok-android", "android"), ("tok-ios", "ios")):
         res = await client.post(
             "/api/v1/devices",
             headers={"Authorization": f"Bearer {st}"},
@@ -253,25 +305,95 @@ async def test_push_sends_when_configured_and_prunes_dead_tokens(client, session
         )
         assert res.status_code == 200, res.text
 
-    calls: list[dict] = []
+    fcm: list[dict] = []
+    apple: list[dict] = []
 
     async def fake_deliver(tokens, title, body, channel, route):
-        calls.append({"tokens": sorted(tokens), "title": title, "channel": channel, "route": route})
-        return ["tok-dead"]
+        fcm.append({"tokens": sorted(tokens), "channel": channel})
+        return []
+
+    async def fake_apns(tokens, *, title, body, sound, level, channel, route):
+        apple.append({"tokens": sorted(tokens), "sound": sound, "level": level, "route": route})
+        return ["tok-ios"]  # 애플이 "이제 없는 토큰" 이라고 답한 셈
 
     monkeypatch.setattr(push, "configured", lambda: True)
     monkeypatch.setattr(push, "_deliver", fake_deliver)
+    monkeypatch.setattr(apns, "configured", lambda: True)
+    monkeypatch.setattr(apns, "send", fake_apns)
 
     import uuid as _uuid
 
     row = await push.send(
-        session, _uuid.UUID(senior_id), title="약 드실 시간이에요", body="혈압약", channel="medication", route="/s/med"
+        session,
+        _uuid.UUID(senior_id),
+        title="약 드실 시간이에요",
+        body="혈압약",
+        channel="medication",
+        route="/s/med",
     )
     assert row.event == "sent"
-    assert calls == [{"tokens": ["tok-dead", "tok-live"], "title": "약 드실 시간이에요", "channel": "medication", "route": "/s/med"}]
+    assert fcm == [{"tokens": ["tok-android"], "channel": "medication"}]
+    assert apple == [
+        {"tokens": ["tok-ios"], "sound": "medic_alarm.wav", "level": "time-sensitive", "route": "/s/med"}
+    ]
 
     left = list(await session.scalars(_select(Device.push_token)))
-    assert left == ["tok-live"]
+    assert left == ["tok-android"]
+
+
+@pytest.mark.asyncio
+async def test_push_logs_when_apns_unconfigured(client, session, monkeypatch):
+    """애플 키가 없으면 iOS 는 못 보낸다. 죽지 말고 이력에 남겨야 나중에 답할 수 있다."""
+    from app.services import apns, push
+
+    _gt, st, senior_id = await _family(client)
+    res = await client.post(
+        "/api/v1/devices",
+        headers={"Authorization": f"Bearer {st}"},
+        json={"platform": "ios", "push_token": "tok-ios", "app_version": "0.1.0"},
+    )
+    assert res.status_code == 200, res.text
+
+    monkeypatch.setattr(apns, "configured", lambda: False)
+
+    import uuid as _uuid
+
+    row = await push.send(
+        session,
+        _uuid.UUID(senior_id),
+        title="약 드실 시간이에요",
+        body="혈압약",
+        channel="medication",
+        route="/s/med",
+    )
+    assert row.event == "skipped"
+    assert row.detail is not None and "APNs 미설정" in row.detail
+
+
+def test_apns_payload_shape():
+    """aps 안은 애플이, 그 옆은 앱이 읽는다. 앱은 data.route 로 화면을 연다."""
+    from app.services import apns
+
+    payload = apns.build_payload(
+        "약 드실 시간이에요", "08:00 혈압약 1정", "medic_alarm.wav", "time-sensitive", "medication", "/s/med"
+    )
+    assert payload["aps"]["alert"] == {"title": "약 드실 시간이에요", "body": "08:00 혈압약 1정"}
+    assert payload["aps"]["sound"] == "medic_alarm.wav"
+    assert payload["aps"]["interruption-level"] == "time-sensitive"
+    assert payload["route"] == "/s/med"
+    assert payload["channel"] == "medication"
+
+
+def test_apns_unconfigured_without_key_file(monkeypatch):
+    from app.core.config import settings as _settings
+    from app.services import apns
+
+    monkeypatch.setattr(_settings, "APNS_KEY_PATH", "")
+    assert apns.configured() is False
+    monkeypatch.setattr(_settings, "APNS_KEY_PATH", "없는파일.p8")
+    monkeypatch.setattr(_settings, "APNS_KEY_ID", "ABC123")
+    monkeypatch.setattr(_settings, "APNS_TEAM_ID", "TEAM123")
+    assert apns.configured() is False
 
 
 @pytest.mark.asyncio
@@ -292,3 +414,128 @@ async def test_dedupe_key_fits_column():
     assert len(fit_key(huge)) <= DEDUPE_MAX
     assert fit_key(huge) == fit_key(huge)
     assert fit_key(key) == key
+
+
+@pytest.mark.asyncio
+async def test_apns_signs_and_sends_real_request(monkeypatch, tmp_path):
+    """진짜 ES256 키로 서명해 실제 요청을 만든다. 네트워크만 가짜다.
+
+    여기서 잡으려는 것: 서명 실패, URL·헤더 오타, 죽은 토큰 판별.
+    """
+    import httpx
+    import jwt as pyjwt
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
+    )
+
+    from app.core.config import settings as _settings
+    from app.services import apns
+
+    # 애플이 주는 .p8 과 같은 형식(PKCS8 PEM · P-256)
+    key = ec.generate_private_key(ec.SECP256R1())
+    p8 = tmp_path / "AuthKey_TEST123.p8"
+    p8.write_bytes(key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+
+    monkeypatch.setattr(_settings, "APNS_KEY_PATH", str(p8))
+    monkeypatch.setattr(_settings, "APNS_KEY_ID", "TEST123")
+    monkeypatch.setattr(_settings, "APNS_TEAM_ID", "TEAM456")
+    monkeypatch.setattr(_settings, "APNS_TOPIC", "kr.co.mangotree.hubfamily")
+    monkeypatch.setattr(_settings, "APNS_SANDBOX", False)
+    monkeypatch.setattr(apns, "_jwt_cache", None)
+    assert apns.configured() is True
+
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path.endswith("tok-dead"):
+            return httpx.Response(410, json={"reason": "Unregistered"})
+        return httpx.Response(200)
+
+    monkeypatch.setattr(
+        apns, "_http", lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    )
+
+    dead = await apns.send(
+        ["tok-ok", "tok-dead"],
+        title="약 드실 시간이에요",
+        body="08:00 혈압약 1정",
+        sound="medic_alarm.wav",
+        level="time-sensitive",
+        channel="medication",
+        route="/s/med",
+    )
+    assert dead == ["tok-dead"]
+    assert len(seen) == 2
+
+    req = next(r for r in seen if r.url.path.endswith("tok-ok"))
+    assert str(req.url) == "https://api.push.apple.com/3/device/tok-ok"
+    assert req.headers["apns-topic"] == "kr.co.mangotree.hubfamily"
+    assert req.headers["apns-push-type"] == "alert"
+    assert req.headers["apns-priority"] == "10"
+
+    # 서명이 실제로 검증되는지 — 공개키로 풀어 본다
+    bearer = req.headers["authorization"].removeprefix("bearer ")
+    assert pyjwt.get_unverified_header(bearer)["kid"] == "TEST123"
+    claims = pyjwt.decode(bearer, key.public_key(), algorithms=["ES256"])
+    assert claims["iss"] == "TEAM456"
+
+    import json as _json
+
+    body = _json.loads(req.content)
+    assert body["aps"]["alert"]["title"] == "약 드실 시간이에요"
+    assert body["aps"]["sound"] == "medic_alarm.wav"
+    assert body["aps"]["interruption-level"] == "time-sensitive"
+    assert body["route"] == "/s/med"
+
+
+@pytest.mark.asyncio
+async def test_apns_retries_other_environment_on_bad_device_token(monkeypatch, tmp_path):
+    """sandbox 빌드 토큰을 production 에 보내면 BadDeviceToken 이다. 반대쪽으로 한 번 더 간다."""
+    import httpx
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
+    )
+
+    from app.core.config import settings as _settings
+    from app.services import apns
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    p8 = tmp_path / "AuthKey_TEST123.p8"
+    p8.write_bytes(key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+    monkeypatch.setattr(_settings, "APNS_KEY_PATH", str(p8))
+    monkeypatch.setattr(_settings, "APNS_KEY_ID", "TEST123")
+    monkeypatch.setattr(_settings, "APNS_TEAM_ID", "TEAM456")
+    monkeypatch.setattr(_settings, "APNS_SANDBOX", False)
+    monkeypatch.setattr(apns, "_jwt_cache", None)
+
+    hosts: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        hosts.append(request.url.host)
+        if request.url.host == "api.push.apple.com":
+            return httpx.Response(400, json={"reason": "BadDeviceToken"})
+        return httpx.Response(200)
+
+    monkeypatch.setattr(
+        apns, "_http", lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    )
+
+    dead = await apns.send(
+        ["tok-sandbox"],
+        title="약 드실 시간이에요",
+        body="혈압약",
+        sound="medic_alarm.wav",
+        level="time-sensitive",
+        channel="medication",
+        route="/s/med",
+    )
+    assert dead == []  # 반대쪽에서 성공했으니 지우면 안 된다
+    assert hosts == ["api.push.apple.com", "api.sandbox.push.apple.com"]
+

@@ -19,13 +19,14 @@ dependencies = [
     "python-multipart==0.0.20",
     "pillow==11.1.0",
     "firebase-admin==7.5.0",
+    # APNs 직접 발송 — 애플은 HTTP/2 만 받는다 (services/apns.py)
+    "httpx[http2]==0.28.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest==8.3.4",
     "pytest-asyncio==0.25.0",
-    "httpx==0.28.1",
     "ruff==0.8.6",
     "aiosqlite==0.20.0",
 ]

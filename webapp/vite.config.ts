@@ -15,8 +15,9 @@ const proxy = {
 // 상대 경로가 서버를 못 찾는다. 실도메인 + HTTPS (2026-09-09).
 const APP_API_BASE = process.env.VITE_API_BASE_URL ?? "https://hubfamily.co.kr";
 
-// 푸시는 google-services.json 이 있을 때만 켠다. 없는 채로 register() 를 부르면
-// 네이티브에서 "Default FirebaseApp is not initialized" 로 앱이 죽는다 — JS 로는 못 막는다.
+// 안드로이드 전용 안전장치. google-services.json 없이 register() 를 부르면 네이티브에서
+// "Default FirebaseApp is not initialized" 로 앱이 죽는다 — JS 로는 못 막는다.
+// iOS 는 Firebase 를 아예 안 탄다(애플에 직접 등록)므로 이 값과 무관하다 — bridge.ts 참고.
 const HAS_FIREBASE = existsSync(new URL("../mobile/android/app/google-services.json", import.meta.url));
 
 export default defineConfig(({ mode }) => ({
