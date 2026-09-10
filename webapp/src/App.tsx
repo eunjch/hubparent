@@ -22,6 +22,7 @@ import GuardianMore from "./pages/GuardianMore";
 import Report from "./pages/Report";
 import SeniorMore from "./pages/SeniorMore";
 import SeniorRecord from "./pages/SeniorRecord";
+import Withdraw from "./pages/Withdraw";
 import GuardianLogin from "./pages/GuardianLogin";
 import GuardianSignup from "./pages/GuardianSignup";
 import SeniorAdd from "./pages/SeniorAdd";
@@ -270,6 +271,16 @@ export default function App() {
           element={
             <Guarded>
               <SeniorAdd />
+            </Guarded>
+          }
+        />
+
+        {/* 탈퇴 — 자녀·부모님 같은 화면을 쓰고 역할에 따라 내용이 갈린다 */}
+        <Route
+          path="/withdraw"
+          element={
+            <Guarded>
+              <Withdraw />
             </Guarded>
           }
         />

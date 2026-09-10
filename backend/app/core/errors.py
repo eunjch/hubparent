@@ -14,6 +14,11 @@ class AppError(HTTPException):
         self.message = message
 
 
+class BadRequest(AppError):
+    def __init__(self, code: str = "BAD_REQUEST", message: str = "요청이 올바르지 않습니다.") -> None:
+        super().__init__(status.HTTP_400_BAD_REQUEST, code, message)
+
+
 class NotFound(AppError):
     def __init__(self, code: str = "NOT_FOUND", message: str = "찾을 수 없습니다.") -> None:
         super().__init__(status.HTTP_404_NOT_FOUND, code, message)

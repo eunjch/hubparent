@@ -15,7 +15,7 @@ from fastapi import APIRouter
 from sqlalchemy import func, select
 
 from app.core.deps import CurrentUser, DBSession
-from app.core.errors import Conflict, NotFound, Unauthorized
+from app.core.errors import BadRequest, Conflict, NotFound, Unauthorized
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -38,7 +38,10 @@ from app.schemas.auth import (
     SeniorLookupResult,
     TokenPair,
     UserOut,
+    WithdrawRequest,
+    WithdrawResult,
 )
+from app.services import account
 
 router = APIRouter(tags=["auth"])
 
@@ -203,6 +206,26 @@ async def refresh(payload: RefreshRequest, session: DBSession) -> TokenPair:
     if user is None or not user.is_active:
         raise Unauthorized("USER_NOT_FOUND", "다시 시작해 주세요.")
     return _tokens(user)
+
+
+@router.delete("/me", response_model=WithdrawResult)
+async def withdraw(payload: WithdrawRequest, user: CurrentUser, session: DBSession) -> WithdrawResult:
+    """탈퇴. 개인정보처리방침에 "탈퇴 즉시 파기" 로 적어 두었으므로 그 자리에서 지운다.
+
+    자녀는 비밀번호를 다시 받는다 — 폰을 잠깐 빌린 사람이 지울 수 있으면 안 된다.
+    어르신은 비밀번호가 없어 confirm 만 받는다. 실수 방지는 화면에서 두 번 묻는 것으로 한다.
+    """
+    if not payload.confirm:
+        raise BadRequest("CONFIRM_REQUIRED", "탈퇴를 확인해 주세요.")
+
+    if user.role is UserRole.GUARDIAN:
+        if not payload.password:
+            raise BadRequest("PASSWORD_REQUIRED", "비밀번호를 입력해 주세요.")
+        if not verify_password(payload.password, user.password_hash):
+            raise Unauthorized("INVALID_PASSWORD", "비밀번호가 맞지 않습니다.")
+
+    result = await account.withdraw(session, user)
+    return WithdrawResult(**result)
 
 
 @router.get("/me", response_model=MeOut)

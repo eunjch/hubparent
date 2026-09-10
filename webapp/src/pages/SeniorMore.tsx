@@ -90,6 +90,12 @@ export default function SeniorMore() {
             <Glyph name="logout" size={22} />
             로그아웃
           </button>
+          {/* 어르신이 잘못 누르지 않도록 작게. 눌러도 확인 화면이 두 번 더 있다 */}
+          <div className="withdraw-link">
+            <button className="text-btn danger" onClick={() => nav("/withdraw")}>
+              회원 탈퇴
+            </button>
+          </div>
         </div>
       </main>
 

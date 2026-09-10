@@ -81,3 +81,17 @@ class MeOut(BaseModel):
     family_id: uuid.UUID | None
     family_name: str | None
     consented: bool
+
+
+class WithdrawRequest(BaseModel):
+    """탈퇴 요청. confirm 은 사고로 부르는 것을 막는 잠금이다."""
+
+    confirm: bool = False
+    password: str | None = None  # 자녀만. 어르신은 비밀번호가 없다
+
+
+class WithdrawResult(BaseModel):
+    """무엇이 지워졌는지. 화면이 안내 문구를 고르는 데 쓴다."""
+
+    scope: str  # "user" = 본인만 · "family" = 가족 전체
+    deleted_users: int

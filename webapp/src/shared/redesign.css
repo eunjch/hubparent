@@ -2062,3 +2062,84 @@ body {
   line-height: 1.25;
   word-break: keep-all;
 }
+
+/* ── 회원 탈퇴 ────────────────────────────────────────────────
+ *  되돌릴 수 없는 화면이다. 붉은 톤은 마지막 버튼에만 쓰고,
+ *  설명 카드는 읽히는 것이 목적이라 조용한 배경을 둔다. */
+
+.withdraw-link {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 2px;
+}
+
+.withdraw-link .text-btn {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.warn-card {
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent);
+  border-radius: 20px;
+  padding: 18px 20px;
+}
+
+.warn-card h2 {
+  margin: 0 0 12px;
+  font-size: var(--text-md);
+  font-weight: 800;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+.warn-card ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.warn-card li {
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--ink-1);
+}
+
+.warn-card li.strong {
+  font-weight: 800;
+  color: var(--danger);
+}
+
+.warn-card .sub {
+  margin: 14px 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+/* 마지막 확인 — 읽을 것이 한 줄뿐이라 가운데로 모은다 */
+.warn-card.final {
+  text-align: center;
+  padding: 28px 20px;
+}
+
+.warn-card.final h2 {
+  margin-bottom: 8px;
+  font-size: var(--text-lg);
+}
+
+.warn-card.final p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-1);
+  line-height: 1.6;
+}
+
+.withdraw-actions {
+  margin-top: auto;
+  padding-top: 16px;
+  display: grid;
+  gap: 10px;
+}

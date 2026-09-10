@@ -69,6 +69,12 @@ export default function GuardianMore() {
             <Glyph name="logout" size={22} />
             로그아웃
           </button>
+          {/* 탈퇴는 되돌릴 수 없다. 로그아웃과 헷갈리지 않게 작게 둔다 */}
+          <div className="withdraw-link">
+            <button className="text-btn danger" onClick={() => nav("/withdraw")}>
+              회원 탈퇴
+            </button>
+          </div>
         </div>
       </main>
 
