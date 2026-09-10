@@ -230,12 +230,15 @@ HubFamily connects adult children with their elderly parents who live apart. The
 Push notifications: when a medication time registered by the child arrives, the parent's phone receives a time-sensitive notification with an alarm sound. To test, register a medication 3–4 minutes ahead on the child side, sign in as the parent on the device, allow notifications, and close the app.
 
 Camera / photo library access is requested only when the parent adds an optional meal photo.
+
+Account deletion: More (더보기) → 회원 탈퇴. Deleting the demo child account also deletes the whole demo family, including the parent, because parents sign in through their child. PLEASE DO NOT DELETE THE DEMO ACCOUNT. To test deletion, create a new account from "자녀예요" → 회원가입 and delete that one.
 This app does not provide medical diagnosis or treatment. Records are shared only within the connected family.
 
 [KO]
 자녀 계정: 첫 화면 [자녀예요] → 위 계정으로 로그인.
 부모님 화면: 로그아웃 → [부모예요] → 자녀 이름 "김민수", 전화번호 "01012345678" → 목록에서 "김영희" 선택.
 약 알림 확인: 자녀 화면에서 3~4분 뒤 시각으로 약 등록 → 기기에서 부모로 로그인·알림 허용 → 앱 종료.
+회원 탈퇴 확인: 데모 계정은 지우지 말고, [자녀예요] → 회원가입으로 새 계정을 만들어 탈퇴해 주세요. 데모 자녀 계정을 지우면 부모님 계정까지 함께 지워집니다.
 ```
 
 ### 버전 출시
@@ -250,7 +253,7 @@ This app does not provide medical diagnosis or treatment. Records are shared onl
 |---|---|
 | 5.1.1(v) 계정 삭제 | 앱 안에서 탈퇴된다 (더보기 → 회원 탈퇴, `a915f17`). 업로드 전에 `npx cap sync ios` 로 이 화면이 빌드에 들어갔는지 확인할 것 |
 | 4.2 최소 기능 (웹을 감싼 앱) | 푸시 알림(시각 맞춤 알람음), 카메라 · 사진, 전화 걸기가 앱에서만 된다고 답한다 |
-| 로그인이 필요해 심사를 못 함 | 심사 정보의 데모 계정과 메모. 운영 서버의 시험용 가족을 **지우지 말 것** |
+| 로그인이 필요해 심사를 못 함 | 심사 정보의 데모 계정과 메모. 운영 서버의 시험용 가족을 **지우지 말 것**. 심사팀이 데모 계정으로 탈퇴를 눌러 가족이 통째로 지워졌다면 다시 만들어 두고 답장한다 |
 | 알림이 안 온다 | 서버 `APNS_SANDBOX=false` 인지, 워커 로그의 `event` (sent/failed/skipped) 확인 |
 | 5.1.3 건강 데이터 | 개인정보처리방침과 앱 개인정보 표. 광고 · 제3자 공유가 없다고 답한다 |
 
