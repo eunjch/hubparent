@@ -33,6 +33,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    // 푸시 토큰을 Capacitor 푸시 플러그인에 넘긴다. 이 두 함수가 없으면 iOS 가 준 APNs 토큰이
+    // 플러그인까지 오지 않아 `registration` 이벤트가 영영 안 뜨고, bridge.ts 는 8초 뒤 null 로 끝나
+    // POST /devices 가 호출되지 않는다 → 서버가 이 폰을 모르니 알림이 하나도 안 온다.
+    // (플러그인 README iOS 절: "add the following to your app's AppDelegate.swift")
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
     func application(_ application: UIApplication,
                      configurationForConnecting connectingSceneSession: UISceneSession,
                      options: UIScene.ConnectionOptions) -> UISceneConfiguration {
