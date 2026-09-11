@@ -154,7 +154,7 @@ export default function Alerts() {
               {splitMessage(a.message).note && <p className="disclaimer">{splitMessage(a.message).note}</p>}
             </div>
           </div>
-          <button className="alert-detail" onClick={() => ack(a)}>
+          <button className="alert-detail" disabled={busy} onClick={() => ack(a)}>
             상세 확인
           </button>
         </section>
@@ -164,6 +164,7 @@ export default function Alerts() {
         <button
           className={`alert-row${a.ack_at ? " read" : ""}`}
           key={a.id}
+          disabled={busy}
           onClick={() => !a.ack_at && ack(a)}
           aria-label={`${TYPE_LABEL[a.type]} ${a.ack_at ? "확인함" : "확인하기"}`}
         >
@@ -180,8 +181,8 @@ export default function Alerts() {
       ))}
 
       {data && data.unread > 0 && (
-        <button className="ack-all" onClick={ackAll}>
-          모두 확인했어요
+        <button className="ack-all" disabled={busy} onClick={ackAll}>
+          {busy ? "확인하는 중…" : "모두 확인했어요"}
         </button>
       )}
     </Screen>

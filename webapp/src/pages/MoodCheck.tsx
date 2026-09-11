@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, request } from "../shared/api";
 import { Art, type ArtName } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
-import { pendingCount, send } from "../shared/offlineQueue";
+import { onQueueChange, pendingCount, send } from "../shared/offlineQueue";
 import { localDate } from "../shared/tabs";
 import type { CheckSlot, MoodCheck as Mood, MoodValue } from "../shared/types";
 import { Notice, Screen, Spinner } from "../shared/ui";
@@ -42,6 +42,9 @@ export default function MoodCheck() {
   const [pending, setPending] = useState(() => pendingCount() > 0);
   // 같은 칸의 연타를 막는 잠금. 상태는 같은 틱의 두 번째 클릭을 못 막아 ref 를 쓴다
   const sending = useRef(new Set<string>());
+
+  // 큐가 실제로 비면 안내도 사라진다
+  useEffect(() => onQueueChange((n) => setPending(n > 0)), []);
 
   useEffect(() => {
     request<Mood[]>(`/checks/moods?check_date=${today()}`)

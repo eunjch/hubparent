@@ -14,7 +14,7 @@ import { ApiError, request, upload } from "../shared/api";
 import { fileUrl } from "../shared/base";
 import { Art } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
-import { pendingCount, send } from "../shared/offlineQueue";
+import { onQueueChange, pendingCount, send } from "../shared/offlineQueue";
 import { localDate } from "../shared/tabs";
 import type { CheckSlot, MealCheck as Meal, MealStatus } from "../shared/types";
 import { Notice, Screen, Spinner } from "../shared/ui";
@@ -39,6 +39,9 @@ export default function MealCheck() {
   const [pending, setPending] = useState(() => pendingCount() > 0);
   // 같은 칸의 연타를 막는 잠금. 상태는 같은 틱의 두 번째 클릭을 못 막아 ref 를 쓴다
   const sending = useRef(new Set<string>());
+
+  // 큐가 실제로 비면 안내도 사라진다
+  useEffect(() => onQueueChange((n) => setPending(n > 0)), []);
   const [photoNote, setPhotoNote] = useState("");
 
   useEffect(() => {

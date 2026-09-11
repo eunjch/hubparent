@@ -144,9 +144,10 @@ async def login(payload: GuardianLogin, request: Request, session: DBSession) ->
         if user is None:
             verify_password(payload.password, DUMMY_HASH)
         raise Unauthorized("BAD_CREDENTIALS", "이메일 또는 비밀번호가 맞지 않습니다.")
-    await throttle_clear("login", email)
     if not user.is_active:
+        # 카운터를 지우기 전에 막는다. 비활성 계정을 상대로 무제한 검증이 되면 안 된다
         raise Unauthorized("USER_INACTIVE", "사용할 수 없는 계정입니다.")
+    await throttle_clear("login", email)
     return _tokens(user)
 
 
@@ -222,6 +223,10 @@ async def senior_login(payload: SeniorLogin, request: Request, session: DBSessio
 
     if payload.senior_id not in {s.id for s in seniors}:
         raise NotFound("SENIOR_NOT_FOUND", "다시 선택해 주세요.")
+
+    # 제대로 들어왔으면 카운터를 지운다. 부모님이 이름을 몇 번 잘못 넣은 뒤
+    # 성공했을 때 다음에 걸리면 안 된다 (2026-09-11 재점검)
+    await throttle_clear("senior", normalize_phone(payload.guardian_phone))
 
     senior = await session.get(User, payload.senior_id)
     if senior is None or not senior.is_active:

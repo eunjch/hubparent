@@ -4,7 +4,7 @@
  *  계획서 7.3: 등록은 자녀만 한다. 어르신 화면은 읽기 전용이다.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
@@ -176,11 +176,14 @@ export default function ScheduleManage() {
   }
 
   /* 보내는 동안 버튼을 잠근다. 반응이 늦으면 한 번 더 누르게 되고,
-     그러면 부모님 폰에 같은 알림이 두 번 울린다 (2026-09-11 점검). */
+     그러면 부모님 폰에 같은 알림이 두 번 울린다 (2026-09-11 점검).
+     상태는 같은 틱의 두 번째 클릭을 못 막으므로 ref 로 즉시 잠근다 (재점검). */
   const [sending, setSending] = useState("");
+  const locked = useRef(false);
 
   async function notify(row: Schedule) {
-    if (sending) return;
+    if (locked.current) return;
+    locked.current = true;
     setNote("");
     setSending(row.id);
     try {
@@ -190,6 +193,7 @@ export default function ScheduleManage() {
     } catch {
       setError("알림을 보내지 못했습니다.");
     } finally {
+      locked.current = false;
       setSending("");
     }
   }
@@ -313,9 +317,9 @@ export default function ScheduleManage() {
               </div>
               <span className="badge">다가오는 일정</span>
             </div>
-            <button className="notify-btn" onClick={() => notify(next)}>
+            <button className="notify-btn" disabled={sending === next.id} onClick={() => notify(next)}>
               <Glyph name="bell" size={22} />
-              부모님에게 알림 전송
+              {sending === next.id ? "보내는 중…" : "부모님에게 알림 전송"}
             </button>
             <div className="next-actions">
               <button className="text-btn" onClick={() => startEdit(next)}>

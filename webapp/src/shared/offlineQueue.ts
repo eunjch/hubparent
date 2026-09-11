@@ -55,6 +55,7 @@ export async function send<T>(path: string, options: RequestOptions): Promise<T 
   } catch (e) {
     if (permanent(e)) throw e;
     save([...load(), { id, path, options: withKey }]);
+    announce();
     return null;
   }
 }
@@ -76,9 +77,28 @@ export async function flush(): Promise<number> {
   }
 
   save(remaining);
+  announce();
   return sent;
 }
 
 export function pendingCount(): number {
   return load().length;
+}
+
+/** 큐 길이가 바뀌면 알린다. 화면의 "아직 못 보냈어요" 배너가 이걸 보고 사라진다.
+ *  예전에는 큐가 비어도 배너가 화면을 떠날 때까지 남아 있었다 (2026-09-11 재점검). */
+type Listener = (count: number) => void;
+const watchers: Listener[] = [];
+
+export function onQueueChange(fn: Listener): () => void {
+  watchers.push(fn);
+  return () => {
+    const i = watchers.indexOf(fn);
+    if (i >= 0) watchers.splice(i, 1);
+  };
+}
+
+function announce(): void {
+  const n = load().length;
+  watchers.forEach((fn) => fn(n));
 }

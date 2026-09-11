@@ -5,6 +5,10 @@
 
 원본을 지워도 그날의 요약은 남는다 — `daily_reports` 를 매일 21:00 에 만들어 두기
 때문이다(services.report.build_all). 그래서 여기서는 접는 작업 없이 버리기만 한다.
+
+**주의**: `notification_logs` 는 이력이자 **중복 방지 저장소**다(services.push.already_sent).
+지금 쓰는 키는 전부 시각·날짜·UUID 를 담고 있어 90일 뒤에 다시 울릴 일이 없지만,
+키에서 시각을 빼는 순간 그 안전이 깨진다. 키를 바꿀 때 이 파일을 함께 볼 것.
 """
 
 import logging

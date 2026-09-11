@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
 import { Art, capsuleFor } from "../shared/art";
-import { pendingCount, send } from "../shared/offlineQueue";
+import { onQueueChange, pendingCount, send } from "../shared/offlineQueue";
 import type { Dose, MedicationStatus } from "../shared/types";
 import { Notice, Screen, Spinner, StatusPill } from "../shared/ui";
 
@@ -23,6 +23,9 @@ export default function MedCheck() {
   const [pending, setPending] = useState(() => pendingCount() > 0);
   // 같은 약·시각의 연타를 막는 잠금. 상태는 같은 틱의 두 번째 클릭을 못 막아 ref 를 쓴다
   const sending = useRef(new Set<string>());
+
+  // 큐가 실제로 비면 안내도 사라진다
+  useEffect(() => onQueueChange((n) => setPending(n > 0)), []);
 
   useEffect(() => {
     request<Dose[]>("/medications/today")
