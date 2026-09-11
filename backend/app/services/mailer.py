@@ -12,7 +12,6 @@ MVP 에서는 쓰지 않는다. M4 일일 리포트 메일에서 outbox 를 거�
 import logging
 import smtplib
 import ssl
-from email.header import Header
 from email.message import EmailMessage
 from email.utils import formataddr
 
@@ -37,9 +36,13 @@ def send(
         raise MailNotConfigured("SMTP 설정이 없습니다. .env 의 SMTP_* 항목을 확인하세요.")
 
     msg = EmailMessage()
-    msg["Subject"] = Header(subject, "utf-8")
+    # EmailMessage 는 한글 제목·이름을 알아서 인코딩한다. Header 객체를 넣으면
+    # 'Header' object is not subscriptable 로 터진다 — 그래서 메일이 한 통도 안 나갔다
+    # (2026-09-11 확인). 평범한 문자열을 준다.
+    msg["Subject"] = subject
     # 발신 주소는 인증 계정으로 고정. 표시 이름만 서비스명으로 바꾼다.
-    msg["From"] = formataddr((str(Header(settings.MAIL_FROM_NAME, "utf-8")), settings.SMTP_USER))
+    # formataddr 이 비 ASCII 표시 이름을 RFC 2047 로 인코딩해 준다.
+    msg["From"] = formataddr((settings.MAIL_FROM_NAME, settings.SMTP_USER))
     msg["To"] = to
     if reply_to:
         msg["Reply-To"] = reply_to
