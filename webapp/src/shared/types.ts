@@ -28,6 +28,8 @@ export interface Me {
 /** 자녀가 관리하는 부모님 한 명 */
 export interface Senior {
   id: string;
+  /** 알림 권한 상태. null = 아직 모름(앱에 안 들어왔거나 옛 버전) */
+  notifications_granted?: boolean | null;
   name: string;
   phone: string;
   relation: string | null;

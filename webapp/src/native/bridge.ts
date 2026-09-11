@@ -70,7 +70,12 @@ export async function registerPush(): Promise<string | null> {
   if (perm.receive === "prompt" || perm.receive === "prompt-with-rationale") {
     perm = await PushNotifications.requestPermissions();
   }
-  if (perm.receive !== "granted") return null;
+  if (perm.receive !== "granted") {
+    // 거부해도 그 사실을 남긴다. 예전에는 아무것도 올리지 않아 복약 알림이 안 울리는
+    // 것을 자녀도 부모님도 모른 채 지냈다 (계획서 8.5.8 · 2026-09-11 점검).
+    await reportPermission(false);
+    return null;
+  }
 
   await ensureChannels();
 
@@ -88,7 +93,12 @@ export async function registerPush(): Promise<string | null> {
         try {
           await request("/devices", {
             method: "POST",
-            body: { platform: platform(), push_token: value, app_version: APP_VERSION },
+            body: {
+              platform: platform(),
+              push_token: value,
+              app_version: APP_VERSION,
+              notifications_granted: true,
+            },
           });
         } catch {
           /* 다음 앱 실행 때 다시 올린다 */
@@ -107,6 +117,29 @@ export async function registerPush(): Promise<string | null> {
     // 토큰이 끝내 안 오면 화면을 붙들지 않는다
     setTimeout(() => done(null), 8000);
   });
+}
+
+/** 알림 권한 상태를 서버에 남긴다. 토큰이 없어도 행은 만들어진다. */
+async function reportPermission(granted: boolean): Promise<void> {
+  try {
+    await request("/devices", {
+      method: "POST",
+      body: { platform: platform(), app_version: APP_VERSION, notifications_granted: granted },
+    });
+  } catch {
+    /* 다음 실행 때 다시 올린다 */
+  }
+}
+
+/** 지금 알림이 켜져 있는가. 화면이 배너를 띄울지 정하는 데 쓴다. */
+export async function notificationsEnabled(): Promise<boolean> {
+  if (!isNativeApp()) return true; // 웹에서는 배너를 띄우지 않는다
+  try {
+    const perm = await PushNotifications.checkPermissions();
+    return perm.receive === "granted";
+  } catch {
+    return true;
+  }
 }
 
 /* ── 로컬 알람은 쓰지 않는다 (2026-09-09 결정) ─────────────────

@@ -46,12 +46,15 @@ async def register_device(payload: DeviceRegister, user: CurrentUser, session: D
             platform=payload.platform,
             push_token=payload.push_token,
             app_version=payload.app_version,
+            notifications_granted=payload.notifications_granted,
             last_seen_at=now,
         )
         session.add(device)
     else:
         device.push_token = payload.push_token or device.push_token
         device.app_version = payload.app_version or device.app_version
+        if payload.notifications_granted is not None:
+            device.notifications_granted = payload.notifications_granted
         device.last_seen_at = now
 
     await session.flush()

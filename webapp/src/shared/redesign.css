@@ -2145,3 +2145,72 @@ body {
   display: grid;
   gap: 10px;
 }
+
+/* ── 터치 영역과 대비 (2026-09-11 점검) ───────────────────────
+ *  계획서 기준은 56px 다. 기본 버튼은 지켜졌는데 파생 컨트롤에서 40px 안팎으로
+ *  무너져 있었다. 부모님이 만지는 것부터 48px 이상으로 올린다.
+ *  --ink-3 은 흰 배경에서 2.97:1 이라 기준(4.5:1)에 못 미치는데, 하필 기능 버튼과
+ *  입력 예시 글자에 쓰여 있었다. 그 자리들만 --ink-2(7.00:1)로 올린다. */
+
+.seg-item {
+  min-height: 48px;
+}
+
+.link-btn,
+.text-btn,
+.row-del,
+.row-edit {
+  min-height: 48px;
+}
+
+.hello .gear,
+.med-line .edit-ic {
+  width: 48px;
+  height: 48px;
+}
+
+/* "앨범에서 고르기" — 앱에서 가장 작았고 셋이 붙어 있었다 */
+.inline-link {
+  min-height: 44px;
+  padding: 0 10px;
+  margin: 0 2px;
+  text-underline-offset: 3px;
+}
+
+/* 약 알림 스위치 — 색만으로 구분되고 30px 이었다 */
+.switch {
+  width: 58px;
+  height: 34px;
+}
+
+/* 가입 동의 체크박스 — 26px 이라 누르기 어려웠다 */
+.check input[type="checkbox"] {
+  width: 28px;
+  height: 28px;
+}
+
+.check {
+  min-height: 56px;
+}
+
+/* 기능 버튼과 입력 예시는 읽혀야 한다 */
+.text-btn.danger,
+.row-del,
+.field-input::placeholder {
+  color: var(--ink-2);
+}
+
+/* 스위치는 보이는 크기를 키우면 뚱뚱해진다. 눌리는 범위만 넓힌다 (48px) */
+.switch::before {
+  content: "";
+  position: absolute;
+  inset: -7px -6px;
+}
+
+/* 문단 안에 놓인 링크는 min-height 가 먹지 않는다 */
+.text-link.inline {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 2px;
+}

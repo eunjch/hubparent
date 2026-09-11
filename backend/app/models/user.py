@@ -72,6 +72,10 @@ class Device(Base, UUIDPKMixin, TimestampMixin):
     platform: Mapped[DevicePlatform] = enum_column(DevicePlatform, nullable=False)
     push_token: Mapped[str | None] = mapped_column(String(255))
     app_version: Mapped[str | None] = mapped_column(String(20))
+    # 알림 권한을 허락했는가. 거부하면 복약 알림이 아예 안 울리는데 아무도 모르던 것을
+    # 화면에 띄우기 위해 단말이 올려 준다 (계획서 8.5.8 · 2026-09-11 점검).
+    # None = 아직 보고한 적 없음(옛 버전 앱)
+    notifications_granted: Mapped[bool | None] = mapped_column(Boolean)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
 
     user: Mapped[User] = relationship(back_populates="devices")

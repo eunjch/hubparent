@@ -30,6 +30,8 @@ class SeniorOut(BaseModel):
     birth_year: int | None
     # 한 번이라도 앱에 들어온 적이 있는지. 자녀가 "아직 안 들어오셨네" 를 알 수 있다.
     joined: bool
+    # 알림 권한 상태. None = 아직 모름(앱에 안 들어왔거나 옛 버전)
+    notifications_granted: bool | None = None
 
 
 class FamilyOut(ORMModel):

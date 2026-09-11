@@ -6,9 +6,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { notificationsEnabled } from "../native/bridge";
 import { request } from "../shared/api";
 import { Art } from "../shared/art";
-import { clearTokens } from "../shared/auth";
 import { Glyph } from "../shared/glyphs";
 import { localDate, SeniorTabs } from "../shared/tabs";
 import type { Me, Member } from "../shared/types";
@@ -24,16 +24,25 @@ export default function SeniorHome() {
   const [checked, setChecked] = useState<{ done: number; total: number } | null>(null);
   const [guardian, setGuardian] = useState<Member | null>(null);
   const [error, setError] = useState("");
+  // 다시 시도 버튼이 값을 바꾸면 아래 두 effect 가 다시 돈다
+  const [attempt, setAttempt] = useState(0);
+  // 알림을 꺼 두면 복약 알림이 아예 안 울린다. 그 사실을 알려야 한다 (계획서 8.5.8)
+  const [notifyOff, setNotifyOff] = useState(false);
 
   useEffect(() => {
+    void notificationsEnabled().then((on) => setNotifyOff(!on));
+  }, [attempt]);
+
+  useEffect(() => {
+    setError("");
     request<Me>("/me")
       .then(setMe)
-      .catch(() => setError("정보를 불러오지 못했습니다. 잠시 후 다시 열어주세요."));
+      .catch(() => setError("정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."));
     // 하단 `자녀에게 전화하기` — 첫 번째 자녀
     request<Member[]>("/family/members")
       .then((rows) => setGuardian(rows.find((m) => m.role === "guardian") ?? null))
       .catch(() => setGuardian(null));
-  }, []);
+  }, [attempt]);
 
   // 오늘 얼마나 체크했는지 — 건강 지수의 근거.
   useEffect(() => {
@@ -50,19 +59,20 @@ export default function SeniorHome() {
           doses.filter((d) => d.status === "taken").length;
         setChecked({ done, total: 3 + 3 + doses.length });
       })
-      .catch(() => setChecked({ done: 0, total: 6 }));
-  }, []);
-
-  async function signOut() {
-    await clearTokens();
-    nav("/", { replace: true });
-  }
+      // 불러오지 못한 것을 0점으로 위장하지 않는다. 다 기록한 분이 0점을 보면
+      // 처음부터 다시 누르게 된다 (2026-09-11 점검).
+      .catch(() => setChecked(null));
+  }, [attempt]);
 
   if (error) {
+    // 통신이 한 번 끊긴 것뿐일 수 있다. 예전에는 여기 유일한 버튼이 로그아웃이라,
+    // 누르면 부모님이 혼자 힘으로 못 돌아왔다 (2026-09-11 점검).
     return (
       <Screen title="홈">
         <Notice tone="error">{error}</Notice>
-        <BigButton onClick={signOut}>처음으로</BigButton>
+        <BigButton tone="primary" onClick={() => setAttempt((n) => n + 1)}>
+          다시 시도
+        </BigButton>
       </Screen>
     );
   }
@@ -77,8 +87,10 @@ export default function SeniorHome() {
 
   const score = checked ? Math.round((checked.done / Math.max(checked.total, 1)) * 100) : 0;
   const remaining = checked ? checked.total - checked.done : 0;
-  const condition =
-    !checked || checked.done === 0
+  // 아직 못 불러온 것과 "0개 했다" 를 구분해 말한다
+  const condition = !checked
+    ? "기록을 불러오는 중이에요"
+    : checked.done === 0
       ? "오늘을 시작해 볼까요?"
       : remaining === 0
         ? "오늘 기록을 다 하셨어요!"
@@ -102,6 +114,13 @@ export default function SeniorHome() {
             <Glyph name="gear" size={26} />
           </button>
         </div>
+
+        {notifyOff && (
+          <Notice tone="error">
+            알림이 꺼져 있어 약 드실 시간을 알려드릴 수 없어요. 휴대폰 설정에서 허브패밀리 알림을
+            켜 주세요.
+          </Notice>
+        )}
 
         {/* 건강지수 — 민트 카드, 링은 오른쪽 */}
         <section className="score-card">

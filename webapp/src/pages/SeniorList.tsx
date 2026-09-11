@@ -40,11 +40,8 @@ export default function SeniorList() {
   async function remove(senior: Senior) {
     // 이제 계정과 기록까지 함께 지운다 (2026-09-11). 무엇이 사라지는지 알리고 받는다.
     const ok = window.confirm(
-      `${senior.name} 님을 가족에서 빼시겠어요?
-
-` +
-        "지금까지 기록한 식사 · 약 · 기분과 사진, 등록한 약과 병원 일정이 모두 지워집니다.
-" +
+      `${senior.name} 님을 가족에서 빼시겠어요?\n\n` +
+        "지금까지 기록한 식사 · 약 · 기분과 사진, 등록한 약과 병원 일정이 모두 지워집니다.\n" +
         "되돌릴 수 없고, 같은 번호로 다시 등록할 수 없습니다.",
     );
     if (!ok) return;
@@ -95,6 +92,10 @@ export default function SeniorList() {
                   <span className={`state ${s.joined ? "in" : "out"}`}>
                     {s.joined ? "앱 사용 중" : "아직 안 들어오셨어요"}
                   </span>
+                  {/* 알림을 꺼 두면 복약 알림이 아예 안 울린다. 자녀가 대신 챙겨야 한다 */}
+                  {s.notifications_granted === false && (
+                    <span className="state out">알림이 꺼져 있어요</span>
+                  )}
                 </div>
               </div>
               <span className="row-actions">

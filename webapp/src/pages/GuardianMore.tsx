@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { docUrl } from "../shared/base";
 import { clearTokens } from "../shared/auth";
 import { Glyph } from "../shared/glyphs";
 import { GuardianTabs } from "../shared/tabs";
@@ -23,6 +24,8 @@ export default function GuardianMore() {
   }, []);
 
   async function signOut() {
+    // 화면에서 가장 큰 버튼이라 스크롤하다 닿기 쉽다. 한 번 묻는다 (2026-09-11 점검).
+    if (!window.confirm("로그아웃하시겠어요?\n\n다시 들어오시려면 이메일과 비밀번호가 필요합니다.")) return;
     await clearTokens();
     nav("/", { replace: true });
   }
@@ -69,6 +72,11 @@ export default function GuardianMore() {
             <Glyph name="logout" size={22} />
             로그아웃
           </button>
+          <div className="withdraw-link">
+            <a className="text-btn" href={docUrl("privacy.html")} target="_blank" rel="noreferrer">
+              개인정보처리방침
+            </a>
+          </div>
           {/* 탈퇴는 되돌릴 수 없다. 로그아웃과 헷갈리지 않게 작게 둔다 */}
           <div className="withdraw-link">
             <button className="text-btn danger" onClick={() => nav("/withdraw")}>

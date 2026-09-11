@@ -22,6 +22,7 @@ import GuardianMore from "./pages/GuardianMore";
 import Report from "./pages/Report";
 import SeniorMore from "./pages/SeniorMore";
 import SeniorRecord from "./pages/SeniorRecord";
+import PasswordReset from "./pages/PasswordReset";
 import Withdraw from "./pages/Withdraw";
 import GuardianLogin from "./pages/GuardianLogin";
 import GuardianSignup from "./pages/GuardianSignup";
@@ -139,6 +140,9 @@ export default function App() {
         {/* 자녀 — 로그인 · 회원가입 */}
         <Route path="/login" element={<GuardianLogin />} />
         <Route path="/signup" element={<GuardianSignup />} />
+        {/* 비밀번호 찾기 — 메일 속 링크가 /reset?token=... 으로 들어온다 */}
+        <Route path="/forgot" element={<PasswordReset />} />
+        <Route path="/reset" element={<PasswordReset />} />
 
         {/* 부모 — 자녀 이름·번호로 들어온다 */}
         <Route path="/join" element={<SeniorJoin />} />

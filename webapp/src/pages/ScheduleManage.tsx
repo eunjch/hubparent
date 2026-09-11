@@ -89,19 +89,32 @@ export default function ScheduleManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const load = useCallback(async () => {
-    if (!seniorId) return;
-    try {
-      setRows(await request<Schedule[]>(`/schedules?user_id=${seniorId}`));
-    } catch {
-      setError("일정을 불러오지 못했습니다.");
-    }
-  }, [seniorId]);
+  const load = useCallback(
+    async (state?: { stale: boolean }) => {
+      if (!seniorId) return;
+      try {
+        const list = await request<Schedule[]>(`/schedules?user_id=${seniorId}`);
+        if (state?.stale) return;
+        setRows(list);
+        setError("");
+      } catch {
+        if (state?.stale) return;
+        setError("일정을 불러오지 못했습니다.");
+      }
+    },
+    [seniorId],
+  );
 
   useEffect(() => {
+    // 부모님을 갈아타면 늦게 온 응답은 버린다 (2026-09-11 점검)
+    const state = { stale: false };
     setRows(null);
-    void load();
+    setError("");
+    void load(state);
     if (seniorId) setParams({ user_id: seniorId }, { replace: true });
+    return () => {
+      state.stale = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId]);
 
@@ -162,14 +175,22 @@ export default function ScheduleManage() {
     }
   }
 
+  /* 보내는 동안 버튼을 잠근다. 반응이 늦으면 한 번 더 누르게 되고,
+     그러면 부모님 폰에 같은 알림이 두 번 울린다 (2026-09-11 점검). */
+  const [sending, setSending] = useState("");
+
   async function notify(row: Schedule) {
+    if (sending) return;
     setNote("");
+    setSending(row.id);
     try {
       await request(`/schedules/${row.id}/notify`, { method: "POST" });
       setNote("부모님께 알림을 보냈어요.");
       await load();
     } catch {
       setError("알림을 보내지 못했습니다.");
+    } finally {
+      setSending("");
     }
   }
 

@@ -4,7 +4,7 @@
  *  본인만 응답할 수 있다. 다시 누르면 마지막 답으로 바뀐다 (계획서 9장).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
@@ -18,6 +18,10 @@ export default function MedCheck() {
   const [doses, setDoses] = useState<Dose[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // 오프라인 큐에 들어간 상태. 화면만 바뀌고 서버에는 없는 것을 숨기지 않는다
+  const [pending, setPending] = useState(false);
+  // 같은 틱의 연타를 막는 잠금. 상태로는 늦는다
+  const sending = useRef(false);
 
   useEffect(() => {
     request<Dose[]>("/medications/today")
@@ -26,6 +30,9 @@ export default function MedCheck() {
   }, []);
 
   async function answer(dose: Dose, status: MedicationStatus) {
+    // 연타를 막는다. busy 는 상태라 같은 틱의 두 번째 클릭을 못 막는다 — ref 로 즉시 잠근다
+    if (sending.current) return;
+    sending.current = true;
     const key = dose.medication_id + dose.scheduled_at;
     setBusy(key);
     setError("");
@@ -37,11 +44,13 @@ export default function MedCheck() {
       ),
     );
 
-    await send<Dose>(`/medications/${dose.medication_id}/logs`, {
+    const saved = await send<Dose>(`/medications/${dose.medication_id}/logs`, {
       method: "POST",
       body: { scheduled_at: dose.scheduled_at, status },
     });
+    setPending(saved === null);
 
+    sending.current = false;
     setBusy(null);
   }
 
@@ -49,6 +58,11 @@ export default function MedCheck() {
     <Screen title="약 복용" onBack={() => nav("/s/home")}>
       {!doses && <Spinner />}
       <Notice tone="error">{error}</Notice>
+        {pending && (
+          <Notice tone="error">
+            아직 서버에 보내지 못했어요. 인터넷이 연결되면 저절로 올라갑니다.
+          </Notice>
+        )}
 
       {doses?.length === 0 && (
         <Notice>오늘 드실 약이 없습니다. 자녀분이 등록하면 여기에 표시됩니다.</Notice>

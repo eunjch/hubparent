@@ -11,6 +11,8 @@ class DeviceRegister(BaseModel):
     platform: DevicePlatform
     push_token: str | None = Field(default=None, max_length=255)
     app_version: str | None = Field(default=None, max_length=20)
+    # 알림 권한을 허락했는가. 거부해도 이 값을 남기려고 토큰 없이도 등록을 받는다
+    notifications_granted: bool | None = None
 
 
 class DeviceOut(ORMModel):

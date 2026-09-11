@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { request } from "../shared/api";
 import { Art, type ArtName } from "../shared/art";
 import { Glyph, type GlyphName } from "../shared/glyphs";
+import { GuardianTabs } from "../shared/tabs";
 import type { Alert, AlertList, AlertType } from "../shared/types";
 import { Notice, Screen, SegTabs, Spinner } from "../shared/ui";
 
@@ -58,34 +59,57 @@ export default function Alerts() {
   const [data, setData] = useState<AlertList | null>(null);
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
-    try {
-      setData(await request<AlertList>(`/alerts?filter=${filter}`));
-    } catch {
-      setError("알림을 불러오지 못했습니다.");
-    }
-  }, [filter]);
+  const load = useCallback(
+    async (state?: { stale: boolean }) => {
+      try {
+        const rows = await request<AlertList>(`/alerts?filter=${filter}`);
+        if (state?.stale) return;
+        setData(rows);
+        setError("");
+      } catch {
+        if (state?.stale) return;
+        setError("알림을 불러오지 못했습니다.");
+      }
+    },
+    [filter],
+  );
 
   useEffect(() => {
+    // 날짜를 연달아 넘기면 늦게 온 응답이 화면을 덮을 수 있다. 갈아탄 것은 버린다 (2026-09-11 점검)
+    const state = { stale: false };
     setData(null);
-    void load();
+    setError("");
+    void load(state);
+    return () => {
+      state.stale = true;
+    };
   }, [load]);
 
+  const [busy, setBusy] = useState(false);
+
   async function ack(row: Alert) {
+    if (busy) return;
+    setBusy(true);
     try {
       await request(`/alerts/${row.id}/ack`, { method: "POST" });
       await load();
     } catch {
       setError("잠시 후 다시 시도해 주세요.");
+    } finally {
+      setBusy(false);
     }
   }
 
   async function ackAll() {
+    if (busy) return;
+    setBusy(true);
     try {
       await request("/alerts/ack-all", { method: "POST", body: {} });
       await load();
     } catch {
       setError("잠시 후 다시 시도해 주세요.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -95,7 +119,8 @@ export default function Alerts() {
   const rows = items.filter((a) => !cards.includes(a));
 
   return (
-    <Screen title="알림" onBack={() => nav("/g/home")}>
+    // 하단 탭 `알림` 이 여기로 온다
+    <Screen title="알림" onBack={() => nav("/g/home")} tabs={<GuardianTabs current="alerts" />}>
       <SegTabs<Filter>
         current={filter}
         onChange={setFilter}

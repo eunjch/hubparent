@@ -88,6 +88,10 @@ export default function GuardianLogin() {
 
         <Notice tone="error">{error}</Notice>
 
+        <button className="text-link" onClick={() => nav("/forgot")}>
+          비밀번호를 잊으셨나요?
+        </button>
+
         <button className="text-link" onClick={() => nav("/signup")}>
           <span className="muted">아직 계정이 없으신가요? </span>회원가입
         </button>

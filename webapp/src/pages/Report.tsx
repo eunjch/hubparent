@@ -9,6 +9,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { request } from "../shared/api";
 import { Glyph } from "../shared/glyphs";
+import { fileUrl } from "../shared/base";
 import { Art, type ArtName, capsuleFor } from "../shared/art";
 import { GuardianTabs, dateLabel, localDate, shiftDate } from "../shared/tabs";
 import type {
@@ -62,25 +63,36 @@ export default function Report() {
 
   useEffect(() => {
     if (!seniorId) return;
+    // 날짜나 부모님이 갈리면 늦게 온 응답은 버린다 (2026-09-11 점검)
+    const state = { stale: false };
     setReport(null);
     setMeals(null);
     setDoses(null);
     setActivity(null);
+    setError("");
     setParams({ user_id: seniorId, date: day }, { replace: true });
 
-    Promise.all([
-      request<FamilyReport>(`/reports/family/${seniorId}?report_date=${day}`),
-      request<MealCheck[]>(`/checks/meals?check_date=${day}&user_id=${seniorId}`),
-      request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`),
-      request<ActivityReport>(`/reports/activity/${seniorId}?report_date=${day}`),
-    ])
-      .then(([r, m, d, a]) => {
-        setReport(r);
-        setMeals(m);
-        setDoses(d);
-        setActivity(a);
-      })
-      .catch(() => setError("기록을 불러오지 못했습니다."));
+    // 하나가 실패해도 나머지는 보여 준다. 예전에는 활동 신호 한 건이 실패하면
+    // 식사·약·기분까지 통째로 감춰졌다.
+    const settle = <T,>(p: Promise<T>) => p.then((v) => v).catch(() => null);
+
+    void Promise.all([
+      settle(request<FamilyReport>(`/reports/family/${seniorId}?report_date=${day}`)),
+      settle(request<MealCheck[]>(`/checks/meals?check_date=${day}&user_id=${seniorId}`)),
+      settle(request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`)),
+      settle(request<ActivityReport>(`/reports/activity/${seniorId}?report_date=${day}`)),
+    ]).then(([r, m, d, a]) => {
+      if (state.stale) return;
+      setReport(r);
+      setMeals(m);
+      setDoses(d);
+      setActivity(a);
+      if (r === null) setError("기록을 불러오지 못했습니다.");
+    });
+
+    return () => {
+      state.stale = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId, day]);
 
@@ -187,7 +199,7 @@ export default function Report() {
                     </span>
                     <span className="t">{s.label}</span>
                     {m?.photo_path && (
-                      <img className="thumb" src={`/uploads/${m.photo_path}`} alt={`${s.label} 식사 사진`} />
+                      <img className="thumb" src={fileUrl(m.photo_path!)} alt={`${s.label} 식사 사진`} />
                     )}
                     <StatusPill tone={m?.status === "ate" ? "done" : m ? "mid" : "none"}>
                       {m?.status === "ate" ? "먹었어요" : m ? "안 먹었어요" : "미기록"}

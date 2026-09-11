@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { request } from "../shared/api";
 import { Glyph } from "../shared/glyphs";
 import { Art, scheduleArt } from "../shared/art";
+import { SeniorTabs } from "../shared/tabs";
 import type { Schedule } from "../shared/types";
 import { Notice, Screen, SegTabs, Spinner } from "../shared/ui";
 
@@ -24,14 +25,27 @@ export default function ScheduleView() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // 날짜를 연달아 넘기면 늦게 온 응답이 화면을 덮을 수 있다. 갈아탄 것은 버린다 (2026-09-11 점검)
+    const state = { stale: false };
     setRows(null);
+    setError("");
     request<Schedule[]>(`/schedules?scope=${scope}`)
-      .then(setRows)
-      .catch(() => setError("일정을 불러오지 못했습니다."));
+      .then((list) => {
+        if (state.stale) return;
+        setRows(list);
+      })
+      .catch(() => {
+        if (state.stale) return;
+        setError("일정을 불러오지 못했습니다.");
+      });
+    return () => {
+      state.stale = true;
+    };
   }, [scope]);
 
   return (
-    <Screen title="일정 확인" onBack={() => nav("/s/home")}>
+    // 하단 탭 `일정` 이 여기로 온다. 탭바가 없으면 돌아갈 길이 좌상단 화살표뿐이다
+    <Screen title="일정 확인" onBack={() => nav("/s/home")} tabs={<SeniorTabs current="schedule" />}>
       <SegTabs<Scope>
         className="blue"
         current={scope}

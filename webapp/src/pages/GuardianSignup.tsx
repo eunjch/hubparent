@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
+import { docUrl } from "../shared/base";
 import { Glyph } from "../shared/glyphs";
 import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
@@ -146,6 +147,14 @@ export default function GuardianSignup() {
             checked={agreeEmail}
             onChange={setAgreeEmail}
           />
+          {/* 동의의 대상 문서를 읽을 수 있어야 한다. 앱 번들 안에 있는데 여는 길이 없었다
+              (2026-09-11 점검). 앱에서도 열리도록 절대 주소를 쓴다. */}
+          <p className="field-hint" style={{ marginTop: 10 }}>
+            <a className="text-link inline" href={docUrl("privacy.html")} target="_blank" rel="noreferrer">
+              개인정보처리방침
+            </a>
+            <span className="muted"> 을 읽고 동의합니다.</span>
+          </p>
         </section>
 
         <Notice tone="error">{error}</Notice>

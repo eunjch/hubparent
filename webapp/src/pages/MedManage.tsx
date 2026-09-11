@@ -59,19 +59,32 @@ export default function MedManage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const load = useCallback(async () => {
-    if (!seniorId) return;
-    try {
-      setMeds(await request<Medication[]>(`/medications?user_id=${seniorId}`));
-    } catch {
-      setError("약 목록을 불러오지 못했습니다.");
-    }
-  }, [seniorId]);
+  const load = useCallback(
+    async (state?: { stale: boolean }) => {
+      if (!seniorId) return;
+      try {
+        const rows = await request<Medication[]>(`/medications?user_id=${seniorId}`);
+        if (state?.stale) return;
+        setMeds(rows);
+        setError("");
+      } catch {
+        if (state?.stale) return;
+        setError("약 목록을 불러오지 못했습니다.");
+      }
+    },
+    [seniorId],
+  );
 
   useEffect(() => {
+    // 날짜를 연달아 넘기면 늦게 온 응답이 화면을 덮을 수 있다. 갈아탄 것은 버린다 (2026-09-11 점검)
+    const state = { stale: false };
     setMeds(null);
-    void load();
+    setError("");
+    void load(state);
     if (seniorId) setParams({ user_id: seniorId }, { replace: true });
+    return () => {
+      state.stale = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seniorId]);
 
@@ -85,9 +98,19 @@ export default function MedManage() {
       dosesKey.current = key;
       setDoses(null);
     }
+    const state = { stale: false };
     request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`)
-      .then(setDoses)
-      .catch(() => setError("복용 현황을 불러오지 못했습니다."));
+      .then((rows) => {
+        if (state.stale) return;
+        setDoses(rows);
+      })
+      .catch(() => {
+        if (state.stale) return;
+        setError("복용 현황을 불러오지 못했습니다.");
+      });
+    return () => {
+      state.stale = true;
+    };
   }, [seniorId, day, dosesVersion]);
 
   function removeTime(t: string) {

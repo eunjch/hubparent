@@ -16,7 +16,7 @@ from app.core.deps import CurrentUser, DBSession, require_guardian
 from app.core.errors import Conflict, NotFound
 from app.core.security import normalize_phone
 from app.models.enums import UserRole
-from app.models.user import Family, FamilyMember, User, UserSettings
+from app.models.user import Device, Family, FamilyMember, User, UserSettings
 from app.schemas.family import FamilyOut, MemberOut, SeniorCreate, SeniorOut, SeniorUpdate
 from app.services import account
 
@@ -39,6 +39,20 @@ async def _senior_rows(session: DBSession, family_id: uuid.UUID) -> list[SeniorO
         .where(FamilyMember.family_id == family_id, FamilyMember.role == UserRole.SENIOR)
         .order_by(FamilyMember.created_at)
     )
+    found = rows.all()
+
+    # 알림을 꺼 둔 부모님을 자녀 화면에서도 알 수 있어야 한다 (계획서 8.5.8).
+    # 단말이 여럿이면 하나라도 켜져 있으면 켜진 것으로 본다.
+    granted: dict[uuid.UUID, bool] = {}
+    if found:
+        ids = [u.id for u, _ in found]
+        states = await session.execute(
+            select(Device.user_id, Device.notifications_granted).where(Device.user_id.in_(ids))
+        )
+        for uid, ok in states.all():
+            if ok is not None:
+                granted[uid] = granted.get(uid, False) or ok
+
     return [
         SeniorOut(
             id=u.id,
@@ -47,8 +61,9 @@ async def _senior_rows(session: DBSession, family_id: uuid.UUID) -> list[SeniorO
             relation=relation,
             birth_year=u.birth_year,
             joined=u.consented_at is not None,
+            notifications_granted=granted.get(u.id),
         )
-        for u, relation in rows.all()
+        for u, relation in found
     ]
 
 

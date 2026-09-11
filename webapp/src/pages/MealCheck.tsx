@@ -6,11 +6,12 @@
  *  사진은 선택이다. 안 올려도 체크는 끝난다 (계획서 8.5.8).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { pickMealPhoto } from "../native/bridge";
 import { ApiError, request, upload } from "../shared/api";
+import { fileUrl } from "../shared/base";
 import { Art } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
 import { send } from "../shared/offlineQueue";
@@ -33,6 +34,10 @@ export default function MealCheck() {
   const [rows, setRows] = useState<Meal[] | null>(null);
   const [busy, setBusy] = useState<CheckSlot | null>(null);
   const [error, setError] = useState("");
+  // 오프라인 큐에 들어간 상태. 화면만 바뀌고 서버에는 없는 것을 숨기지 않는다
+  const [pending, setPending] = useState(false);
+  // 같은 틱의 연타를 막는 잠금. 상태로는 늦는다
+  const sending = useRef(false);
   const [photoNote, setPhotoNote] = useState("");
 
   useEffect(() => {
@@ -42,6 +47,10 @@ export default function MealCheck() {
   }, []);
 
   async function answer(slot: CheckSlot, status: MealStatus) {
+    // 연타를 막는다. busy 는 상태라 같은 틱의 두 번째 클릭을 못 막는다 — ref 로 즉시 잠근다
+    // (2026-09-11 점검)
+    if (sending.current) return;
+    sending.current = true;
     setBusy(slot);
     setError("");
 
@@ -60,6 +69,13 @@ export default function MealCheck() {
     if (saved) {
       setRows((prev) => [...(prev ?? []).filter((r) => r.slot !== slot), saved]);
     }
+    if (saved === null) {
+      // 오프라인 큐에 들어갔다. 화면만 바뀌고 서버에는 없는 상태를 숨기지 않는다
+      setPending(true);
+    } else {
+      setPending(false);
+    }
+    sending.current = false;
     setBusy(null);
   }
 
@@ -86,6 +102,11 @@ export default function MealCheck() {
     <Screen title="식사 체크" onBack={() => nav("/s/home")}>
       {!rows && <Spinner />}
       <Notice tone="error">{error}</Notice>
+        {pending && (
+          <Notice tone="error">
+            아직 서버에 보내지 못했어요. 인터넷이 연결되면 저절로 올라갑니다.
+          </Notice>
+        )}
 
       {rows && (
         <>
@@ -141,7 +162,7 @@ export default function MealCheck() {
                   <div className="thumbs">
                     {withPhoto.map((s) => (
                       <span className="thumb-item" key={s.key}>
-                        <img className="thumb" src={`/uploads/${find(s.key)!.photo_path}`} alt={`${s.label} 식사 사진`} />
+                        <img className="thumb" src={fileUrl(find(s.key)!.photo_path!)} alt={`${s.label} 식사 사진`} />
                         <span className="cap">{s.label}</span>
                       </span>
                     ))}

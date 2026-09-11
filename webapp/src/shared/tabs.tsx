@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { TabBar } from "./ui";
 
 export type SeniorTab = "home" | "record" | "schedule" | "more";
-export type GuardianTab = "home" | "report" | "message" | "more";
+export type GuardianTab = "home" | "report" | "alerts" | "more";
 
 export function SeniorTabs({ current }: { current: SeniorTab }) {
   const nav = useNavigate();
@@ -34,7 +34,8 @@ export function GuardianTabs({ current }: { current: GuardianTab }) {
       items={[
         { key: "home", icon: "home", label: "홈", onClick: () => nav("/g/home") },
         { key: "report", icon: "report", label: "리포트", onClick: () => nav("/g/report") },
-        { key: "message", icon: "message", label: "메시지", onClick: () => nav("/g/alerts") },
+        // 메시지 기능은 없다. 있지도 않은 것을 기대하게 만들지 않는다 (2026-09-11 점검)
+        { key: "alerts", icon: "message", label: "알림", onClick: () => nav("/g/alerts") },
         { key: "more", icon: "grid", label: "더보기", onClick: () => nav("/g/more") },
       ]}
     />

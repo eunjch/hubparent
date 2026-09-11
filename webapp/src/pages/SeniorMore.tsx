@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
+import { docUrl } from "../shared/base";
 import { clearTokens } from "../shared/auth";
 import { prettyPhone } from "../shared/format";
 import { Glyph } from "../shared/glyphs";
@@ -31,6 +32,8 @@ export default function SeniorMore() {
   }, []);
 
   async function signOut() {
+    // 화면에서 가장 큰 버튼이라 스크롤하다 닿기 쉽다. 한 번 묻는다 (2026-09-11 점검).
+    if (!window.confirm("로그아웃하시겠어요?\n\n다시 들어오시려면 자녀분의 이름과 전화번호가 필요합니다.")) return;
     await clearTokens();
     nav("/", { replace: true });
   }
@@ -90,6 +93,11 @@ export default function SeniorMore() {
             <Glyph name="logout" size={22} />
             로그아웃
           </button>
+          <div className="withdraw-link">
+            <a className="text-btn" href={docUrl("privacy.html")} target="_blank" rel="noreferrer">
+              개인정보처리방침
+            </a>
+          </div>
           {/* 어르신이 잘못 누르지 않도록 작게. 눌러도 확인 화면이 두 번 더 있다 */}
           <div className="withdraw-link">
             <button className="text-btn danger" onClick={() => nav("/withdraw")}>

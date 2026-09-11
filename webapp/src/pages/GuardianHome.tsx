@@ -64,18 +64,36 @@ export default function GuardianHome() {
     })();
   }, []);
 
-  const loadReport = useCallback(async () => {
-    if (!seniorId) return;
-    try {
-      setReport(await request<FamilyReport>(`/reports/family/${seniorId}`));
-    } catch {
-      setError("정보를 불러오지 못했습니다.");
-    }
-  }, [seniorId]);
+  /* 부모님을 빠르게 전환하면 먼저 보낸 요청이 나중에 도착해, 화면 위쪽 이름과
+     아래 숫자가 서로 다른 사람 것이 될 수 있었다. 갈아탄 요청의 응답은 버린다
+     (2026-09-11 점검). stale 은 이 효과가 끝났는지를 가리킨다. */
+  // 알림을 꺼 둔 부모님. 복약 알림이 안 울리는데 아무도 모르던 것 (계획서 8.5.8)
+  const notifyOff = seniors.filter((s) => s.notifications_granted === false);
+
+  const loadReport = useCallback(
+    async (state?: { stale: boolean }) => {
+      if (!seniorId) return;
+      try {
+        const next = await request<FamilyReport>(`/reports/family/${seniorId}`);
+        if (state?.stale) return;
+        setReport(next);
+        setError("");
+      } catch {
+        if (state?.stale) return;
+        setError("정보를 불러오지 못했습니다.");
+      }
+    },
+    [seniorId],
+  );
 
   useEffect(() => {
+    const state = { stale: false };
     setReport(null);
-    void loadReport();
+    setError("");
+    void loadReport(state);
+    return () => {
+      state.stale = true;
+    };
   }, [loadReport]);
 
   async function signOut() {
@@ -127,6 +145,13 @@ export default function GuardianHome() {
   return (
     <div className="screen">
       <main className="screen-body">
+        {notifyOff.length > 0 && (
+          <Notice tone="error">
+            {notifyOff.map((s) => s.name).join(" · ")} 님의 폰에서 알림이 꺼져 있어요. 약 드실
+            시간을 알려드릴 수 없으니 대신 챙겨 주세요.
+          </Notice>
+        )}
+
         {/* 우리 부모님 ⌄ + 날짜 + 알림 */}
         <div className="whose">
           <div className="whose-text">
