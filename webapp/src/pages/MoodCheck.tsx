@@ -85,11 +85,9 @@ export default function MoodCheck() {
     <Screen title="기분 체크" onBack={() => nav("/s/home")}>
       {!rows && <Spinner />}
       <Notice tone="error">{error}</Notice>
-        {pending && (
-          <Notice tone="error">
-            아직 서버에 보내지 못했어요. 인터넷이 연결되면 저절로 올라갑니다.
-          </Notice>
-        )}
+      {pending && (
+        <Notice tone="error">아직 서버에 보내지 못했어요. 인터넷이 연결되면 저절로 올라갑니다.</Notice>
+      )}
 
       {rows && (
         <>

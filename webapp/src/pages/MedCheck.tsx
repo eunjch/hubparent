@@ -58,11 +58,9 @@ export default function MedCheck() {
     <Screen title="약 복용" onBack={() => nav("/s/home")}>
       {!doses && <Spinner />}
       <Notice tone="error">{error}</Notice>
-        {pending && (
-          <Notice tone="error">
-            아직 서버에 보내지 못했어요. 인터넷이 연결되면 저절로 올라갑니다.
-          </Notice>
-        )}
+      {pending && (
+        <Notice tone="error">아직 서버에 보내지 못했어요. 인터넷이 연결되면 저절로 올라갑니다.</Notice>
+      )}
 
       {doses?.length === 0 && (
         <Notice>오늘 드실 약이 없습니다. 자녀분이 등록하면 여기에 표시됩니다.</Notice>
