@@ -16,7 +16,7 @@ import { Art } from "../shared/art";
 import { phoneAsYouType } from "../shared/format";
 import { Glyph } from "../shared/glyphs";
 import type { SeniorLookupResult, TokenPair } from "../shared/types";
-import { BigButton, Field, Notice, Spinner } from "../shared/ui";
+import { avatarFor, BigButton, Field, Notice, Spinner } from "../shared/ui";
 
 export default function SeniorJoin() {
   const nav = useNavigate();
@@ -69,7 +69,7 @@ export default function SeniorJoin() {
   /* ── 2단계 — 본인 선택 ── */
   if (found) {
     return (
-      <div className="screen">
+      <div className="screen s-join">
         <header className="screen-head">
           <button className="icon-btn" onClick={() => setFound(null)} aria-label="뒤로 가기">
             <Glyph name="back" size={26} />
@@ -94,7 +94,8 @@ export default function SeniorJoin() {
                 disabled={busy}
               >
                 <span className="face">
-                  <Art name="avatarGrandma" size={52} />
+                  {/* 관계에 맞는 그림. 아버지에게 할머니 그림이 나오고 있었다 (2026-09-11) */}
+                  <Art name={avatarFor(s.relation)} size={52} />
                 </span>
                 <span className="body">
                   <span className="t">{s.name}</span>
@@ -114,7 +115,7 @@ export default function SeniorJoin() {
 
   /* ── 1단계 — 자녀 정보 입력 ── */
   return (
-    <div className="screen">
+    <div className="screen s-join">
       <header className="screen-head">
         <button className="icon-btn" onClick={() => nav("/")} aria-label="뒤로 가기">
           <Glyph name="back" size={26} />
@@ -124,10 +125,14 @@ export default function SeniorJoin() {
       </header>
 
       <main className="screen-body">
-        <div className="hero" style={{ padding: "12px 0 4px" }}>
-          <span className="hero-badge">
-            <Art name="tileHeart" />
-          </span>
+        {/* 시작·로그인 화면과 같은 로고를 쓴다 (2026-09-11). 빨간 하트 타일은
+            앱 아이콘과 달라서 "다른 앱에 들어온 건가" 싶게 만들었다. */}
+        <div className="brand-inline">
+          <Art name="logo" />
+          <span className="brand-name">허브패밀리</span>
+        </div>
+
+        <div className="hero">
           <h2>
             자녀분의 이름과
             <br />

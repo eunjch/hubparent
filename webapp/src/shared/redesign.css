@@ -3504,3 +3504,101 @@ body {
   display: grid;
   place-items: center;
 }
+
+/* ── 부모님 시작하기(/join) — 글자를 키운다 (2026-09-11) ─────────
+ *  60~80대가 처음 만나는 화면인데 자녀 화면과 글자 크기가 같았다.
+ *  로고도 빨간 하트 타일이라 앱 아이콘과 달랐다 — 브랜드 로고로 맞춘다. */
+
+.s-join .brand-inline {
+  margin-top: 12px;
+}
+
+.s-join .brand-inline .art {
+  width: 88px;
+  height: 82px;
+}
+
+.s-join .brand-name {
+  font-size: 1.875rem;
+}
+
+.s-join .hero {
+  padding: 18px 0 6px;
+}
+
+.s-join .hero h2 {
+  font-size: 2rem !important;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+/* 입력칸 — 이름과 번호를 직접 넣으시는 자리다 */
+.s-join .field-label {
+  font-size: 1.3125rem;
+}
+
+.s-join .field-input {
+  font-size: 1.3125rem;
+  min-height: 60px;
+}
+
+.s-join .field-wrap .glyph {
+  width: 28px;
+  height: 28px;
+}
+
+.s-join .field-wrap .field-input {
+  padding-left: 54px;
+}
+
+.s-join .big-btn {
+  font-size: 1.375rem;
+  min-height: 62px;
+}
+
+/* 2단계 — "어느 분이신가요?" 와 이름 카드 */
+.s-join .sub {
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.s-join .choice-card .t {
+  font-size: 1.5rem;
+}
+
+.s-join .choice-card .d {
+  font-size: 1.0625rem;
+}
+
+/* 좁은 폰에서는 한 단계만 줄인다 */
+@media (max-width: 380px) {
+  .s-join .hero h2 {
+    font-size: 1.75rem !important;
+  }
+
+  .s-join .brand-inline .art {
+    width: 76px;
+    height: 71px;
+  }
+}
+
+/* 짧은 화면에서는 로고 위아래를 조인다 — 입력칸과 버튼이 먼저다 */
+@media (max-height: 780px) {
+  .s-join .brand-inline {
+    margin-top: 4px;
+    gap: 6px;
+  }
+
+  .s-join .brand-inline .art {
+    width: 72px;
+    height: 67px;
+  }
+
+  .s-join .hero {
+    padding: 10px 0 4px;
+  }
+
+  .s-join .hero h2 {
+    font-size: 1.75rem !important;
+  }
+}
