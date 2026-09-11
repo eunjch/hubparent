@@ -68,35 +68,57 @@ export function onSessionLost(fn: Listener): () => void {
  *
  *  api.ts 의 request() 를 쓰지 않고 직접 부른다 — 401 재시도가 여기로 들어오므로
  *  서로를 부르면 무한히 돈다. 동시에 여러 요청이 401 을 받아도 갱신은 한 번만 돈다.
+ *
+ *  세 가지를 지킨다.
+ *   - **끝나면 반드시 잠금을 푼다.** 예전에는 토큰이 없을 때 try 밖에서 빠져나가
+ *     finally 를 안 타는 바람에, 한 번 그 경로를 밟으면 앱을 죽일 때까지 갱신이
+ *     영영 되지 않았다 (2026-09-11 재점검).
+ *   - **401 일 때만 토큰을 지운다.** 502·503 은 fetch 가 던지지 않고 그냥 응답으로 온다.
+ *     배포 중 잠깐 503 이 났다고 부모님을 로그아웃시키면 혼자 돌아오지 못한다.
+ *   - **시간 제한을 둔다.** 여기서 매달리면 401 을 받은 모든 화면이 함께 멈춘다.
  */
 let inFlight: Promise<boolean> | null = null;
 
-export async function refreshSession(): Promise<boolean> {
-  if (inFlight) return inFlight;
-  inFlight = (async () => {
-    const refresh = read(REFRESH_KEY);
-    if (!refresh) return false;
-    try {
-      const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refresh }),
-      });
-      if (!res.ok) {
-        // 만료·폐기된 refresh 다. 통신 오류는 여기로 오지 않는다(fetch 가 throw)
-        await clearTokens();
-        lost.forEach((fn) => fn());
-        return false;
-      }
+const REFRESH_TIMEOUT_MS = 10_000;
+
+async function doRefresh(): Promise<boolean> {
+  const refresh = read(REFRESH_KEY);
+  if (!refresh) return false;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REFRESH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refresh }),
+      signal: ctrl.signal,
+    });
+    if (res.ok) {
       const tokens = (await res.json()) as { access_token: string; refresh_token: string };
       await saveTokens(tokens.access_token, tokens.refresh_token);
       return true;
-    } catch {
-      // 통신이 안 되는 것뿐이다. 토큰은 남겨 둔다 — 지하철에서 로그아웃되면 안 된다
-      return false;
-    } finally {
-      inFlight = null;
     }
-  })();
+    if (res.status === 401) {
+      // 만료·폐기된 refresh 다. 이때만 세션을 접는다
+      await clearTokens();
+      lost.forEach((fn) => fn());
+    }
+    // 500·502·503 은 서버가 잠깐 아픈 것이다. 토큰은 그대로 둔다
+    return false;
+  } catch {
+    // 통신이 안 되거나 시간이 다 됐다. 토큰은 남겨 둔다 — 지하철에서 로그아웃되면 안 된다
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function refreshSession(): Promise<boolean> {
+  if (inFlight) return inFlight;
+  // 잠금 해제를 호출부 바깥에서 확실히 한다. 안쪽 early return 에 기대지 않는다
+  inFlight = doRefresh().finally(() => {
+    inFlight = null;
+  });
   return inFlight;
 }

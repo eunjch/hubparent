@@ -191,8 +191,9 @@ export default function MedManage() {
       // 서버가 바뀐 뒤에 날짜별 목록만 조용히 다시 읽는다 (약 목록은 이미 맞다)
       setDosesVersion((v) => v + 1);
     } catch {
-      setError("잠시 후 다시 시도해 주세요.");
+      // load() 가 성공하면 오류를 비우므로, 되돌린 뒤에 다시 말한다 (2026-09-11 재점검)
       await load();
+      setError("알림 설정을 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   }
 

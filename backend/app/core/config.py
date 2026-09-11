@@ -76,16 +76,25 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _guard_secret(self) -> "Settings":
-        """운영에서 서명 키가 비어 있거나 기본값이면 뜨지 않는다.
+        """서명 키가 비어 있으면 뜨지 않는다.
 
         PyJWT 는 빈 키로도 아무 불평 없이 서명·검증한다. 그 상태로 뜨면 누구나
         토큰을 만들어 남의 건강정보를 읽을 수 있다 (2026-09-11 점검).
-        .env.example 이 빈 값이라 그대로 복사하면 실제로 그렇게 된다.
+
+        **ENV 에 기대지 않는다.** `.env.example` 이 `ENV=dev` 와 빈 키를 함께 담고 있어서,
+        "예시를 그대로 복사해 배포한다" 는 가장 흔한 실수에서 가드가 한 번도 안 울렸다.
+        `ENV=production` 같은 오기도 통과했다 (2026-09-11 재점검).
+        빈 값은 개발에서도 실수다 — 개발은 기본값을 쓰면 된다.
         """
-        if self.is_prod and self.SECRET_KEY.strip() in ("", DEFAULT_SECRET):
+        key = self.SECRET_KEY.strip()
+        if not key:
             raise ValueError(
-                "SECRET_KEY 를 설정하세요. 운영에서는 빈 값이나 기본값으로 뜰 수 없습니다. "
-                "예: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+                "SECRET_KEY 가 비어 있습니다. 빈 키로는 토큰을 아무나 위조할 수 있습니다. "
+                'python -c "import secrets; print(secrets.token_urlsafe(48))" 로 만들어 넣으세요.'
+            )
+        if key == DEFAULT_SECRET and self.ENV not in ("dev", "test", "local"):
+            raise ValueError(
+                f"SECRET_KEY 가 개발용 기본값입니다 (ENV={self.ENV}). 실제 키로 바꾸세요."
             )
         return self
 

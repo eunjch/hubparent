@@ -10,7 +10,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { clearTokens } from "../shared/auth";
 import { Art } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
 import { GuardianTabs } from "../shared/tabs";
@@ -44,6 +43,8 @@ export default function GuardianHome() {
   const nav = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
   const [seniors, setSeniors] = useState<Senior[]>([]);
+  // 다시 시도 버튼이 값을 바꾸면 아래 effect 들이 다시 돈다
+  const [attempt, setAttempt] = useState(0);
   const [seniorId, setSeniorId] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const [report, setReport] = useState<FamilyReport | null>(null);
@@ -62,7 +63,7 @@ export default function GuardianHome() {
         setError("정보를 불러오지 못했습니다.");
       }
     })();
-  }, []);
+  }, [attempt]);
 
   /* 부모님을 빠르게 전환하면 먼저 보낸 요청이 나중에 도착해, 화면 위쪽 이름과
      아래 숫자가 서로 다른 사람 것이 될 수 있었다. 갈아탄 요청의 응답은 버린다
@@ -94,18 +95,16 @@ export default function GuardianHome() {
     return () => {
       state.stale = true;
     };
-  }, [loadReport]);
-
-  async function signOut() {
-    await clearTokens();
-    nav("/", { replace: true });
-  }
+  }, [loadReport, attempt]);
 
   if (error) {
+    // 통신이 한 번 끊긴 것뿐일 수 있다. 유일한 버튼이 로그아웃이면 안 된다 (2026-09-11 재점검)
     return (
       <Screen title="부모님">
         <Notice tone="error">{error}</Notice>
-        <BigButton onClick={signOut}>처음으로</BigButton>
+        <BigButton tone="primary" onClick={() => setAttempt((n) => n + 1)}>
+          다시 시도
+        </BigButton>
       </Screen>
     );
   }

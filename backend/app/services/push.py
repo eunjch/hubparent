@@ -153,6 +153,18 @@ async def already_sent(session: AsyncSession, dedupe_key: str) -> bool:
     return row is not None
 
 
+def should_retry(row: NotificationLog) -> bool:
+    """다음 주기에 다시 보낼 값어치가 있는가.
+
+      failed  — 보낼 수단은 있는데 이번에 실패했다(FCM·APNs 오류). 다시 해 볼 만하다.
+      skipped — 보낼 수단 자체가 없다(단말 미등록, 자격증명 미설정). 매 분 두드려도 같다.
+
+    이 둘을 섞으면 단말 없는 어르신의 복약 단계가 영영 안 올라 로그가 침묵하고,
+    워커는 하루 종일 같은 건을 다시 시도한다 (2026-09-11 재점검).
+    """
+    return row.event == "failed"
+
+
 async def send(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -247,6 +259,7 @@ async def send(
         if sent_any:
             event = "sent"
         elif any(n.startswith(("FCM:", "APNs:")) for n in notes):
+            # 수단은 있는데 이번에 실패했다. 다음 주기에 다시 해 볼 값어치가 있다
             event = "failed"
         detail = " · ".join(notes)[:200] or None
 

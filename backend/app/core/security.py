@@ -14,31 +14,44 @@ from app.core.config import settings
 ALGORITHM = "HS256"
 
 
-def _encode(subject: uuid.UUID, token_type: str, expires: timedelta) -> str:
+def _encode(subject: uuid.UUID, token_type: str, expires: timedelta, epoch: int = 0) -> str:
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": str(subject),
         "typ": token_type,
+        "gen": epoch,
         "iat": int(now.timestamp()),
         "exp": int((now + expires).timestamp()),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_access_token(user_id: uuid.UUID) -> str:
-    return _encode(user_id, "access", timedelta(minutes=settings.ACCESS_TOKEN_MINUTES))
+def create_access_token(user_id: uuid.UUID, epoch: int = 0) -> str:
+    return _encode(user_id, "access", timedelta(minutes=settings.ACCESS_TOKEN_MINUTES), epoch)
 
 
-def create_refresh_token(user_id: uuid.UUID) -> str:
-    return _encode(user_id, "refresh", timedelta(days=settings.REFRESH_TOKEN_DAYS))
+def create_refresh_token(user_id: uuid.UUID, epoch: int = 0) -> str:
+    return _encode(user_id, "refresh", timedelta(days=settings.REFRESH_TOKEN_DAYS), epoch)
+
+
+def read_token(token: str, expected_type: str = "access") -> tuple[uuid.UUID, int]:
+    """유효하면 (user_id, 세대) 를 돌려준다. 아니면 jwt 예외를 그대로 올린다.
+
+    세대(gen)는 비밀번호를 바꿀 때 올린다. 옛 토큰은 세대가 낮아 거절된다 —
+    비밀번호를 바꿔도 공격자의 refresh 토큰이 180일 살아 있던 것을 막는다
+    (2026-09-11 재점검). 세대가 없는 옛 토큰은 0 으로 본다.
+    """
+    payload = jwt.decode(
+        token, settings.SECRET_KEY, algorithms=[ALGORITHM], options={"require": ["exp", "sub"]}
+    )
+    if payload.get("typ") != expected_type:
+        raise jwt.InvalidTokenError(f"expected {expected_type} token")
+    return uuid.UUID(payload["sub"]), int(payload.get("gen", 0))
 
 
 def decode_token(token: str, expected_type: str = "access") -> uuid.UUID:
-    """유효하면 user_id 를 돌려준다. 아니면 jwt 예외를 그대로 올린다."""
-    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-    if payload.get("typ") != expected_type:
-        raise jwt.InvalidTokenError(f"expected {expected_type} token")
-    return uuid.UUID(payload["sub"])
+    """세대를 보지 않는 옛 진입점. 새 코드는 read_token 을 쓴다."""
+    return read_token(token, expected_type)[0]
 
 
 # ── 비밀번호 ────────────────────────────────────────────────

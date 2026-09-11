@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { docUrl } from "../shared/base";
 import { clearTokens } from "../shared/auth";
 import { Glyph } from "../shared/glyphs";
 import { GuardianTabs } from "../shared/tabs";
@@ -73,9 +72,9 @@ export default function GuardianMore() {
             로그아웃
           </button>
           <div className="withdraw-link">
-            <a className="text-btn" href={docUrl("privacy.html")} target="_blank" rel="noreferrer">
+            <button className="text-btn" onClick={() => nav("/privacy")}>
               개인정보처리방침
-            </a>
+            </button>
           </div>
           {/* 탈퇴는 되돌릴 수 없다. 로그아웃과 헷갈리지 않게 작게 둔다 */}
           <div className="withdraw-link">

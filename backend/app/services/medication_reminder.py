@@ -100,8 +100,12 @@ async def remind(session: AsyncSession, now: datetime | None = None) -> int:
                 route="/s/med",
                 dedupe_key=f"med:{med.id}:{occ.scheduled_at.isoformat()}:L{due}",
             )
-            if due == 2:
-                # 보호자 알림은 어르신 쪽 발송 성공과 무관하게 보낸다.
+            # 보호자 알림은 어르신 쪽 발송 성공과 무관하게 보낸다.
+            # 다만 어르신 쪽이 안 올라가는 동안 매 분 다시 부르지 않도록, 이미 보낸 건은 건너뛴다
+            # (2026-09-11 재점검). dedupe 가 막아 주긴 하지만 조회·갱신이 매 분 반복된다.
+            if due == 2 and not await push.already_sent(
+                session, push.fit_key(f"med-guardian:{med.id}:{occ.scheduled_at.isoformat()}") or ""
+            ):
                 # 어르신 폰에 못 닿는 상황이야말로 자녀가 알아야 할 때다
                 # (2026-09-11 재점검: 여기를 어르신 발송에 묶었다가 단말 없는 어르신은
                 #  보호자 알림까지 영영 안 가게 만들 뻔했다). 키가 달라 중복되지 않는다.
@@ -115,10 +119,12 @@ async def remind(session: AsyncSession, now: datetime | None = None) -> int:
                     dedupe_key=f"med-guardian:{med.id}:{occ.scheduled_at.isoformat()}",
                 )
 
-            # 실제로 나갔을 때만 단계를 올린다. 무조건 올리면 FCM 일시 장애나 단말 미등록으로
-            # 실패한 약 알림이 영영 다시 시도되지 않는다 (2026-09-11 점검).
-            # 이미 보낸 건은 dedupe 로 걸러지므로 재시도가 중복 발송이 되지 않는다.
             if row.event != "sent":
+                # 일시적 실패(FCM 장애 등)면 단계를 그대로 두고 다음 주기에 다시 보낸다.
+                # 보낼 수단이 아예 없으면(단말 미등록) 다시 해도 같으므로 단계를 올려
+                # 넘어간다 — 왜 안 울렸는지는 이력의 detail 이 답한다 (2026-09-11 재점검).
+                if not push.should_retry(row):
+                    log.reminder_level = due
                 continue
             log.reminder_level = due
             sent += 1

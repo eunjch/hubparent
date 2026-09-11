@@ -23,6 +23,9 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     role: Mapped[UserRole] = enum_column(UserRole, nullable=False)
     birth_year: Mapped[int | None] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # 발급된 토큰의 세대. 비밀번호를 바꾸면 올린다 → 그 이전 토큰은 모두 무효가 된다.
+    # 폐기 목록 없이 세션을 끊는 가장 단순한 방법이다 (2026-09-11 재점검).
+    token_epoch: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     # 민감정보 수집·이용 동의 시각. 없으면 서비스 이용 불가 — 계획서 11장
     consented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

@@ -10,10 +10,12 @@ import { BASE_URL } from "./base";
 /** 응답이 이만큼 안 오면 포기한다. 지하 주차장처럼 연결은 되고 응답만 없는 곳에서
  *  몇 분씩 매달리면 화면이 멈춘 것처럼 보인다 (2026-09-11 점검). */
 const TIMEOUT_MS = 15_000;
+/** 사진은 수 MB 라 같은 잣대를 대면 LTE 에서 거의 항상 실패한다 (2026-09-11 재점검). */
+const UPLOAD_TIMEOUT_MS = 90_000;
 
-async function withTimeout(url: string, init: RequestInit): Promise<Response> {
+async function withTimeout(url: string, init: RequestInit, ms = TIMEOUT_MS): Promise<Response> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), ms);
   try {
     return await fetch(url, { ...init, signal: ctrl.signal });
   } catch (e) {
@@ -89,16 +91,20 @@ export async function upload<T>(path: string, file: File): Promise<T> {
   const form = new FormData();
   form.append("file", file);
 
-  let res = await withTimeout(`${BASE_URL}/api/v1${path}`, { method: "POST", headers, body: form });
+  let res = await withTimeout(
+    `${BASE_URL}/api/v1${path}`,
+    { method: "POST", headers, body: form },
+    UPLOAD_TIMEOUT_MS,
+  );
   if (res.status === 401 && (await refreshSession())) {
     const retry: Record<string, string> = {};
     const fresh = await getAccessToken();
     if (fresh) retry.Authorization = `Bearer ${fresh}`;
-    res = await withTimeout(`${BASE_URL}/api/v1${path}`, {
-      method: "POST",
-      headers: retry,
-      body: form,
-    });
+    res = await withTimeout(
+      `${BASE_URL}/api/v1${path}`,
+      { method: "POST", headers: retry, body: form },
+      UPLOAD_TIMEOUT_MS,
+    );
   }
 
   if (!res.ok) {

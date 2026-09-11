@@ -87,7 +87,11 @@ export default function Report() {
       setMeals(m);
       setDoses(d);
       setActivity(a);
-      if (r === null) setError("기록을 불러오지 못했습니다.");
+      // 하나라도 못 받았으면 말한다. 식사만 실패했는데 조용히 두면 세 끼가 "미기록" 으로
+      // 보여, 자녀는 부모님이 굶은 것으로 읽는다 (2026-09-11 재점검).
+      if ([r, m, d].some((x) => x === null)) {
+        setError("일부 기록을 불러오지 못했습니다. 화면의 숫자가 실제와 다를 수 있어요.");
+      }
     });
 
     return () => {

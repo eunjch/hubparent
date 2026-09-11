@@ -64,10 +64,13 @@ async def validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
     제출한 값(input)은 싣지 않는다 — 비밀번호가 그대로 돌아오던 문제도 함께 막는다.
     """
     errors = getattr(exc, "errors", lambda: [])()
-    first = errors[0] if errors else {}
+    first = errors[0] if isinstance(errors, list) and errors else {}
     field = _field_name(tuple(first.get("loc", ())))
-    label = FIELD_LABEL.get(field, field)
-    message = f"{label}을(를) 다시 확인해 주세요." if field != "입력값" else "입력값을 다시 확인해 주세요."
+    label = FIELD_LABEL.get(field)
+    # 아는 항목만 이름을 부른다. 모르는 것은 내부 필드명을 그대로 보여 주느니
+    # 뭉뚱그리는 편이 낫다 — "agree_email_report을(를) 다시 확인해 주세요" 는 안내가 아니다
+    # (2026-09-11 재점검). 어느 항목인지는 field 로 화면이 알 수 있다.
+    message = f"{label}을(를) 다시 확인해 주세요." if label else "입력하신 내용을 다시 확인해 주세요."
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"code": "VALIDATION_ERROR", "message": message, "field": field},

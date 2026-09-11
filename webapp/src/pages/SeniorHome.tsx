@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { notificationsEnabled } from "../native/bridge";
+import { notificationsEnabled, onResume } from "../native/bridge";
 import { request } from "../shared/api";
 import { Art } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
@@ -30,7 +30,10 @@ export default function SeniorHome() {
   const [notifyOff, setNotifyOff] = useState(false);
 
   useEffect(() => {
-    void notificationsEnabled().then((on) => setNotifyOff(!on));
+    const look = () => void notificationsEnabled().then((on) => setNotifyOff(!on));
+    look();
+    // 설정에서 알림을 켜고 돌아오면 배너가 사라져야 한다 (2026-09-11 재점검)
+    return onResume(look);
   }, [attempt]);
 
   useEffect(() => {
@@ -60,8 +63,11 @@ export default function SeniorHome() {
         setChecked({ done, total: 3 + 3 + doses.length });
       })
       // 불러오지 못한 것을 0점으로 위장하지 않는다. 다 기록한 분이 0점을 보면
-      // 처음부터 다시 누르게 된다 (2026-09-11 점검).
-      .catch(() => setChecked(null));
+      // 처음부터 다시 누르게 된다 (2026-09-11 점검). 오류로 올려 "다시 시도" 가 뜨게 한다.
+      .catch(() => {
+        setChecked(null);
+        setError("기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      });
   }, [attempt]);
 
   if (error) {

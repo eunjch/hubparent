@@ -17,7 +17,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, event, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -59,6 +59,14 @@ async def _member_ids(session: AsyncSession, family_id: uuid.UUID) -> list[uuid.
     return list(rows)
 
 
+def _after_commit(session: AsyncSession, user_id: uuid.UUID) -> None:
+    """커밋이 실제로 끝나면 그때 파일을 지운다. 롤백되면 파일도 그대로 남는다."""
+
+    @event.listens_for(session.sync_session, "after_commit", once=True)
+    def _go(_sess) -> None:  # noqa: ANN001
+        _drop_uploads(user_id)
+
+
 def _drop_uploads(user_id: uuid.UUID) -> None:
     """식사 사진은 UPLOAD_DIR/<user_id>/ 아래 모인다 (checks.py). 통째로 지운다."""
     folder = Path(settings.UPLOAD_DIR) / str(user_id)
@@ -96,7 +104,9 @@ async def purge_user(session: AsyncSession, user_id: uuid.UUID) -> None:
 
     await session.execute(delete(FamilyMember).where(FamilyMember.user_id == user_id))
     await session.execute(delete(User).where(User.id == user_id))
-    _drop_uploads(user_id)
+    # 파일 삭제는 커밋이 끝난 뒤로 미룬다. 여기서 지우면 뒤에서 트랜잭션이 실패했을 때
+    # 사진만 사라지고 행은 전부 남는 어중간한 상태가 된다 (2026-09-11 재점검).
+    _after_commit(session, user_id)
 
 
 async def _purge_family(session: AsyncSession, family_id: uuid.UUID) -> int:

@@ -78,3 +78,72 @@ async def test_garbage_token_is_rejected(client):
     )
     assert res.status_code == 400
     assert res.json()["code"] == "INVALID_RESET_TOKEN"
+
+
+@pytest.mark.asyncio
+async def test_reset_kills_existing_sessions(client, monkeypatch):
+    """비밀번호를 바꾸면 그 전에 발급된 토큰이 전부 끊긴다.
+
+    계정을 뺏긴 사람이 비밀번호를 바꿔도 공격자의 refresh 토큰이 180일 살아 있었다
+    (2026-09-11 재점검). 그게 이 기능을 만든 이유를 무력화한다.
+    """
+    g = await _register(client)
+    stolen_access = g["access_token"]
+    stolen_refresh = g["refresh_token"]
+
+    # 뺏긴 토큰은 지금은 통한다
+    before = await client.get("/api/v1/me", headers={"Authorization": f"Bearer {stolen_access}"})
+    assert before.status_code == 200
+
+    token = await _forgot(client, GUARDIAN["email"], monkeypatch)
+    res = await client.post(
+        "/api/v1/auth/password/reset", json={"token": token, "password": "되찾은비밀1234"}
+    )
+    assert res.status_code == 200, res.text
+
+    # 뺏긴 access 도, refresh 도 더는 안 통한다
+    after = await client.get("/api/v1/me", headers={"Authorization": f"Bearer {stolen_access}"})
+    assert after.status_code == 401
+    assert after.json()["code"] == "SESSION_ENDED"
+
+    again = await client.post("/api/v1/auth/refresh", json={"refresh_token": stolen_refresh})
+    assert again.status_code == 401
+
+    # 주인은 새 비밀번호로 들어간다
+    fresh = await client.post(
+        "/api/v1/auth/login", json={"email": GUARDIAN["email"], "password": "되찾은비밀1234"}
+    )
+    assert fresh.status_code == 200, fresh.text
+    ok = await client.get(
+        "/api/v1/me", headers={"Authorization": f"Bearer {fresh.json()['access_token']}"}
+    )
+    assert ok.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_reset_refuses_accounts_without_a_password(client):
+    """비밀번호가 없는 어르신 계정에는 재설정이 성립하지 않는다.
+
+    빈 비밀번호의 지문은 모든 계정에서 같아, 막지 않으면 일회성 보장이 깨진다.
+    """
+    from app.services import password_reset
+    from tests.test_medications import _family
+
+    _gt, _st, senior_id = await _family(client)
+
+    import uuid as _uuid
+
+    from app.models.user import User
+
+    # 어르신 계정으로 토큰을 억지로 만든다
+    class _Fake:
+        id = _uuid.UUID(senior_id)
+        password_hash = None
+
+    token = password_reset.make_token(_Fake())  # type: ignore[arg-type]
+    res = await client.post(
+        "/api/v1/auth/password/reset", json={"token": token, "password": "아무비밀1234"}
+    )
+    assert res.status_code == 400
+    assert res.json()["code"] == "INVALID_RESET_TOKEN"
+    assert User  # import 유지

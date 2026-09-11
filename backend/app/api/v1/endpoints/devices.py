@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, status
-from sqlalchemy import delete, select
+from sqlalchemy import select, update
 
 from app.core.deps import CurrentUser, DBSession
 from app.models.monitor import ActivitySignal
@@ -28,11 +28,15 @@ async def register_device(payload: DeviceRegister, user: CurrentUser, session: D
             )
         )
         if device is None:
-            # 기기를 물려준 경우: 남이 쥐고 있던 같은 토큰은 버린다
+            # 같은 토큰을 남이 쥐고 있다. push_token 에 유니크 제약이 있으므로 놓아 줘야
+            # 내 행에 붙일 수 있다. 한 기기를 물려주거나 가족이 함께 쓰는 흔한 경우다.
+            # 행을 지우지는 않는다 — last_seen_at 은 그 사람의 생존 신호라 남겨야 하고,
+            # 지우면 "토큰을 아는 사람이 남의 기록을 없애는" 수단이 된다 (2026-09-11 재점검).
+            # 이 토큰으로 계속 보내면 엉뚱한 사람 폰에 남의 건강정보가 뜨므로 놓아 주는 것이 맞다.
             await session.execute(
-                delete(Device).where(
-                    Device.push_token == payload.push_token, Device.user_id != user.id
-                )
+                update(Device)
+                .where(Device.push_token == payload.push_token, Device.user_id != user.id)
+                .values(push_token=None)
             )
     if device is None:
         device = await session.scalar(

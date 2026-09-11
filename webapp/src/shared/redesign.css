@@ -2158,8 +2158,9 @@ body {
 
 .link-btn,
 .text-btn,
-.row-del,
-.row-edit {
+.row-actions .row-del,
+.row-actions .row-edit {
+  /* tokens.css 가 .row-actions .row-del 로 44px 를 걸어 둔다. 같은 특이도로 맞춰야 이긴다 */
   min-height: 48px;
 }
 
@@ -2171,8 +2172,8 @@ body {
 
 /* "앨범에서 고르기" — 앱에서 가장 작았고 셋이 붙어 있었다 */
 .inline-link {
-  min-height: 44px;
-  padding: 0 10px;
+  min-height: 48px;
+  padding: 0 12px;
   margin: 0 2px;
   text-underline-offset: 3px;
 }
@@ -2183,21 +2184,35 @@ body {
   height: 34px;
 }
 
+/* 트랙을 키웠으니 손잡이 위치도 맞춘다. 안 맞추면 위로 치우치고 켠 상태에서 끝까지 안 간다.
+   색 말고 이 위치가 켜짐·꺼짐의 유일한 단서다 (계획서 9장). */
+.switch .knob {
+  top: 5px;
+  left: 5px;
+}
+
+.switch.on .knob {
+  left: 29px;
+}
+
 /* 가입 동의 체크박스 — 26px 이라 누르기 어려웠다 */
 .check input[type="checkbox"] {
   width: 28px;
   height: 28px;
 }
 
-.check {
-  min-height: 56px;
-}
 
 /* 기능 버튼과 입력 예시는 읽혀야 한다 */
 .text-btn.danger,
-.row-del,
-.field-input::placeholder {
+.row-del {
   color: var(--ink-2);
+}
+
+/* 예시 글자. 대비는 기준을 넘기되 입력값(--ink #1c2b5c)과는 눈에 띄게 달라야 한다.
+   --ink-2 까지 올렸더니 부모님 첫 화면에서 이미 입력된 것처럼 보였다 (2026-09-11 재점검). */
+.field-input::placeholder {
+  color: #6a76a0;
+  font-weight: 400;
 }
 
 /* 스위치는 보이는 크기를 키우면 뚱뚱해진다. 눌리는 범위만 넓힌다 (48px) */
@@ -2211,6 +2226,69 @@ body {
 .text-link.inline {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--touch-min);
   padding: 0 2px;
+}
+
+/* 더보기의 방침 링크 — a 는 button 과 달리 세로 가운데로 오지 않는다 */
+.withdraw-link .text-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 앱 안에서 보는 방침 문서. 원본 HTML 의 제목·표를 앱 톤으로 맞춘다 */
+.policy-doc {
+  color: var(--ink);
+  line-height: 1.7;
+  font-size: var(--text-body);
+}
+
+.policy-doc h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.policy-doc h2 {
+  font-size: var(--text-label);
+  font-weight: 800;
+  color: var(--brand-deep);
+  margin: 26px 0 8px;
+}
+
+.policy-doc p {
+  margin: 0 0 10px;
+}
+
+.policy-doc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--text-sm);
+  margin: 8px 0 12px;
+}
+
+.policy-doc th,
+.policy-doc td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.policy-doc th {
+  background: var(--surface-2);
+}
+
+.policy-doc .meta,
+.policy-doc small {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.policy-doc .box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
 }

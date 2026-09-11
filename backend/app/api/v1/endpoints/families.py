@@ -42,16 +42,18 @@ async def _senior_rows(session: DBSession, family_id: uuid.UUID) -> list[SeniorO
     found = rows.all()
 
     # 알림을 꺼 둔 부모님을 자녀 화면에서도 알 수 있어야 한다 (계획서 8.5.8).
-    # 단말이 여럿이면 하나라도 켜져 있으면 켜진 것으로 본다.
+    # 단말이 여럿이면 **가장 최근에 쓴 것**을 본다. "하나라도 켜져 있으면 켜짐" 으로 보면
+    # 안 쓰는 옛 폰이 지금 쓰는 폰의 꺼짐을 가린다 (2026-09-11 재점검).
     granted: dict[uuid.UUID, bool] = {}
     if found:
         ids = [u.id for u, _ in found]
         states = await session.execute(
-            select(Device.user_id, Device.notifications_granted).where(Device.user_id.in_(ids))
+            select(Device.user_id, Device.notifications_granted)
+            .where(Device.user_id.in_(ids), Device.notifications_granted.is_not(None))
+            .order_by(Device.last_seen_at)
         )
         for uid, ok in states.all():
-            if ok is not None:
-                granted[uid] = granted.get(uid, False) or ok
+            granted[uid] = ok   # 정렬 덕에 마지막으로 덮이는 값이 가장 최근 단말이다
 
     return [
         SeniorOut(

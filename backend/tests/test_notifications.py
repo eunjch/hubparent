@@ -712,3 +712,39 @@ async def test_guardian_gets_l2_even_when_the_senior_push_fails(client, session,
     guardian = [r for r in rows if r.dedupe_key and r.dedupe_key.startswith("med-guardian")]
     assert guardian, "보호자 L2 알림이 생기지 않았다"
     assert guardian[0].title == "부모님이 아직 약을 안 드셨어요"
+
+
+@pytest.mark.asyncio
+async def test_device_token_moves_without_erasing_the_previous_owner(client, session):
+    """한 기기를 다른 사람이 쓰면 토큰은 넘어가되 옛 주인의 행은 남는다.
+
+    지우면 "토큰을 아는 사람이 남의 생존 신호를 없애는" 수단이 되고,
+    안 놓아 주면 유니크 제약에 걸려 새 주인이 등록조차 못 한다 (2026-09-11 재점검).
+    """
+    from app.models.user import Device
+
+    gt, st, _senior_id = await _family(client)
+
+    first = await client.post(
+        "/api/v1/devices",
+        headers={"Authorization": f"Bearer {st}"},
+        json={"platform": "android", "push_token": "같은기기토큰", "app_version": "1.0"},
+    )
+    assert first.status_code == 200, first.text
+
+    second = await client.post(
+        "/api/v1/devices",
+        headers={"Authorization": f"Bearer {gt}"},
+        json={"platform": "android", "push_token": "같은기기토큰", "app_version": "1.0"},
+    )
+    assert second.status_code == 200, second.text
+
+    session.expire_all()
+    rows = list(await session.scalars(select(Device)))
+    assert len(rows) == 2, "옛 주인의 행이 사라졌다"
+    holders = [r for r in rows if r.push_token == "같은기기토큰"]
+    assert len(holders) == 1, "토큰을 둘이 쥐고 있다"
+
+    # 옛 주인의 생존 신호는 남는다 — 이상 징후 감지가 여기에 달려 있다
+    orphan = next(r for r in rows if r.push_token is None)
+    assert orphan.last_seen_at is not None

@@ -7,9 +7,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { request } from "../shared/api";
+import { ApiError, request } from "../shared/api";
 import { Art, capsuleFor } from "../shared/art";
-import { send } from "../shared/offlineQueue";
+import { pendingCount, send } from "../shared/offlineQueue";
 import type { Dose, MedicationStatus } from "../shared/types";
 import { Notice, Screen, Spinner, StatusPill } from "../shared/ui";
 
@@ -18,10 +18,11 @@ export default function MedCheck() {
   const [doses, setDoses] = useState<Dose[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  // 오프라인 큐에 들어간 상태. 화면만 바뀌고 서버에는 없는 것을 숨기지 않는다
-  const [pending, setPending] = useState(false);
-  // 같은 틱의 연타를 막는 잠금. 상태로는 늦는다
-  const sending = useRef(false);
+  // 오프라인 큐에 들어간 상태. 화면만 바뀌고 서버에는 없는 것을 숨기지 않는다.
+  // 큐가 실제로 비면 안내도 사라져야 하므로 개수를 본다 (2026-09-11 재점검).
+  const [pending, setPending] = useState(() => pendingCount() > 0);
+  // 같은 약·시각의 연타를 막는 잠금. 상태는 같은 틱의 두 번째 클릭을 못 막아 ref 를 쓴다
+  const sending = useRef(new Set<string>());
 
   useEffect(() => {
     request<Dose[]>("/medications/today")
@@ -30,10 +31,11 @@ export default function MedCheck() {
   }, []);
 
   async function answer(dose: Dose, status: MedicationStatus) {
-    // 연타를 막는다. busy 는 상태라 같은 틱의 두 번째 클릭을 못 막는다 — ref 로 즉시 잠근다
-    if (sending.current) return;
-    sending.current = true;
+    // 같은 칸을 연달아 누르는 것만 막는다. 화면 전체를 잠그면 아침을 누른 뒤
+    // 점심을 못 누른다 — 실제로 그렇게 만들었다가 되돌린다 (2026-09-11 재점검).
     const key = dose.medication_id + dose.scheduled_at;
+    if (sending.current.has(key)) return;
+    sending.current.add(key);
     setBusy(key);
     setError("");
 
@@ -44,13 +46,22 @@ export default function MedCheck() {
       ),
     );
 
-    const saved = await send<Dose>(`/medications/${dose.medication_id}/logs`, {
-      method: "POST",
-      body: { scheduled_at: dose.scheduled_at, status },
-    });
+    let saved: Dose | null = null;
+    try {
+      saved = await send<Dose>(`/medications/${dose.medication_id}/logs`, {
+        method: "POST",
+        body: { scheduled_at: dose.scheduled_at, status },
+      });
+    } catch (e) {
+      // 서버가 거절한 것이다. 큐에 넣어도 영원히 실패하므로 바로 알린다
+      setError(e instanceof ApiError ? e.message : "기록하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      sending.current.delete(key);
+      setBusy(null);
+      return;
+    }
     setPending(saved === null);
 
-    sending.current = false;
+    sending.current.delete(key);
     setBusy(null);
   }
 

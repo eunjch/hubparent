@@ -3,6 +3,7 @@ import uuid
 from pydantic import BaseModel, Field
 
 from app.models.enums import UserRole
+from app.schemas.auth import Phone
 from app.schemas.common import ORMModel
 
 
@@ -10,7 +11,10 @@ class SeniorCreate(BaseModel):
     """자녀가 부모님을 등록한다. 어르신은 아무것도 입력하지 않는다 — 계획서 1.4."""
 
     name: str = Field(min_length=1, max_length=50, examples=["김영희"])
-    phone: str = Field(min_length=10, max_length=20, examples=["010-8765-4321"])
+    # 자녀 가입에만 붙여 뒀는데, "----------" 같은 값이 실제로 들어오던 경로는 이쪽이었다
+    # (2026-09-11 재점검). 빈 문자열 phone 이 하나 생기면 이후 모든 무의미 입력이
+    # 그 계정과 충돌해 엉뚱한 안내가 나간다.
+    phone: Phone = Field(examples=["010-8765-4321"])
     relation: str | None = Field(default=None, max_length=20, examples=["어머니"])
     birth_year: int | None = Field(default=None, ge=1900, le=2030)
 

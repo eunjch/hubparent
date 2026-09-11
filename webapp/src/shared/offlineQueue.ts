@@ -5,7 +5,7 @@
  *  서버는 (user, date, slot) 유니크 + Idempotency-Key 로 중복을 흡수한다.
  */
 
-import { request, type RequestOptions } from "./api";
+import { ApiError, request, type RequestOptions } from "./api";
 
 interface QueuedRequest {
   id: string;
@@ -31,14 +31,29 @@ function save(items: QueuedRequest[]): void {
   }
 }
 
-/** 전송을 시도하고, 실패하면 큐에 넣는다. 호출부는 항상 성공한 것처럼 화면을 갱신한다. */
+/** 다시 보내 봐야 소용없는 실패인가.
+ *
+ *  400·403·422 같은 거절은 통신 문제가 아니다. 큐에 넣으면 앱을 켤 때마다 같은 실패를
+ *  반복하며 영원히 남고, 화면은 "곧 올라갑니다" 라고 거짓말한다 (2026-09-11 재점검).
+ *  401 은 예외다 — api.ts 가 토큰을 갱신해 다시 보내므로, 여기까지 왔다면 세션이 끝난 것이다.
+ */
+function permanent(e: unknown): boolean {
+  return e instanceof ApiError && e.status >= 400 && e.status < 500;
+}
+
+/** 전송을 시도하고, 나중에 될 법한 실패만 큐에 넣는다.
+ *
+ *  돌려주는 값: 성공하면 서버 응답, **큐에 넣었으면 null, 영구 실패면 예외**.
+ *  호출부는 null 을 "아직 못 보냈다" 로 표시하고, 예외는 오류로 보여 준다.
+ */
 export async function send<T>(path: string, options: RequestOptions): Promise<T | null> {
   const id = crypto.randomUUID();
   const withKey: RequestOptions = { ...options, idempotencyKey: options.idempotencyKey ?? id };
 
   try {
     return await request<T>(path, withKey);
-  } catch {
+  } catch (e) {
+    if (permanent(e)) throw e;
     save([...load(), { id, path, options: withKey }]);
     return null;
   }
@@ -54,8 +69,9 @@ export async function flush(): Promise<number> {
     try {
       await request(item.path, item.options);
       sent += 1;
-    } catch {
-      remaining.push(item);
+    } catch (e) {
+      // 영구 실패는 버린다. 안 버리면 매번 실패하며 영원히 쌓인다
+      if (!permanent(e)) remaining.push(item);
     }
   }
 

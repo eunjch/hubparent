@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.errors import Forbidden, Unauthorized
-from app.core.security import decode_token
+from app.core.security import read_token
 from app.models.enums import UserRole
 from app.models.user import FamilyMember, User
 
@@ -31,7 +31,7 @@ async def get_current_user(
     if credentials is None:
         raise Unauthorized("NO_TOKEN", "로그인이 필요합니다.")
     try:
-        user_id = decode_token(credentials.credentials)
+        user_id, epoch = read_token(credentials.credentials)
     except jwt.ExpiredSignatureError as exc:
         raise Unauthorized("TOKEN_EXPIRED", "다시 시작해 주세요.") from exc
     except jwt.InvalidTokenError as exc:
@@ -40,6 +40,9 @@ async def get_current_user(
     user = await session.get(User, user_id)
     if user is None or not user.is_active:
         raise Unauthorized("USER_NOT_FOUND", "다시 시작해 주세요.")
+    # 비밀번호를 바꾸면 세대가 오른다. 그 전에 발급된 토큰은 여기서 끊긴다
+    if epoch < user.token_epoch:
+        raise Unauthorized("SESSION_ENDED", "비밀번호가 바뀌었습니다. 다시 로그인해 주세요.")
     return user
 
 

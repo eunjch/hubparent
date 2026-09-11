@@ -58,7 +58,10 @@ export default function SeniorRecord() {
       setReport(r);
       setMeals(m);
       setDoses(d);
-      if (r === null) setError("기록을 불러오지 못했습니다.");
+      // 하나라도 못 받았으면 말한다. 조용히 두면 다 기록한 날이 "아직" 으로 보인다
+      if ([r, m, d].some((x) => x === null)) {
+        setError("일부 기록을 불러오지 못했습니다. 화면의 숫자가 실제와 다를 수 있어요.");
+      }
     });
 
     return () => {

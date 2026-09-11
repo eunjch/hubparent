@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { request } from "../shared/api";
-import { docUrl } from "../shared/base";
 import { clearTokens } from "../shared/auth";
 import { prettyPhone } from "../shared/format";
 import { Glyph } from "../shared/glyphs";
@@ -94,9 +93,9 @@ export default function SeniorMore() {
             로그아웃
           </button>
           <div className="withdraw-link">
-            <a className="text-btn" href={docUrl("privacy.html")} target="_blank" rel="noreferrer">
+            <button className="text-btn" onClick={() => nav("/privacy")}>
               개인정보처리방침
-            </a>
+            </button>
           </div>
           {/* 어르신이 잘못 누르지 않도록 작게. 눌러도 확인 화면이 두 번 더 있다 */}
           <div className="withdraw-link">

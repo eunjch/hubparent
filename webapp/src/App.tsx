@@ -12,7 +12,7 @@ import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-route
 
 import { afterLogin, bindBackButton, bindNavigator, isNativeApp, onResume } from "./native/bridge";
 import { request } from "./shared/api";
-import { clearTokens, hasSession, refreshSession } from "./shared/auth";
+import { clearTokens, hasSession, onSessionLost, refreshSession } from "./shared/auth";
 import type { Me } from "./shared/types";
 import { flush } from "./shared/offlineQueue";
 import { Screen, Spinner } from "./shared/ui";
@@ -23,6 +23,7 @@ import Report from "./pages/Report";
 import SeniorMore from "./pages/SeniorMore";
 import SeniorRecord from "./pages/SeniorRecord";
 import PasswordReset from "./pages/PasswordReset";
+import PolicyDoc from "./pages/PolicyDoc";
 import Withdraw from "./pages/Withdraw";
 import GuardianLogin from "./pages/GuardianLogin";
 import GuardianSignup from "./pages/GuardianSignup";
@@ -104,6 +105,8 @@ function NativeBoot() {
     const offResume = onResume(() => {
       if (!hasSession()) return;
       void request("/heartbeat", { method: "POST" }).catch(() => undefined);
+      // 오프라인이 아니라 "느려서" 밀린 것은 online 이벤트가 안 온다. 돌아올 때마다 비운다
+      void flush();
     });
     return () => {
       offBack();
@@ -118,6 +121,9 @@ function Guarded({ children }: { children: React.ReactNode }) {
   const nav = useNavigate();
   useEffect(() => {
     if (!hasSession()) nav("/", { replace: true });
+    // refresh 까지 만료되면 화면에 그대로 남아 "불러오지 못했습니다" 만 반복했다.
+    // 세션이 끊긴 그 순간 첫 화면으로 보낸다 (2026-09-11 재점검).
+    return onSessionLost(() => nav("/", { replace: true }));
   }, [nav]);
   return <>{children}</>;
 }
@@ -141,6 +147,8 @@ export default function App() {
         <Route path="/login" element={<GuardianLogin />} />
         <Route path="/signup" element={<GuardianSignup />} />
         {/* 비밀번호 찾기 — 메일 속 링크가 /reset?token=... 으로 들어온다 */}
+        {/* 방침은 앱 안에서 연다. target="_blank" 는 iOS 에서 안 열리고 안드로이드에서는 SPA 를 덮는다 */}
+        <Route path="/privacy" element={<PolicyDoc />} />
         <Route path="/forgot" element={<PasswordReset />} />
         <Route path="/reset" element={<PasswordReset />} />
 

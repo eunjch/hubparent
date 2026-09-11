@@ -220,7 +220,16 @@ export async function pickMealPhoto(source: "camera" | "gallery" = "camera"): Pr
               targetHeight: 1280,
               correctOrientation: true,
             })
-          : (await Camera.chooseFromGallery({ allowMultipleSelection: false, limit: 1 })).results[0];
+          : (
+              // 앨범 원본은 3~8MB 다. 줄이지 않으면 LTE 에서 올리다 끊긴다 (2026-09-11 재점검)
+              await Camera.chooseFromGallery({
+                allowMultipleSelection: false,
+                limit: 1,
+                quality: 80,
+                targetWidth: 1280,
+                targetHeight: 1280,
+              })
+            ).results[0];
       const webPath = result?.uri ? Capacitor.convertFileSrc(result.uri) : undefined;
       const format = result?.uri?.split(".").pop()?.toLowerCase() || "jpg";
       if (!webPath) return null;
