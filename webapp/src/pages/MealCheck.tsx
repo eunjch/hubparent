@@ -15,7 +15,8 @@ import { fileUrl } from "../shared/base";
 import { Art } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
 import { onQueueChange, pendingCount, send } from "../shared/offlineQueue";
-import { localDate } from "../shared/tabs";
+import { PhotoThumb, PhotoView, type Photo } from "../shared/photoView";
+import { dateLabel, localDate } from "../shared/tabs";
 import type { CheckSlot, MealCheck as Meal, MealStatus } from "../shared/types";
 import { Notice, Screen, Spinner } from "../shared/ui";
 
@@ -43,6 +44,8 @@ export default function MealCheck() {
   // 큐가 실제로 비면 안내도 사라진다
   useEffect(() => onQueueChange((n) => setPending(n > 0)), []);
   const [photoNote, setPhotoNote] = useState("");
+  // 붙인 사진을 눌러 크게 본다 (2026-09-11)
+  const [photo, setPhoto] = useState<Photo | null>(null);
 
   useEffect(() => {
     request<Meal[]>(`/checks/meals?check_date=${today()}`)
@@ -173,7 +176,14 @@ export default function MealCheck() {
                   <div className="thumbs">
                     {withPhoto.map((s) => (
                       <span className="thumb-item" key={s.key}>
-                        <img className="thumb" src={fileUrl(find(s.key)!.photo_path!)} alt={`${s.label} 식사 사진`} />
+                        <PhotoThumb
+                          photo={{
+                            src: fileUrl(find(s.key)!.photo_path!),
+                            alt: `${s.label} 식사 사진`,
+                            caption: `${s.label} · ${dateLabel(today())}`,
+                          }}
+                          onOpen={setPhoto}
+                        />
                         <span className="cap">{s.label}</span>
                       </span>
                     ))}
@@ -208,6 +218,8 @@ export default function MealCheck() {
           )}
         </>
       )}
+
+      <PhotoView photo={photo} onClose={() => setPhoto(null)} />
     </Screen>
   );
 }

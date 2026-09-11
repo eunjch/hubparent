@@ -435,13 +435,14 @@ body {
   padding: 8px 4px calc(10px + var(--sab));
 }
 
+/* 선택된 탭 아래에 점을 찍던 자리는 뺐다 (2026-09-11). 글자만 보면 마침표로 읽혔고,
+   색과 굵기가 이미 어느 탭인지 말해 준다. 점을 받치던 padding-bottom 도 같이 없앤다. */
 .tab {
   color: var(--ink-3);
   font-size: 0.875rem;
   font-weight: 600;
   gap: 4px;
   position: relative;
-  padding-bottom: 12px;
 }
 
 .tab .glyph {
@@ -452,18 +453,6 @@ body {
 .tab[aria-current="page"] {
   color: var(--brand-deep);
   font-weight: 800;
-}
-
-.tab[aria-current="page"]::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  border-radius: 50%;
-  background: var(--brand-deep);
 }
 
 /* ── 시작 화면 ─────────────────────────────────────────── */
@@ -484,6 +473,184 @@ body {
 
 .start-hero {
   padding: 8px 0 0;
+}
+
+/* 설명 문구를 뺀 자리만큼 로고와 역할 카드 사이를 띄운다 (2026-09-11).
+   붙여 두면 로고가 카드에 눌린 것처럼 보인다.
+
+   고정값으로 끊으면 경계 바로 위 높이(예: 800px)에서 로그인 링크가 화면 밖으로 나간다.
+   남는 공간을 그대로 여백으로 쓰게 하고, 최소·최대만 정한다.
+   본문이 길어 스크롤이 생기는 화면에서는 auto 가 0 이 되어 저절로 접힌다. */
+.screen.start .screen-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.screen.start .role-list {
+  margin-top: auto;
+}
+
+/* 로고가 카드에 붙지 않도록 최소한은 띄운다 */
+.screen.start .start-hero {
+  margin-bottom: 40px;
+}
+
+/* 카드 아래도 조금 남겨 화면 맨 밑에 붙지 않게 */
+.screen.start .text-link {
+  margin-bottom: 24px;
+}
+
+/* ── 동의 체크박스 (2026-09-11) ──────────────────────────────
+ *  브라우저 기본 사각형 대신 직접 그린다. input 은 숨기되 지우지는 않는다 —
+ *  키보드 탭 이동과 읽어 주는 기능이 그대로여야 한다. */
+
+.check {
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+
+.check input {
+  /* 화면에서만 감춘다. display:none 이면 포커스를 못 받는다 */
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.check .box {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  color: transparent;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.check .txt {
+  flex: 1;
+}
+
+.check.on {
+  border-color: color-mix(in srgb, var(--brand-deep) 35%, transparent);
+  background: color-mix(in srgb, var(--brand-deep) 5%, var(--surface));
+}
+
+.check.on .box {
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
+  color: #fff;
+}
+
+/* 키보드로 이동했을 때 어디에 있는지 보여야 한다 */
+.check input:focus-visible + .box {
+  outline: 3px solid color-mix(in srgb, var(--brand-deep) 45%, transparent);
+  outline-offset: 2px;
+}
+
+/* 로그인 화면에서 "다시 오셨네요" 와 사람 아이콘 배지를 뺀 자리 (2026-09-11).
+   위가 허전해지므로 로고를 시작 화면과 같은 크기로 키운다. */
+.login-gap {
+  height: 72px;
+}
+
+/* 화면이 짧으면 이 여백부터 줄인다 — 입력칸과 버튼이 먼저다.
+   로고 밑 이름이 들어가면서 높이가 늘어, 경계를 올렸다 (2026-09-11) */
+@media (max-height: 820px) {
+  .login-gap {
+    height: 48px;
+  }
+}
+
+@media (max-height: 760px) {
+  .login-gap {
+    height: 32px;
+  }
+
+  .screen .brand-inline {
+    margin-top: 20px;
+  }
+}
+
+@media (max-height: 680px) {
+  .login-gap {
+    height: 12px;
+  }
+
+  .screen .brand-inline {
+    margin-top: 8px;
+  }
+
+  .screen .brand-inline .art {
+    width: 72px;
+    height: 66px;
+  }
+
+  .brand-name {
+    font-size: 1.625rem;
+  }
+}
+
+/* 아래 고정 버튼이 본문 마지막 줄을 덮는다. 그만큼 비켜 준다 (2026-09-11).
+   화면이 짧을수록 잘 드러나는데, 로그인 화면에서는 회원가입 링크가 가려졌다. */
+.screen:has(.sticky-cta) .screen-body {
+  padding-bottom: 96px;
+}
+
+/* 아주 짧은 화면 — 로고를 더 줄여 입력칸과 버튼을 지킨다 */
+@media (max-height: 620px) {
+  .login-gap {
+    height: 4px;
+  }
+
+  .screen .brand-inline .art {
+    width: 56px;
+    height: 52px;
+  }
+
+  .brand-name {
+    font-size: 1.375rem;
+  }
+}
+
+/* 로고 위쪽도 띄운다. 머리글에 바로 붙어 있으면 답답하다 (2026-09-11) */
+.screen .brand-inline {
+  margin-top: 40px;
+  /* 이름을 로고 아래로 내린다. 원래는 가로로 나란히 두던 자리다 */
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 로고 밑 이름 (2026-09-11). 로고의 두 색을 글자에 그대로 흘린다 */
+.brand-name {
+  margin: 0;
+  font-size: 2.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-align: center;
+  background: linear-gradient(100deg, #8d86f7 0%, #4aa8f0 55%, #35c6e8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 그라데이션 글자를 못 읽는 환경에서는 단색으로 (색이 사라져 안 보이면 안 된다) */
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .brand-name {
+    background: none;
+    color: var(--brand-deep);
+  }
+}
+
+.screen .brand-inline .art {
+  width: 104px;
+  height: 96px;
 }
 
 .start-logo {
@@ -2237,6 +2404,40 @@ body {
   justify-content: center;
 }
 
+/* 방침 덮개 — 가입 화면 위에 덮는다. 뒤 화면이 살아 있어 입력이 날아가지 않는다 */
+.policy-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--ground);
+  display: flex;
+  flex-direction: column;
+}
+
+.policy-sheet-head {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  padding: calc(8px + var(--sat)) 12px 8px;
+  background: var(--ground);
+  border-bottom: 1px solid var(--line);
+}
+
+.policy-sheet-head h2 {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 800;
+  text-align: center;
+  color: var(--ink);
+}
+
+.policy-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px var(--gap) calc(24px + var(--sab));
+}
+
 /* 앱 안에서 보는 방침 문서. 원본 HTML 의 제목·표를 앱 톤으로 맞춘다 */
 .policy-doc {
   color: var(--ink);
@@ -2291,4 +2492,1015 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   padding: 14px 16px;
+}
+
+/* ── 자녀 홈: 한 화면 안에 (2026-09-11) ──────────────────────────
+ *  네 덩어리(머리글·요약·추이·타일)를 스크롤 없이 보이게 줄인다.
+ *  자녀는 30~50대라 글자를 부모님 화면만큼 키울 필요가 없다. 대신
+ *  누르는 것(타일·종·부모님 고르기)은 48px 아래로 내려가지 않게 둔다.
+ *  .g-home 으로 감싸 어르신 화면은 건드리지 않는다. */
+
+.g-home .screen-body {
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+/* 로고 옆에 지금 보고 있는 부모님, 그 아래 날짜 */
+.whose-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.whose-logo {
+  width: 40px;
+  height: 37px;
+  object-fit: contain;
+  display: block;
+  flex: none;
+}
+
+.g-home .whose {
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+/* 이름 밑에 떠서 본문을 덮는다 — 밀어내지 않는다 */
+.g-home .whose-text {
+  position: relative;
+}
+
+.g-home .whose-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  max-width: 100%;
+  padding: 6px;
+  box-shadow: 0 14px 34px rgba(18, 30, 66, 0.18);
+  animation: pick-drop 0.14s ease-out;
+}
+
+@keyframes pick-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-home .whose-list {
+    animation: none;
+  }
+}
+
+.g-home .whose-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.g-home .whose-item .glyph {
+  flex: none;
+  color: var(--brand-deep);
+}
+
+/* 목록 밖을 눌러 닫기 위한 투명 판 */
+.pick-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.g-home .whose-pick {
+  font-size: 1.5rem;
+  min-height: 44px;
+  min-width: 0;
+}
+
+.g-home .whose .right {
+  padding-top: 6px;
+}
+
+.g-home .whose .pair {
+  height: 40px;
+  width: 62px;
+}
+
+/* 카드 — 안쪽 여백과 제목 아래 간격만 줄인다. 글자 크기는 그대로 */
+.g-home .card {
+  padding: 14px;
+}
+
+.g-home .card-title {
+  margin-bottom: 8px;
+}
+
+/* 카드 제목 옆 날짜 — 제목보다 확실히 작게, 한 줄로 */
+.card-date {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* 오늘의 건강 요약 */
+
+/* 문구는 한 줄일 때도 두 줄 자리를 잡아 둔다. 부모님을 바꿀 때마다 문장 길이가
+   달라져 카드가 9px 씩 늘었다 줄었다 했고, 그만큼 화면이 튀었다 (2026-09-11).
+   자리는 덩어리 전체로 잡고 안에서 가운데로 모은다 — .t 에 걸면 두 줄 사이가 벌어진다. */
+.g-home .summary-head .msg {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 4.2em;
+}
+
+.g-home .score-ring.lg {
+  width: 76px;
+  height: 76px;
+}
+
+.g-home .score-ring::before {
+  inset: 8px;
+}
+
+.g-home .summary-grid {
+  padding-top: 10px;
+}
+
+.g-home .summary-cell {
+  padding: 8px 4px;
+  gap: 2px;
+}
+
+.g-home .summary-cell .art {
+  width: 24px;
+  height: 24px;
+}
+
+.g-home .summary-cell .v {
+  font-size: 1.25rem;
+}
+
+/* 최근 7일 추이 — 막대는 비율이라 통을 줄여도 모양이 남는다 */
+.g-home .trend {
+  height: 78px;
+}
+
+/* 타일 4개 — 그림을 줄이고 높이를 낮춘다. 누를 곳은 여전히 96px 로 넉넉하다 */
+.g-home .tile-grid {
+  gap: 10px;
+}
+
+.g-home .tile.guardian {
+  min-height: 96px;
+  padding: 12px 14px;
+}
+
+.g-home .tile.guardian .art {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 4px;
+}
+
+.g-home .tile.guardian .chev {
+  top: 12px;
+  right: 12px;
+}
+
+.g-home .tile .t {
+  font-size: 1.25rem;
+}
+
+.g-home .tile.guardian .d {
+  font-size: 0.875rem;
+}
+
+/* 보통 폰(≈844) — 여기서부터 한 단계 조인다 */
+@media (max-height: 900px) {
+  .g-home .screen-body {
+    gap: 10px;
+  }
+
+  .g-home .card {
+    padding: 12px;
+  }
+
+  .g-home .score-ring.lg {
+    width: 68px;
+    height: 68px;
+  }
+
+  .g-home .summary-cell {
+    padding: 6px 4px;
+  }
+
+  .g-home .trend {
+    height: 46px;
+  }
+
+  .g-home .tile-grid {
+    gap: 8px;
+  }
+
+  .g-home .tile.guardian {
+    min-height: 86px;
+    padding: 10px 12px;
+  }
+
+  .g-home .tile.guardian .art {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 3px;
+  }
+}
+
+/* 화면이 짧으면 한 번 더 조인다. 여기서도 누르는 곳은 80px 밑으로 내리지 않는다 */
+@media (max-height: 820px) {
+  .g-home .screen-body {
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .g-home .card {
+    padding: 10px;
+  }
+
+  .g-home .card-title {
+    margin-bottom: 5px;
+  }
+
+  .g-home .summary-head .msg .t {
+    font-size: 1rem;
+  }
+
+  .g-home .summary-grid {
+    padding-top: 8px;
+  }
+
+  .g-home .summary-cell {
+    padding: 5px 3px;
+  }
+
+  .g-home .summary-head .msg {
+    min-height: 3.9em;
+  }
+
+  .g-home .summary-cell .k {
+    font-size: 0.8125rem;
+  }
+
+  .g-home .summary-cell .s {
+    font-size: 0.75rem;
+  }
+
+  .g-home .whose-logo {
+    width: 34px;
+    height: 31px;
+  }
+
+  .g-home .whose-pick {
+    font-size: 1.375rem;
+  }
+
+  .g-home .trend {
+    height: 48px;
+  }
+
+  .g-home .score-ring.lg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .g-home .score-ring::before {
+    inset: 7px;
+  }
+
+  .g-home .summary-cell .art {
+    width: 20px;
+    height: 20px;
+  }
+
+  .g-home .summary-cell .v {
+    font-size: 1.0625rem;
+  }
+
+  .g-home .tile.guardian {
+    min-height: 80px;
+  }
+
+  .g-home .tile.guardian .art {
+    width: 26px;
+    height: 26px;
+  }
+
+  .g-home .tile .t {
+    font-size: 1.125rem;
+  }
+
+  .g-home .tile.guardian .d {
+    font-size: 0.8125rem;
+  }
+}
+
+/* 아주 짧은 화면 — 추이 막대와 타일을 마지막으로 한 번 더 줄인다.
+   여기서도 타일은 76px 라 손가락으로 짚기에 모자라지 않는다. */
+@media (max-height: 750px) {
+  .g-home .screen-body {
+    gap: 6px;
+  }
+
+  .g-home .trend {
+    height: 32px;
+  }
+
+  .g-home .tile-grid {
+    gap: 6px;
+  }
+
+  .g-home .tile.guardian {
+    min-height: 76px;
+    padding: 8px 12px;
+  }
+
+  .g-home .tile.guardian .art {
+    width: 22px;
+    height: 22px;
+    margin-bottom: 2px;
+  }
+
+  .g-home .tile.guardian .chev {
+    top: 9px;
+  }
+}
+
+/* ── 추이 막대 → 그날 기록 팝업 (2026-09-11) ──────────────────
+ *  막대만으로는 "32점" 이 무엇 때문인지 알 수 없다. 눌러서 재료를 본다.
+ *  덮개를 깔아 뒤 화면은 살려 둔다 — 닫으면 보던 자리로 그대로 돌아온다. */
+
+.trend-col {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  position: relative;
+}
+
+/* 짧은 화면에서는 그래프 통이 40px 까지 내려간다. 막대를 키우면 그래프가 화면을
+   넘치니, 보이는 크기는 두고 눌리는 범위만 48px 로 넓힌다 (스위치와 같은 수법) */
+.trend-col::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 48px;
+  transform: translateY(-50%);
+}
+
+.trend-col:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* 고른 날은 막대를 진하게. 색만으로 구분되지 않게 글자도 굵힌다 */
+.trend-col.on .bar {
+  background: var(--brand-deep);
+}
+
+.trend-col.on .lab {
+  color: var(--brand-deep);
+  font-weight: 800;
+}
+
+.trend-hint {
+  margin: 5px 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.day-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(18, 30, 66, 0.46);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overscroll-behavior: contain;
+  animation: day-fade 0.16s ease-out;
+}
+
+.day-card {
+  width: 100%;
+  max-width: 330px;
+  max-height: calc(100% - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border-radius: 26px;
+  box-shadow: 0 22px 56px rgba(18, 30, 66, 0.3);
+  padding: 6px 20px 20px;
+  animation: day-rise 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* 움직임을 줄여 달라고 한 기기에서는 그냥 나타난다 */
+@media (prefers-reduced-motion: reduce) {
+  .day-pop,
+  .day-card {
+    animation: none;
+  }
+}
+
+@keyframes day-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes day-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+
+.day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.day-head h2 {
+  margin: 0;
+  font-size: 1.3125rem;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.day-head .icon-btn {
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  color: var(--ink-2);
+  flex: none;
+}
+
+/* 점수 — 카드 안에서 한 번 더 강조되는 자리라 옅은 판 위에 올린다 */
+.day-score {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f2f6ff 0%, #eef7f2 100%);
+  margin-bottom: 4px;
+}
+
+.day-score .lab {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.day-score .lab em {
+  font-style: normal;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-top: 3px;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.day-rows {
+  margin: 0;
+}
+
+.day-rows > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.day-rows > div:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.day-rows dt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  flex: none;
+}
+
+.day-rows dt .art {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.day-rows dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: right;
+  word-break: keep-all;
+  line-height: 1.35;
+}
+
+/* 다 채운 줄은 초록, 하다 만 줄은 그대로, 빈 줄은 흐리게.
+   색만으로 구분되면 안 되니 값 글자 자체가 "기록 없음"으로 다르다 */
+.day-rows > .full dd {
+  color: var(--ok-ink);
+}
+
+.day-rows > .empty dd {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.day-rows > .empty dt .art {
+  opacity: 0.45;
+}
+
+/* 기분은 값마다 제 색으로. 좋음만 초록이고 힘듦은 주황이다 */
+.mood-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px 10px;
+}
+
+.mood-bit em {
+  font-style: normal;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  margin-right: 4px;
+}
+
+.mood-bit.good {
+  color: var(--ok-ink);
+}
+
+.mood-bit.normal {
+  color: var(--ink);
+}
+
+.mood-bit.bad {
+  color: var(--warn);
+}
+
+/* 요약 4칸 → 3칸 (2026-09-11). 활동(걸음 수)은 보내는 쪽이 아직 없어 언제나
+   "기록 없음" 이었다. 빈 칸을 보여 주면 자녀는 부모님이 안 움직인 것으로 읽는다.
+   서버의 ActivitySignal · /signals · /reports/activity 는 그대로 살아 있다. */
+.summary-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ── 부모님 칩: 셋 이상일 때 (2026-09-11) ────────────────────────
+ *  셋째 부모님이 화면 밖으로 완전히 나가 있었고, 밀 수 있다는 표시도 없었다.
+ *  줄을 화면 끝까지 늘려 다음 칩이 가장자리에 걸치게 한다 — 이게 "더 있다"는 신호다.
+ *  데스크톱에서는 세로 휠이 가로 스크롤이 안 되므로 SeniorChips 가 손으로 바꿔 준다. */
+
+.senior-tabs {
+  flex-wrap: nowrap;
+  margin-inline: calc(var(--gap) * -1);
+  /* .screen-body 가 세로 flex 라 음수 마진만으로는 폭이 늘지 않는다 — 직접 준다.
+     `.screen-body > * { max-width: 100% }` 가 다시 묶으므로 그것도 푼다. */
+  width: calc(100% + var(--gap) * 2);
+  max-width: none;
+  flex: none;
+  padding-inline: var(--gap);
+  scroll-padding-inline: var(--gap);
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  /* 칩의 그림자가 위아래로 잘리지 않게 */
+  padding-block: 4px;
+}
+
+/* 마우스로 끌어 넘기는 중 — 글자가 잡히면 드래그가 선택으로 새어 나간다 */
+.senior-tabs.dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.senior-chip {
+  /* 왼쪽 끝에 맞춘다 — 가운데로 모으면 뒤에 누가 더 있는지 안 보인다 */
+  scroll-snap-align: start;
+  /* 둘일 때는 반씩 나눠 갖고, 셋 이상이면 글자만큼만 차지하고 넘어간다 */
+  flex: 1 0 auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* "전체" 칩 — 사람 그림 대신 아이콘이라 조금 좁다 */
+.senior-chip.all {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.senior-chip.all .glyph {
+  color: var(--brand);
+}
+
+.senior-chip.all[aria-pressed="true"] .glyph {
+  color: #fff;
+}
+
+/* 이름이 길면 자른다. 관계는 짧아서 그대로 둔다 */
+.senior-chip .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ── 부모님 홈: 네 타일을 키운다 (2026-09-11) ────────────────────
+ *  60~80대가 하루에 가장 많이 누르는 네 곳이다. 아래쪽 여백과 카드 안쪽 여백을
+ *  줄여 그만큼 타일에 준다. 화면 밖으로 밀리면 안 되므로 줄인 만큼만 키운다. */
+
+.s-home .screen-body {
+  gap: 10px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.s-home .score-card {
+  padding: 14px 20px;
+}
+
+.s-home .score-card .d {
+  margin-top: 6px;
+}
+
+/* "도움이 필요하신가요?" 와 전화 버튼 사이 */
+.s-home .help-bar {
+  gap: 6px;
+}
+
+.s-home .help-bar .q {
+  font-size: 1rem;
+}
+
+/* 여기서부터가 키우는 쪽 */
+.s-home .tile-grid {
+  gap: 12px;
+}
+
+.s-home .tile {
+  min-height: 172px;
+  padding: 16px 10px 14px;
+  gap: 4px;
+}
+
+.s-home .tile .art {
+  width: 74px;
+  height: 74px;
+  margin-bottom: 6px;
+}
+
+.s-home .tile .t {
+  font-size: 1.75rem;
+}
+
+/* 설명이 두 줄로 접히면 타일이 통째로 40px 씩 커져 화면을 넘긴다.
+   한 줄에 들어가는 크기로 묶고, 좁은 폰에서는 한 단계 줄인다 (2026-09-11) */
+.s-home .tile .d {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 380px) {
+  .s-home .tile .d {
+    font-size: 0.9375rem;
+  }
+
+  /* 좁은 폰은 인사말·건강지수가 이미 작아져 있다. 타일도 한 뼘만 줄인다 */
+  .s-home .tile .art {
+    width: 68px;
+    height: 68px;
+  }
+
+  .s-home .tile .t {
+    font-size: 1.625rem;
+  }
+}
+
+/* ── 부모님 일정 확인: 글자를 키운다 (2026-09-11) ────────────────
+ *  아래가 통째로 비어 있는데 글자는 자녀 화면과 비슷한 크기였다.
+ *  .sched-row.big 은 부모님 화면(S5)에서만 쓰므로 여기만 키운다. */
+
+.sched-row.big {
+  padding: 20px 18px;
+  gap: 18px;
+  min-height: 104px;
+}
+
+.sched-row.big .art {
+  width: 58px;
+  height: 58px;
+}
+
+.sched-row.big .body {
+  gap: 4px;
+}
+
+/* 날짜 — 이 화면에서 가장 먼저 읽혀야 하는 줄 */
+.sched-row.big .t {
+  font-size: 1.625rem;
+  line-height: 1.3;
+}
+
+.sched-row.big .d {
+  font-size: 1.1875rem;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+/* 시각은 장소·제목보다 진하게 — 오늘 몇 시에 가야 하는지가 핵심이다 */
+.sched-row.big .d:first-of-type {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.sched-row.big .chev .glyph {
+  width: 24px;
+  height: 24px;
+}
+
+/* 세그먼트 탭도 같이 — 부모님 화면에서 작았다 */
+.screen .seg.blue .seg-item {
+  font-size: 1.1875rem;
+  min-height: 52px;
+}
+
+@media (max-width: 380px) {
+  .sched-row.big {
+    padding: 18px 14px;
+    gap: 14px;
+  }
+
+  .sched-row.big .t {
+    font-size: 1.5rem;
+  }
+
+  .sched-row.big .d {
+    font-size: 1.125rem;
+  }
+
+  .sched-row.big .art {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* ── 글자 크기 설정 (2026-09-11) ─────────────────────────────────
+ *  html 의 font-size 하나만 바꾼다. 글자와 터치 최소 크기가 rem 이라 같이 따라 온다.
+ *  값을 안 고른 기기(data-text-scale 없음)는 브라우저 기본 16px 그대로다. */
+
+:root[data-text-scale="sm"] {
+  font-size: 15px;
+}
+
+:root[data-text-scale="md"] {
+  font-size: 16px;
+}
+
+:root[data-text-scale="lg"] {
+  font-size: 18px;
+}
+
+.text-scale {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.ts-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 96px;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--ink-2);
+  padding: 10px 6px;
+}
+
+/* 보기 글자는 설정값을 따라가면 안 된다 — 세 칸이 늘 같은 비율로 보여야
+   무엇이 큰지 알 수 있다. 그래서 여기만 px 로 못 박는다 */
+.ts-sample {
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.ts-sample.sm {
+  font-size: 18px;
+}
+
+.ts-sample.md {
+  font-size: 24px;
+}
+
+.ts-sample.lg {
+  font-size: 31px;
+}
+
+.ts-label {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.ts-item.on {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+}
+
+.ts-item.on .ts-sample {
+  color: var(--brand-deep);
+}
+
+/* 색만으로 구분되지 않게 고른 칸에 체크를 찍는다 (계획서 9장) */
+.ts-on {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--brand);
+  display: flex;
+}
+
+/* 글자를 키우면 부모님 홈이 화면을 넘긴다. 글자를 키워 달라고 한 것이므로
+   글자는 그대로 두고 그림과 여백을 내준다 (2026-09-11). */
+:root[data-text-scale="lg"] .s-home .tile .art {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 4px;
+}
+
+:root[data-text-scale="lg"] .s-home .tile {
+  min-height: 0;
+  padding: 12px 8px 12px;
+}
+
+:root[data-text-scale="lg"] .s-home .score-card {
+  padding: 12px 16px;
+}
+
+:root[data-text-scale="lg"] .s-home .hello .avatar {
+  width: 56px;
+  height: 56px;
+}
+
+/* 인사말은 이 화면에서 가장 덜 중요한 줄이다. 크게에서 여기까지 커지면
+   "안녕하세요 / 김영희 어르신 / 👋" 로 석 줄이 되어 타일을 밀어낸다 */
+:root[data-text-scale="lg"] .s-home .hello-text .t {
+  font-size: 1.375rem;
+}
+
+:root[data-text-scale="lg"] .s-home .hello-text .d {
+  font-size: 1rem;
+}
+
+/* 큰 글자에서는 일정 카드의 그림도 한 뼘 줄인다 */
+:root[data-text-scale="lg"] .sched-row.big .art {
+  width: 50px;
+  height: 50px;
+}
+
+/* ── 식사 사진 크게 보기 (2026-09-11) ────────────────────────────
+ *  목록의 사진은 44px 남짓이라 무엇을 드셨는지 알아볼 수 없었다. */
+
+.thumb-btn {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 0;
+  flex: none;
+  line-height: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.thumb-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* 누를 수 있다는 표시. 사진 위 모서리에 작은 + 배지 */
+.thumb-btn .zoom {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(18, 30, 66, 0.3);
+}
+
+/* 사진이 작아 누르기 어려웠다. 보이는 크기는 두고 눌리는 범위만 넓힌다 */
+.thumb-btn::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.photo-view {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(10, 16, 34, 0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: calc(20px + var(--sat)) 16px calc(24px + var(--sab));
+  animation: day-fade 0.16s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-view {
+    animation: none;
+  }
+}
+
+/* 높이는 vh 가 아니라 %로 잡는다 — 웹뷰마다 vh 가 주소창·안전영역을 다르게 세서
+   사진 아래 설명이 화면 밖으로 밀리는 일이 생긴다 (2026-09-11).
+   화면을 꽉 채우지는 않는다. 세로 사진이 특히 커져서 눌러 놓는다. */
+.photo-view img {
+  max-width: 88%;
+  max-height: 56%;
+  min-height: 0;
+  flex: 0 1 auto;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #0a1022;
+}
+
+.photo-cap {
+  flex: none;
+}
+
+.photo-cap {
+  margin: 0;
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+}
+
+/* 닫기는 늘 같은 자리에. 사진 아무 데나 눌러도 닫히지만 눈에 보이는 길도 둔다 */
+.photo-close {
+  position: absolute;
+  top: calc(8px + var(--sat));
+  right: 8px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  background: none;
+  color: #fff;
+  display: grid;
+  place-items: center;
 }

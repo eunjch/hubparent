@@ -1,7 +1,8 @@
 /** 화면 S1-더보기 탭 — 어르신 (리디자인 16_s_more). 설정 화면은 없다 (계획서 7.4).
  *
- *  자녀에게 전화하기(민트 카드)가 첫 줄이다. 그 다음 내 정보, 로그아웃.
- *  글자 크기는 기기 설정을 따르므로 여기서 바꾸지 않는다 (계획서 9.1).
+ *  자녀에게 전화하기(민트 카드) → 글자 크기 → 내 정보 → 로그아웃.
+ *  글자 크기는 계획서 9.1 대로 기기 설정만 따르게 두었는데, 부모님이 안드로이드
+ *  설정에서 그것을 찾아 바꾸는 일이 없어 앱 안으로 들였다 (2026-09-11).
  */
 
 import { useEffect, useState } from "react";
@@ -12,6 +13,13 @@ import { clearTokens } from "../shared/auth";
 import { prettyPhone } from "../shared/format";
 import { Glyph } from "../shared/glyphs";
 import { SeniorTabs } from "../shared/tabs";
+import {
+  getTextScale,
+  SCALE_LABEL,
+  setTextScale,
+  TEXT_SCALES,
+  type TextScale,
+} from "../shared/textScale";
 import type { Me, Member } from "../shared/types";
 import { Card, Notice, Spinner } from "../shared/ui";
 
@@ -19,7 +27,13 @@ export default function SeniorMore() {
   const nav = useNavigate();
   const [me, setMe] = useState<Me | null>(null);
   const [guardians, setGuardians] = useState<Member[]>([]);
+  const [scale, setScale] = useState<TextScale>(getTextScale);
   const [error, setError] = useState("");
+
+  function pickScale(v: TextScale) {
+    setTextScale(v);
+    setScale(v);
+  }
 
   useEffect(() => {
     Promise.all([request<Me>("/me"), request<Member[]>("/family/members")])
@@ -67,6 +81,31 @@ export default function SeniorMore() {
           </section>
         )}
 
+        {/* 고르면 바로 앱 전체에 적용된다. 저장 버튼을 따로 두지 않는다 —
+            누른 그 자리에서 글자가 커지는 것이 곧 확인이다 */}
+        <Card title="글자 크기">
+          <div className="text-scale" role="group" aria-label="글자 크기">
+            {TEXT_SCALES.map((v) => (
+              <button
+                key={v}
+                className={`ts-item${v === scale ? " on" : ""}`}
+                aria-pressed={v === scale}
+                onClick={() => pickScale(v)}
+              >
+                <span className={`ts-sample ${v}`} aria-hidden="true">
+                  가
+                </span>
+                <span className="ts-label">{SCALE_LABEL[v]}</span>
+                {v === scale && (
+                  <span className="ts-on" aria-hidden="true">
+                    <Glyph name="check" size={18} />
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </Card>
+
         {me && (
           <Card title="내 정보">
             <div className="info-row">
@@ -83,7 +122,6 @@ export default function SeniorMore() {
                 <span className="v">{me.family_name}</span>
               </div>
             )}
-            <p className="sub">글자가 작으면 휴대폰 설정의 글자 크기를 키워 주세요. 앱이 따라갑니다.</p>
           </Card>
         )}
 

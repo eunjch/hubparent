@@ -181,16 +181,19 @@ export function onResume(fn: () => void): () => void {
   };
 }
 
-/** 안드로이드 뒤로가기 — 첫 화면에서는 앱을 내린다, 그 밖에는 라우터 뒤로. */
-export function bindBackButton(canGoBack: () => boolean, goBack: () => void): () => void {
+/** 안드로이드 뒤로가기. 무엇을 할지는 App.tsx 가 정한다 — 덮개가 열려 있으면
+ *  그것부터 닫아야 해서, 라우터만 보고 판단할 수 없다 (2026-09-11). */
+export function bindBackButton(onBack: () => void): () => void {
   if (platform() !== "android") return () => undefined;
-  const handle = App.addListener("backButton", () => {
-    if (canGoBack()) goBack();
-    else void App.exitApp();
-  });
+  const handle = App.addListener("backButton", onBack);
   return () => {
     void handle.then((h) => h.remove());
   };
+}
+
+/** 앱 내리기. 뒤로가기가 더 갈 곳이 없을 때만 쓴다. */
+export function exitApp(): void {
+  void App.exitApp();
 }
 
 /** 로그인 직후 한 번. 푸시 토큰 등록 + 옛 로컬 알람 정리. */

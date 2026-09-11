@@ -13,6 +13,7 @@ import { ApiError, request } from "../shared/api";
 import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
 import { Art } from "../shared/art";
+import { phoneAsYouType } from "../shared/format";
 import { Glyph } from "../shared/glyphs";
 import type { SeniorLookupResult, TokenPair } from "../shared/types";
 import { BigButton, Field, Notice, Spinner } from "../shared/ui";
@@ -146,7 +147,7 @@ export default function SeniorJoin() {
           <Field
             label="자녀 전화번호"
             value={guardianPhone}
-            onChange={setGuardianPhone}
+            onChange={(v) => setGuardianPhone(phoneAsYouType(v))}
             placeholder="010-1234-5678"
             inputMode="tel"
             icon="phone"

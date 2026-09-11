@@ -1,7 +1,9 @@
-/** 화면 G1-리포트 탭 — 하루를 자세히 본다 (계획서 7.1 G1 의 기분 변화 · 생활 패턴).
+/** 화면 G1-리포트 탭 — 하루를 자세히 본다 (계획서 7.1 G1 의 기분 변화).
  *
- *  날짜 이동 ‹ › → 요약 4칸 → 기분 변화(아침·점심·저녁) → 식사 → 약 복용 → 생활 패턴(시간대별).
+ *  날짜 이동 ‹ › → 요약 3칸 → 기분 변화(아침·점심·저녁) → 식사 → 약 복용.
  *  홈은 "오늘 한눈에", 여기는 "그날 전부" 다.
+ *
+ *  생활 패턴(시간대별 활동량)은 2026-09-11 에 뺐다 — 걸음 수를 보내는 쪽이 없다.
  */
 
 import { useEffect, useState } from "react";
@@ -12,22 +14,9 @@ import { Glyph } from "../shared/glyphs";
 import { fileUrl } from "../shared/base";
 import { Art, type ArtName, capsuleFor } from "../shared/art";
 import { GuardianTabs, dateLabel, localDate, shiftDate } from "../shared/tabs";
-import type {
-  ActivityLevel,
-  CheckSlot,
-  Dose,
-  FamilyReport,
-  MealCheck,
-  MoodValue,
-  Senior,
-} from "../shared/types";
+import type { CheckSlot, Dose, FamilyReport, MealCheck, MoodValue, Senior } from "../shared/types";
+import { PhotoThumb, PhotoView, type Photo } from "../shared/photoView";
 import { Card, Notice, ScoreRing, SeniorChips, Spinner, StatusPill } from "../shared/ui";
-
-interface ActivityReport {
-  activity_level: ActivityLevel | null;
-  steps: number;
-  hours: { hour: number; steps: number; screen_on: number }[];
-}
 
 const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
   { key: "breakfast", label: "아침", icon: "sun" },
@@ -36,8 +25,7 @@ const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
 ];
 
 const FACE: Record<MoodValue, ArtName> = { good: "emojiGood", normal: "emojiNormal", bad: "emojiBad" };
-const MOOD_LABEL: Record<MoodValue, string> = { good: "좋아요", normal: "괜찮아요", bad: "힘들어요" };
-const ACTIVITY_LABEL: Record<ActivityLevel, string> = { high: "활발", normal: "보통", low: "적음" };
+const MOOD_LABEL: Record<MoodValue, string> = { good: "좋아요", normal: "괜찮아요", bad: "슬퍼요" };
 
 export default function Report() {
   const [params, setParams] = useSearchParams();
@@ -48,7 +36,8 @@ export default function Report() {
   const [report, setReport] = useState<FamilyReport | null>(null);
   const [meals, setMeals] = useState<MealCheck[] | null>(null);
   const [doses, setDoses] = useState<Dose[] | null>(null);
-  const [activity, setActivity] = useState<ActivityReport | null>(null);
+  // 식사 사진 크게 보기 (2026-09-11)
+  const [photo, setPhoto] = useState<Photo | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -68,11 +57,10 @@ export default function Report() {
     setReport(null);
     setMeals(null);
     setDoses(null);
-    setActivity(null);
     setError("");
     setParams({ user_id: seniorId, date: day }, { replace: true });
 
-    // 하나가 실패해도 나머지는 보여 준다. 예전에는 활동 신호 한 건이 실패하면
+    // 하나가 실패해도 나머지는 보여 준다. 예전에는 한 건이 실패하면
     // 식사·약·기분까지 통째로 감춰졌다.
     const settle = <T,>(p: Promise<T>) => p.then((v) => v).catch(() => null);
 
@@ -80,13 +68,11 @@ export default function Report() {
       settle(request<FamilyReport>(`/reports/family/${seniorId}?report_date=${day}`)),
       settle(request<MealCheck[]>(`/checks/meals?check_date=${day}&user_id=${seniorId}`)),
       settle(request<Dose[]>(`/medications/today?user_id=${seniorId}&day=${day}`)),
-      settle(request<ActivityReport>(`/reports/activity/${seniorId}?report_date=${day}`)),
-    ]).then(([r, m, d, a]) => {
+    ]).then(([r, m, d]) => {
       if (state.stale) return;
       setReport(r);
       setMeals(m);
       setDoses(d);
-      setActivity(a);
       // 하나라도 못 받았으면 말한다. 식사만 실패했는데 조용히 두면 세 끼가 "미기록" 으로
       // 보여, 자녀는 부모님이 굶은 것으로 읽는다 (2026-09-11 재점검).
       if ([r, m, d].some((x) => x === null)) {
@@ -105,7 +91,6 @@ export default function Report() {
   const r = report;
   const moodOf = (slot: CheckSlot) => r?.moods.find((m) => m.slot === slot)?.mood;
   const mealOf = (slot: CheckSlot) => meals?.find((m) => m.slot === slot);
-  const maxSteps = Math.max(1, ...(activity?.hours.map((h) => h.steps) ?? [0]));
 
   return (
     <div className="screen">
@@ -163,11 +148,6 @@ export default function Report() {
                   <span className="v">{r.med_total ? `${r.med_taken}/${r.med_total}` : "—"}</span>
                 </span>
                 <span className="summary-cell">
-                  <Art name="runnerSm" blend />
-                  <span className="k">활동</span>
-                  <span className="v">{r.activity_level ? ACTIVITY_LABEL[r.activity_level] : "—"}</span>
-                </span>
-                <span className="summary-cell">
                   <Art name="smileySm" blend />
                   <span className="k">기분</span>
                   <span className="v">{r.moods.length}/3</span>
@@ -203,7 +183,14 @@ export default function Report() {
                     </span>
                     <span className="t">{s.label}</span>
                     {m?.photo_path && (
-                      <img className="thumb" src={fileUrl(m.photo_path!)} alt={`${s.label} 식사 사진`} />
+                      <PhotoThumb
+                        photo={{
+                          src: fileUrl(m.photo_path),
+                          alt: `${s.label} 식사 사진`,
+                          caption: `${current.name} · ${s.label} · ${dateLabel(day)}`,
+                        }}
+                        onOpen={setPhoto}
+                      />
                     )}
                     <StatusPill tone={m?.status === "ate" ? "done" : m ? "mid" : "none"}>
                       {m?.status === "ate" ? "먹었어요" : m ? "안 먹었어요" : "미기록"}
@@ -228,38 +215,14 @@ export default function Report() {
               ))}
             </Card>
 
-            {/* 생활 패턴 — 시간대별 활동량 (시안 G1) */}
-            <Card
-              title="생활 패턴"
-              action={
-                <span className={`trend-badge ${activity?.activity_level ? "ok" : "mid"}`}>
-                  {activity?.activity_level ? ACTIVITY_LABEL[activity.activity_level] : "기록 없음"}
-                </span>
-              }
-            >
-              {activity && activity.steps === 0 && (
-                <p className="sub">이날 받은 활동 신호가 없어요. 휴대폰을 안 가지고 계셨을 수 있어요.</p>
-              )}
-              <div className="trend hours" aria-label="시간대별 활동량">
-                {(activity?.hours ?? []).map((h) => (
-                  <span className="trend-col" key={h.hour}>
-                    <span className="bar-wrap">
-                      <span
-                        className="bar"
-                        style={{ height: `${Math.max(4, Math.round((h.steps / maxSteps) * 100))}%` }}
-                      />
-                    </span>
-                    <span className="lab">{h.hour % 6 === 0 ? `${String(h.hour).padStart(2, "0")}시` : ""}</span>
-                  </span>
-                ))}
-              </div>
-              {activity && activity.steps > 0 && (
-                <p className="sub">하루 걸음 {activity.steps.toLocaleString()}보</p>
-              )}
-            </Card>
+            {/* 생활 패턴(시간대별 활동량) 카드는 뺐다 (2026-09-11).
+                걸음 수를 보내는 쪽이 아직 없어 24개 막대가 늘 바닥에 붙어 있었고,
+                "기록 없음" 배지만 매일 떴다. 서버의 /reports/activity 는 살아 있다. */}
           </>
         )}
       </main>
+
+      <PhotoView photo={photo} onClose={() => setPhoto(null)} />
 
       <GuardianTabs current="report" />
     </div>

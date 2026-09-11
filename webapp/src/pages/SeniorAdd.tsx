@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
-import { prettyPhone } from "../shared/format";
+import { phoneAsYouType, prettyPhone } from "../shared/format";
 import { Art } from "../shared/art";
 import type { Senior } from "../shared/types";
 import { BigButton, Field, Notice, Spinner } from "../shared/ui";
@@ -113,7 +113,7 @@ export default function SeniorAdd() {
             <Field
               label="연락처"
               value={phone}
-              onChange={setPhone}
+              onChange={(v) => setPhone(phoneAsYouType(v))}
               placeholder="010-8765-4321"
               inputMode="tel"
             />

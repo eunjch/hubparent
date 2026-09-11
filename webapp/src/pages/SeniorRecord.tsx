@@ -13,6 +13,7 @@ import { fileUrl } from "../shared/base";
 import { Art, type ArtName, capsuleFor } from "../shared/art";
 import { SeniorTabs, dateLabel, localDate, shiftDate } from "../shared/tabs";
 import type { CheckSlot, Dose, FamilyReport, Me, MealCheck, MoodValue } from "../shared/types";
+import { PhotoThumb, PhotoView, type Photo } from "../shared/photoView";
 import { Card, Cheer, Notice, ScoreRing, Spinner, StatusPill } from "../shared/ui";
 
 const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
@@ -22,7 +23,7 @@ const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
 ];
 
 const FACE: Record<MoodValue, ArtName> = { good: "emojiGood", normal: "emojiNormal", bad: "emojiBad" };
-const MOOD_LABEL: Record<MoodValue, string> = { good: "좋아요", normal: "괜찮아요", bad: "힘들어요" };
+const MOOD_LABEL: Record<MoodValue, string> = { good: "좋아요", normal: "괜찮아요", bad: "슬퍼요" };
 
 export default function SeniorRecord() {
   const nav = useNavigate();
@@ -31,6 +32,8 @@ export default function SeniorRecord() {
   const [report, setReport] = useState<FamilyReport | null>(null);
   const [meals, setMeals] = useState<MealCheck[] | null>(null);
   const [doses, setDoses] = useState<Dose[] | null>(null);
+  // 식사 사진 크게 보기 (2026-09-11)
+  const [photo, setPhoto] = useState<Photo | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -123,7 +126,14 @@ export default function SeniorRecord() {
                     </span>
                     <span className="t">{s.label}</span>
                     {m?.photo_path && (
-                      <img className="thumb" src={fileUrl(m.photo_path!)} alt={`${s.label} 식사 사진`} />
+                      <PhotoThumb
+                        photo={{
+                          src: fileUrl(m.photo_path),
+                          alt: `${s.label} 식사 사진`,
+                          caption: `${s.label} · ${dateLabel(day)}`,
+                        }}
+                        onOpen={setPhoto}
+                      />
                     )}
                     <StatusPill tone={m?.status === "ate" ? "done" : m ? "mid" : "none"} withCheck={m?.status === "ate"}>
                       {m?.status === "ate" ? "먹었어요" : m ? "안 먹었어요" : "아직"}
@@ -175,6 +185,8 @@ export default function SeniorRecord() {
           </>
         )}
       </main>
+
+      <PhotoView photo={photo} onClose={() => setPhoto(null)} />
 
       <SeniorTabs current="record" />
     </div>

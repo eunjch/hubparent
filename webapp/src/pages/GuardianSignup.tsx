@@ -10,7 +10,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, request } from "../shared/api";
+import { phoneAsYouType } from "../shared/format";
 import { Glyph } from "../shared/glyphs";
+import { PolicySheet } from "../shared/policy";
 import { afterLogin } from "../native/bridge";
 import { saveTokens } from "../shared/auth";
 import type { TokenPair } from "../shared/types";
@@ -29,8 +31,11 @@ export default function GuardianSignup() {
   const [phone, setPhone] = useState("");
 
   const [agreeHealth, setAgreeHealth] = useState(false);
-  const [agreeEmail, setAgreeEmail] = useState(false);
+  // 리포트 메일 동의는 뺐다 (2026-09-11). 동의는 받는데 보내는 코드가 없어
+  // 지키지 못할 약속이었다. 기능이 생기면 그때 다시 받는다.
 
+  // 방침은 덮개로 연다. 라우터로 옮기면 이 화면이 사라져 입력하던 내용이 전부 날아간다
+  const [policyOpen, setPolicyOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -58,7 +63,6 @@ export default function GuardianSignup() {
           name: name.trim(),
           phone: phone.trim(),
           agree_health_data: agreeHealth,
-          agree_email_report: agreeEmail,
         },
       });
       await saveTokens(tokens.access_token, tokens.refresh_token);
@@ -123,7 +127,7 @@ export default function GuardianSignup() {
           <Field
             label="연락처"
             value={phone}
-            onChange={setPhone}
+            onChange={(v) => setPhone(phoneAsYouType(v))}
             placeholder="010-1234-5678"
             inputMode="tel"
             hint="부모님이 이 이름과 번호로 앱에 들어오십니다."
@@ -141,15 +145,10 @@ export default function GuardianSignup() {
             onChange={setAgreeHealth}
             required
           />
-          <Check
-            label="하루 리포트를 이메일로 받겠습니다."
-            checked={agreeEmail}
-            onChange={setAgreeEmail}
-          />
           {/* 동의의 대상 문서를 읽을 수 있어야 한다. 앱 번들 안에 있는데 여는 길이 없었다
               (2026-09-11 점검). 앱에서도 열리도록 절대 주소를 쓴다. */}
           <p className="field-hint" style={{ marginTop: 10 }}>
-            <button className="text-link inline" onClick={() => nav("/privacy")}>
+            <button className="text-link inline" onClick={() => setPolicyOpen(true)}>
               개인정보처리방침
             </button>
             <span className="muted"> 을 읽고 동의합니다.</span>
@@ -164,6 +163,8 @@ export default function GuardianSignup() {
           {busy ? "만드는 중…" : "가입하기"}
         </BigButton>
       </div>
+
+      <PolicySheet open={policyOpen} onClose={() => setPolicyOpen(false)} />
     </div>
   );
 }

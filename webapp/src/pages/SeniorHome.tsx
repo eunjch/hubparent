@@ -103,7 +103,7 @@ export default function SeniorHome() {
         : `${remaining}가지 남았어요`;
 
   return (
-    <div className="screen">
+    <div className="screen s-home">
       <main className="screen-body">
         {/* 아바타 · 인사 · 톱니 (시안) */}
         <div className="hello">

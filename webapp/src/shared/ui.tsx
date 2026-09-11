@@ -5,6 +5,7 @@
  *  값은 tokens.css 에 있고 여기서는 토큰과 클래스만 쓴다.
  */
 
+import { useEffect, useRef } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { Art, type ArtName } from "./art";
@@ -463,10 +464,24 @@ export function Check({
   onChange: (v: boolean) => void;
   required?: boolean;
 }) {
+  /* 브라우저 기본 체크박스는 OS 마다 모양이 달라 앱 톤과 겉돈다 (2026-09-11).
+     input 은 화면에서 숨기고 옆의 box 를 그린다 — 접근성과 키보드 조작은 그대로 남는다. */
   return (
-    <label className="check">
+    <label className={`check${checked ? " on" : ""}`}>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span>
+      <span className="box" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path
+            d="M5 12.5 10 17.5 19 7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <span className="txt">
         {label}
         <em className={required ? "req" : "opt"}>{required ? "필수" : "선택"}</em>
       </span>
@@ -513,14 +528,111 @@ export function SeniorChips({
   seniors,
   current,
   onChange,
+  allLabel,
+  onAll,
 }: {
   seniors: { id: string; name: string; relation: string | null }[];
   current: string | null;
   onChange: (id: string) => void;
+  /** 주면 맨 앞에 "전체" 칩이 붙는다. current 가 null 이면 그것이 골라진 상태다. */
+  allLabel?: string;
+  onAll?: () => void;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+
+  /* 고른 분이 화면 밖에 있으면 "아무도 안 골린" 것처럼 보인다 — 알림을 눌러
+     들어오거나 주소에 user_id 가 박혀 있을 때가 그랬다 (2026-09-11).
+     scrollIntoView 는 바깥 화면까지 같이 움직여서 쓰지 않는다. 이 줄만 민다.
+     가운데가 아니라 왼쪽 끝에 붙인다 — 뒤에 누가 더 있는지가 보여야 한다. */
+  useEffect(() => {
+    const el = box.current;
+    const on = el?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!el || !on) return;
+    const pad = parseFloat(getComputedStyle(el).paddingLeft) || 0;
+    const left = on.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
+    el.scrollTo({ left: Math.max(0, left - pad), behavior: "smooth" });
+  }, [current, seniors.length]);
+
+  /* 데스크톱에서 밀 방법이 없었다. 마우스에는 가로 휠이 없고, 세로 휠은 이 줄을
+     움직이지 않는다 — 자녀가 PC 로 보면 셋째 부모님에 아예 닿지 못했다.
+     세로 휠을 가로 스크롤로 바꾸고, 마우스로 끌어서도 넘길 수 있게 한다.
+     터치는 브라우저 기본 동작이 더 나으므로 건드리지 않는다. */
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const canScroll = () => el.scrollWidth > el.clientWidth + 1;
+
+    const onWheel = (e: WheelEvent) => {
+      // 트랙패드의 가로 제스처는 그대로 둔다
+      if (!canScroll() || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      el.scrollLeft += e.deltaY;
+      e.preventDefault();
+    };
+
+    let startX = 0;
+    let startLeft = 0;
+    let moved = 0;
+    let dragging = false;
+
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === "touch" || !canScroll()) return;
+      dragging = true;
+      moved = 0;
+      startX = e.clientX;
+      startLeft = el.scrollLeft;
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      moved = Math.max(moved, Math.abs(dx));
+      // 조금 흔들린 것은 누른 것으로 본다. 넘긴 것은 6px 부터
+      if (moved > 6) {
+        el.classList.add("dragging");
+        el.scrollLeft = startLeft - dx;
+      }
+    };
+    const onUp = () => {
+      dragging = false;
+      el.classList.remove("dragging");
+    };
+    // 끌고 나서 손을 떼면 그 자리의 칩이 눌리면 안 된다
+    const onClick = (e: MouseEvent) => {
+      if (moved > 6) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      moved = 0;
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    el.addEventListener("click", onClick, true);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      el.removeEventListener("click", onClick, true);
+    };
+    // 부모님이 한 분일 때는 이 줄 자체가 없다(null 을 돌려준다). 목록이 온 뒤에
+    // 붙어야 해서 길이를 본다 — 빈 배열로 두면 영영 안 붙는다 (2026-09-11).
+  }, [seniors.length]);
+
   if (seniors.length <= 1) return null;
   return (
-    <div className="senior-tabs">
+    <div className="senior-tabs" ref={box}>
+      {allLabel && (
+        <button
+          className="senior-chip all"
+          aria-pressed={current === null}
+          onClick={() => onAll?.()}
+        >
+          <Glyph name="users" size={22} />
+          <span className="nm">{allLabel}</span>
+        </button>
+      )}
       {seniors.map((s) => (
         <button
           key={s.id}
@@ -529,7 +641,7 @@ export function SeniorChips({
           onClick={() => onChange(s.id)}
         >
           <Art name={avatarFor(s.relation)} className="avatar" />
-          {s.name}
+          <span className="nm">{s.name}</span>
           {s.relation && <span className="rel">({s.relation})</span>}
         </button>
       ))}

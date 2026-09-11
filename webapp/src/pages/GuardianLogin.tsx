@@ -54,16 +54,14 @@ export default function GuardianLogin() {
       </header>
 
       <main className="screen-body">
-        <div className="brand-inline" aria-hidden="true">
+        <div className="brand-inline">
           <Art name="logo" />
+          <span className="brand-name">허브패밀리</span>
         </div>
 
-        <div className="hero" style={{ padding: "8px 0 4px" }}>
-          <span className="hero-badge">
-            <Art name="tilePerson" />
-          </span>
-          <h2>다시 오셨네요</h2>
-        </div>
+        {/* "다시 오셨네요" 는 뺐다 (2026-09-11). 읽을 거리 없이 바로 입력으로 간다.
+            빠진 자리만큼 로고와 입력칸 사이를 띄운다. */}
+        <div className="login-gap" aria-hidden="true" />
 
         <section className="form-card bare">
           <Field

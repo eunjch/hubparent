@@ -25,7 +25,7 @@ const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
 const MOODS: { key: MoodValue; label: string; art: ArtName }[] = [
   { key: "good", label: "좋아요", art: "emojiGood" },
   { key: "normal", label: "괜찮아요", art: "emojiNormal" },
-  { key: "bad", label: "힘들어요", art: "emojiBad" },
+  { key: "bad", label: "슬퍼요", art: "emojiBad" },
 ];
 
 /* 날짜는 기기 로컬(한국) 기준이다. toISOString() 은 UTC 라 오전 9시 이전에 전날이 나온다 —

@@ -10,8 +10,9 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
-import { afterLogin, bindBackButton, bindNavigator, isNativeApp, onResume } from "./native/bridge";
+import { afterLogin, bindBackButton, bindNavigator, exitApp, isNativeApp, onResume } from "./native/bridge";
 import { request } from "./shared/api";
+import { closeTopOverlay } from "./shared/overlay";
 import { clearTokens, hasSession, onSessionLost, refreshSession } from "./shared/auth";
 import type { Me } from "./shared/types";
 import { flush } from "./shared/offlineQueue";
@@ -98,10 +99,14 @@ function NativeBoot() {
   useEffect(() => {
     if (!isNativeApp()) return;
     bindNavigator((route) => nav(route));
-    const offBack = bindBackButton(
-      () => window.location.pathname !== "/" && !/^\/(s|g)\/home$/.test(window.location.pathname),
-      () => nav(-1),
-    );
+    const offBack = bindBackButton(() => {
+      // 덮개(팝업 · 방침 시트 · 고르기 목록)가 열려 있으면 그것부터 닫는다.
+      // 예전에는 이 줄이 없어서 홈에서 팝업을 열고 뒤로가기를 누르면 앱이 꺼졌다 (2026-09-11)
+      if (closeTopOverlay()) return;
+      const path = window.location.pathname;
+      if (path !== "/" && !/^\/(s|g)\/home$/.test(path)) nav(-1);
+      else exitApp();
+    });
     const offResume = onResume(() => {
       if (!hasSession()) return;
       void request("/heartbeat", { method: "POST" }).catch(() => undefined);
