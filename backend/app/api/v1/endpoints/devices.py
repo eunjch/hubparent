@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.core.deps import CurrentUser, DBSession
 from app.models.monitor import ActivitySignal
@@ -20,7 +20,20 @@ async def register_device(payload: DeviceRegister, user: CurrentUser, session: D
     """같은 단말이 토큰을 갱신하는 경우가 많아 upsert 로 처리한다."""
     device = None
     if payload.push_token:
-        device = await session.scalar(select(Device).where(Device.push_token == payload.push_token))
+        # 소유자까지 함께 본다. 토큰만으로 찾으면 남의 단말 행을 자기 것으로 바꿔
+        # 그 사람의 복약 알림을 끊을 수 있다 (2026-09-11 점검).
+        device = await session.scalar(
+            select(Device).where(
+                Device.push_token == payload.push_token, Device.user_id == user.id
+            )
+        )
+        if device is None:
+            # 기기를 물려준 경우: 남이 쥐고 있던 같은 토큰은 버린다
+            await session.execute(
+                delete(Device).where(
+                    Device.push_token == payload.push_token, Device.user_id != user.id
+                )
+            )
     if device is None:
         device = await session.scalar(
             select(Device).where(Device.user_id == user.id, Device.platform == payload.platform)
@@ -37,7 +50,6 @@ async def register_device(payload: DeviceRegister, user: CurrentUser, session: D
         )
         session.add(device)
     else:
-        device.user_id = user.id
         device.push_token = payload.push_token or device.push_token
         device.app_version = payload.app_version or device.app_version
         device.last_seen_at = now

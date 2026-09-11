@@ -10,11 +10,11 @@ import uuid
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.core.deps import CurrentUser, DBSession, assert_family_access
+from app.core.deps import CurrentUser, DBSession, assert_family_access, require_senior
 from app.core.errors import Conflict, NotFound
 from app.models.care import MealCheck, MoodCheck
 from app.schemas.check import MealCheckIn, MealCheckOut, MoodCheckIn, MoodCheckOut
@@ -38,7 +38,7 @@ async def list_meals(
     return [MealCheckOut.model_validate(r) for r in rows]
 
 
-@router.post("/meals", response_model=MealCheckOut)
+@router.post("/meals", response_model=MealCheckOut, dependencies=[Depends(require_senior)])
 async def upsert_meal(payload: MealCheckIn, user: CurrentUser, session: DBSession) -> MealCheckOut:
     row = await session.scalar(
         select(MealCheck).where(
@@ -81,7 +81,7 @@ async def list_moods(
     return [MoodCheckOut.model_validate(r) for r in rows]
 
 
-@router.post("/moods", response_model=MoodCheckOut)
+@router.post("/moods", response_model=MoodCheckOut, dependencies=[Depends(require_senior)])
 async def upsert_mood(payload: MoodCheckIn, user: CurrentUser, session: DBSession) -> MoodCheckOut:
     row = await session.scalar(
         select(MoodCheck).where(

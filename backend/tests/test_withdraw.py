@@ -211,3 +211,53 @@ async def test_withdraw_leaves_no_orphan_rows(client, session):
 
     assert checked >= 15, f"외래키를 {checked}개만 봤다 — 모델을 못 읽은 것 아닌가"
     assert leftovers == [], "지워지지 않은 행: " + ", ".join(leftovers)
+
+
+@pytest.mark.asyncio
+async def test_removing_a_senior_purges_their_records(client, session):
+    """가족에서 빼면 계정과 기록까지 지운다.
+
+    예전에는 소속 행만 지워, 아무도 볼 수 없는 건강기록이 영구히 남고
+    그 번호를 남이 등록하면 기록까지 가져갈 수 있었다 (2026-09-11 점검).
+    """
+    from app.models.care import MealCheck, Medication
+
+    gt, st, senior_id = await _family(client)
+    await _fill_records(client, gt, st, senior_id)
+    assert await _count(session, User) == 2
+    assert await _count(session, Medication) == 1
+    assert await _count(session, MealCheck) == 1
+
+    res = await client.delete(
+        f"/api/v1/family/seniors/{senior_id}", headers={"Authorization": f"Bearer {gt}"}
+    )
+    assert res.status_code == 200, res.text
+
+    session.expire_all()
+    left = list(await session.scalars(select(User.name)))
+    assert left == ["김민수"], "어르신 계정이 남아 있다"
+    assert await _count(session, Medication) == 0
+    assert await _count(session, MealCheck) == 0
+
+    # 그 어르신 토큰은 더 이상 통하지 않는다
+    after = await client.get("/api/v1/me", headers={"Authorization": f"Bearer {st}"})
+    assert after.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_used_phone_cannot_be_adopted_by_another_family(client):
+    """한 번 쓴 번호는 다른 가족이 데려갈 수 없다."""
+    from tests.test_onboarding import _add_senior
+
+    g1 = await _register(client)
+    senior = await _add_senior(client, g1["access_token"], phone="010-7777-8888")
+    assert senior["id"]
+
+    g2 = await _register(client, email="other@example.com", phone="010-5555-6666", name="남남")
+    res = await client.post(
+        "/api/v1/family/seniors",
+        headers={"Authorization": f"Bearer {g2['access_token']}"},
+        json={"name": "아무개", "phone": "010-7777-8888", "relation": "어머니"},
+    )
+    assert res.status_code == 409
+    assert res.json()["code"] == "SENIOR_ALREADY_JOINED"

@@ -14,6 +14,7 @@ import { ApiError, request, upload } from "../shared/api";
 import { Art } from "../shared/art";
 import { Glyph } from "../shared/glyphs";
 import { send } from "../shared/offlineQueue";
+import { localDate } from "../shared/tabs";
 import type { CheckSlot, MealCheck as Meal, MealStatus } from "../shared/types";
 import { Notice, Screen, Spinner } from "../shared/ui";
 
@@ -23,9 +24,9 @@ const SLOTS: { key: CheckSlot; label: string; icon: "sun" | "moon" }[] = [
   { key: "dinner", label: "저녁", icon: "moon" },
 ];
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+/* 날짜는 기기 로컬(한국) 기준이다. toISOString() 은 UTC 라 오전 9시 이전에 전날이 나온다 —
+ * 아침 기록이 통째로 어제로 들어가던 원인 (2026-09-11 점검). 서버도 읽을 때 KST 를 쓴다. */
+const today = localDate;
 
 export default function MealCheck() {
   const nav = useNavigate();

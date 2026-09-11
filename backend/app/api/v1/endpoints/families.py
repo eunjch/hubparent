@@ -18,6 +18,7 @@ from app.core.security import normalize_phone
 from app.models.enums import UserRole
 from app.models.user import Family, FamilyMember, User, UserSettings
 from app.schemas.family import FamilyOut, MemberOut, SeniorCreate, SeniorOut, SeniorUpdate
+from app.services import account
 
 router = APIRouter(tags=["family"])
 
@@ -71,8 +72,10 @@ async def add_senior(payload: SeniorCreate, user: CurrentUser, session: DBSessio
 
     senior = await session.scalar(select(User).where(User.phone == phone))
     if senior is not None:
-        if await session.scalar(select(FamilyMember).where(FamilyMember.user_id == senior.id)):
-            raise Conflict("SENIOR_ALREADY_JOINED", "이미 다른 가족에 등록된 번호입니다.")
+        # 소속이 있든 없든 기존 계정은 데려오지 않는다. 예전에는 소속만 확인해서,
+        # 가족에서 뺀 어르신의 번호를 남이 등록하면 과거 건강기록까지 딸려 갔다
+        # (2026-09-11 점검). 본인 확인 수단이 생기기 전까지는 번호를 막는다.
+        raise Conflict("SENIOR_ALREADY_JOINED", "이미 등록된 적이 있는 번호입니다.")
     else:
         senior = User(
             phone=phone,
@@ -154,8 +157,14 @@ async def update_senior(
 
 @router.delete("/family/seniors/{senior_id}", dependencies=[Depends(require_guardian)])
 async def remove_senior(senior_id: uuid.UUID, user: CurrentUser, session: DBSession) -> dict:
-    """가족에서 제외한다. 어르신 계정과 기록 자체는 남긴다 —
-    실수로 지웠을 때 되돌릴 수 있어야 하고, 파기는 별도 절차다 (계획서 11장)."""
+    """가족에서 제외하고 그 어르신의 계정·기록을 파기한다.
+
+    예전에는 소속 행만 지우고 계정을 남겼는데, 남은 계정은 아무 자녀도 볼 수 없고
+    본인도 다시 로그인할 수 없으면서 건강기록만 영구히 남았다. 게다가 그 번호를
+    남이 등록하면 기록까지 가져갈 수 있었다 (2026-09-11 점검).
+    개인정보처리방침의 "탈퇴 즉시 파기" 와도 이쪽이 맞다. 되돌릴 수 없으므로
+    화면에서 무엇이 지워지는지 알리고 확인을 받는다.
+    """
     family_id = await _my_family_id(session, user)
     member = await session.scalar(
         select(FamilyMember).where(
@@ -168,6 +177,8 @@ async def remove_senior(senior_id: uuid.UUID, user: CurrentUser, session: DBSess
         raise NotFound("SENIOR_NOT_FOUND", "부모님을 찾을 수 없습니다.")
 
     await session.delete(member)
+    await session.flush()
+    await account.purge_user(session, senior_id)
     return {"ok": True}
 
 

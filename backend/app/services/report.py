@@ -13,7 +13,7 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.care import MealCheck, MedicationLog, MoodCheck
+from app.models.care import MealCheck, MoodCheck
 from app.models.enums import (
     ActivityLevel,
     CheckSlot,

@@ -1,12 +1,12 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    alerts,
     auth,
     checks,
     devices,
     families,
     medications,
-    alerts,
     notifications,
     profile,
     reports,

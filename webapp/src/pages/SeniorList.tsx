@@ -38,7 +38,16 @@ export default function SeniorList() {
   }, [load]);
 
   async function remove(senior: Senior) {
-    if (!window.confirm(`${senior.name} 님을 가족에서 빼시겠어요?`)) return;
+    // 이제 계정과 기록까지 함께 지운다 (2026-09-11). 무엇이 사라지는지 알리고 받는다.
+    const ok = window.confirm(
+      `${senior.name} 님을 가족에서 빼시겠어요?
+
+` +
+        "지금까지 기록한 식사 · 약 · 기분과 사진, 등록한 약과 병원 일정이 모두 지워집니다.
+" +
+        "되돌릴 수 없고, 같은 번호로 다시 등록할 수 없습니다.",
+    );
+    if (!ok) return;
     try {
       await request(`/family/seniors/${senior.id}`, { method: "DELETE" });
       await load();

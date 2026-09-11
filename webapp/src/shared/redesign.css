@@ -85,7 +85,9 @@ body {
 
 .screen-head {
   padding: calc(8px + var(--sat)) 12px 8px;
-  background: transparent;
+  /* 투명하면 위에 고정된 제목 뒤로 본문이 비친다 — 어르신 약 화면에서 제목이
+     "먹었어요" 버튼을 덮었다 (2026-09-11 점검). 탭바와 같은 이유로 불투명하게 둔다. */
+  background: var(--ground);
   min-height: 64px;
 }
 
@@ -2088,7 +2090,7 @@ body {
 
 .warn-card h2 {
   margin: 0 0 12px;
-  font-size: var(--text-md);
+  font-size: var(--text-label);
   font-weight: 800;
   color: var(--danger);
   line-height: 1.4;
@@ -2104,7 +2106,7 @@ body {
 .warn-card li {
   font-size: var(--text-sm);
   line-height: 1.55;
-  color: var(--ink-1);
+  color: var(--ink);
 }
 
 .warn-card li.strong {
@@ -2127,13 +2129,13 @@ body {
 
 .warn-card.final h2 {
   margin-bottom: 8px;
-  font-size: var(--text-lg);
+  font-size: var(--text-title);
 }
 
 .warn-card.final p {
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--ink-1);
+  color: var(--ink);
   line-height: 1.6;
 }
 

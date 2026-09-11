@@ -21,6 +21,7 @@ from app.models.care import MealCheck, MoodCheck
 from app.models.enums import AlertSeverity, AlertType, UserRole
 from app.models.monitor import ActivitySignal, Alert
 from app.models.user import Device, FamilyMember
+from app.services import medication as med_service
 
 DISCLAIMER = "의료적 진단이 아닌 참고용 정보입니다."
 
@@ -78,7 +79,9 @@ async def scan(session: AsyncSession) -> list[Alert]:
                 continue  # HIGH 가 떴으면 MEDIUM 은 보지 않는다
 
         # ── MEDIUM: 하루 체크 전무 + 활동 신호 없음 ────────────
-        today = now.date()
+        # 체크는 KST 날짜로 저장된다(checks.py). UTC 로 세면 09:00 에 날짜가 넘어가
+        # 새벽 기록을 못 보고, 아침엔 멀쩡한 어르신에게 오탐이 난다 (2026-09-11 점검).
+        today = now.astimezone(med_service.KST).date()
         meal_count = await session.scalar(
             select(func.count())
             .select_from(MealCheck)

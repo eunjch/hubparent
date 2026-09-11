@@ -66,7 +66,7 @@ def _drop_uploads(user_id: uuid.UUID) -> None:
         shutil.rmtree(folder, ignore_errors=True)
 
 
-async def _purge_user(session: AsyncSession, user_id: uuid.UUID) -> None:
+async def purge_user(session: AsyncSession, user_id: uuid.UUID) -> None:
     """한 사람과 그 사람에게 달린 기록 전부. 가족 단위 정리는 부르는 쪽에서 먼저 한다."""
     # 복약 기록이 약보다 먼저다 (medication_logs.medication_id → medications.id)
     mine = select(Medication.id).where(Medication.user_id == user_id)
@@ -112,7 +112,7 @@ async def _purge_family(session: AsyncSession, family_id: uuid.UUID) -> int:
     await session.execute(delete(Family).where(Family.id == family_id))
 
     for member_id in members:
-        await _purge_user(session, member_id)
+        await purge_user(session, member_id)
     return len(members)
 
 
@@ -123,13 +123,13 @@ async def withdraw(session: AsyncSession, user: User) -> dict:
 
     if family_id is None:
         # 가족에 속하지 않은 계정 — 자기 것만 지운다
-        await _purge_user(session, user_id)
+        await purge_user(session, user_id)
         await session.flush()
         return {"scope": "user", "deleted_users": 1}
 
     if user.role is not UserRole.GUARDIAN:
         # 부모님 — 가족은 남는다
-        await _purge_user(session, user_id)
+        await purge_user(session, user_id)
         await session.flush()
         return {"scope": "user", "deleted_users": 1}
 
@@ -150,6 +150,6 @@ async def withdraw(session: AsyncSession, user: User) -> dict:
         .where(Schedule.family_id == family_id, Schedule.created_by == user_id)
         .values(created_by=heir)
     )
-    await _purge_user(session, user_id)
+    await purge_user(session, user_id)
     await session.flush()
     return {"scope": "user", "deleted_users": 1}

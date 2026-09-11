@@ -9,6 +9,7 @@ api 와 별도 컨테이너로 뜬다 (deploy/docker-compose.yml 의 worker 서�
   이상 징후       15분 주기  감지 후 보호자 푸시 (services.alert_engine)
   일일 리포트     21:00 KST  집계 + 보호자 요약 푸시
   복약 마감       00:10 KST  전날 미응답 건 missed 확정 (L3)
+  보관기간 파기   03:30 KST  90일 지난 생활신호·알림이력 (services.retention)
 """
 
 import asyncio
@@ -26,7 +27,7 @@ from app.core.db import SessionFactory
 from app.core.timeutil import as_utc
 from app.models.care import Schedule
 from app.models.enums import ActivityLevel
-from app.services import alert_engine, medication_reminder, notification_plan, push, report
+from app.services import alert_engine, medication_reminder, notification_plan, push, report, retention
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,7 +82,9 @@ async def remind_schedules() -> None:
                         body=notification_plan.schedule_body(sch),
                         channel="schedule",
                         route="/s/schedule",
-                        dedupe_key=f"schedule:{sch.id}:{minutes}",
+                        # 시작 시각을 키에 넣는다. 없으면 일정을 미뤘을 때 이미 보낸 키에 막혀
+                        # 새 시각 알림이 영영 안 간다 (2026-09-11 점검). 복약은 처음부터 시각을 넣었다.
+                        dedupe_key=f"schedule:{sch.id}:{start.isoformat()}:{minutes}",
                     )
                     sent += 1
         await session.commit()
@@ -144,6 +147,20 @@ async def close_missed_medications() -> None:
         log.info("복약 미응답 %d건 missed 확정 (%s)", closed, yesterday)
 
 
+async def purge_old_records() -> None:
+    """보관 기간(90일)이 지난 기록 파기. 방침에 공개한 약속이다 (services.retention)."""
+    async with SessionFactory() as session:
+        result = await retention.purge(session)
+        await session.commit()
+    if any(result.values()):
+        log.info(
+            "파기 — 생활신호 %d · 알림이력 %d · 알림계획 %d",
+            result["signals"],
+            result["logs"],
+            result["plans"],
+        )
+
+
 async def run() -> None:
     """AsyncIOScheduler 는 실행 중인 이벤트 루프 안에서 start() 해야 한다."""
     scheduler = AsyncIOScheduler(timezone=KST)
@@ -169,6 +186,10 @@ async def run() -> None:
     )
     scheduler.add_job(
         close_missed_medications, CronTrigger(hour=0, minute=10), id="close_missed", **common
+    )
+    # 사람이 안 쓰는 새벽에 돌린다. 지우는 양이 많아도 낮 동작에 영향이 없도록
+    scheduler.add_job(
+        purge_old_records, CronTrigger(hour=3, minute=30), id="purge_old", **common
     )
 
     scheduler.start()

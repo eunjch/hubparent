@@ -8,6 +8,9 @@
 그대로 안고 간다. 교체 지점은 이 파일 하나다.
 """
 
+import asyncio
+import logging
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -24,6 +27,8 @@ from app.core.security import (
     normalize_phone,
     verify_password,
 )
+from app.core.throttle import clear as throttle_clear
+from app.core.throttle import guard as throttle_guard
 from app.models.enums import ConsentKind, SubscriptionStatus, UserRole
 from app.models.ops import Subscription
 from app.models.user import Family, FamilyMember, User, UserConsent, UserSettings
@@ -31,6 +36,8 @@ from app.schemas.auth import (
     GuardianLogin,
     GuardianRegister,
     MeOut,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     RefreshRequest,
     SeniorChoice,
     SeniorLogin,
@@ -41,7 +48,13 @@ from app.schemas.auth import (
     WithdrawRequest,
     WithdrawResult,
 )
-from app.services import account
+from app.schemas.common import Ok
+from app.services import account, mailer, password_reset
+
+# 없는 계정도 해시를 한 번 돌려 응답 시간을 맞춘다 (가입 여부가 새지 않게)
+log = logging.getLogger("hubfamily.auth")
+
+DUMMY_HASH = hash_password("hubfamily-timing-guard")
 
 router = APIRouter(tags=["auth"])
 
@@ -117,12 +130,18 @@ async def register(payload: GuardianRegister, session: DBSession) -> TokenPair:
 
 @router.post("/auth/login", response_model=TokenPair)
 async def login(payload: GuardianLogin, session: DBSession) -> TokenPair:
-    user = await session.scalar(
-        select(User).where(func.lower(User.email) == payload.email.lower())
-    )
-    # 이메일이 없는 경우와 비밀번호가 틀린 경우를 구분해 알려주지 않는다
+    # 비밀번호를 무제한으로 넣어 볼 수 없게 한다 (2026-09-11 점검)
+    email = payload.email.lower()
+    await throttle_guard("login", email, limit=10, window=600)
+
+    user = await session.scalar(select(User).where(func.lower(User.email) == email))
+    # 이메일이 없는 경우와 비밀번호가 틀린 경우를 구분해 알려주지 않는다.
+    # 없는 계정이어도 해시를 한 번 돌려 응답 시간으로 가입 여부가 드러나지 않게 한다.
     if user is None or not verify_password(payload.password, user.password_hash):
+        if user is None:
+            verify_password(payload.password, DUMMY_HASH)
         raise Unauthorized("BAD_CREDENTIALS", "이메일 또는 비밀번호가 맞지 않습니다.")
+    await throttle_clear("login", email)
     if not user.is_active:
         raise Unauthorized("USER_INACTIVE", "사용할 수 없는 계정입니다.")
     return _tokens(user)
@@ -160,6 +179,8 @@ async def _seniors_of(session: DBSession, guardian: User) -> tuple[Family | None
 @router.post("/auth/senior/lookup", response_model=SeniorLookupResult)
 async def senior_lookup(payload: SeniorLookup, session: DBSession) -> SeniorLookupResult:
     """부모 로그인 1단계. 이름 외의 정보는 내보내지 않는다."""
+    # 이름+번호 조합을 자동으로 훑지 못하게 막는다 (2026-09-11 점검)
+    await throttle_guard("senior", normalize_phone(payload.guardian_phone), limit=20, window=600)
     guardian = await _find_guardian(session, payload.guardian_name, payload.guardian_phone)
     family, seniors = await _seniors_of(session, guardian)
     if not seniors:
@@ -175,6 +196,7 @@ async def senior_lookup(payload: SeniorLookup, session: DBSession) -> SeniorLook
 @router.post("/auth/senior/login", response_model=TokenPair)
 async def senior_login(payload: SeniorLogin, session: DBSession) -> TokenPair:
     """부모 로그인 2단계. 1단계 정보를 다시 검증하므로 senior_id 만으로는 못 들어온다."""
+    await throttle_guard("senior", normalize_phone(payload.guardian_phone), limit=20, window=600)
     guardian = await _find_guardian(session, payload.guardian_name, payload.guardian_phone)
     _, seniors = await _seniors_of(session, guardian)
 
@@ -226,6 +248,52 @@ async def withdraw(payload: WithdrawRequest, user: CurrentUser, session: DBSessi
 
     result = await account.withdraw(session, user)
     return WithdrawResult(**result)
+
+
+@router.post("/auth/password/forgot", response_model=Ok)
+async def forgot_password(payload: PasswordResetRequest, session: DBSession) -> Ok:
+    """재설정 링크를 메일로 보낸다.
+
+    **가입 여부를 응답으로 알려주지 않는다.** 없는 주소여도 똑같이 성공으로 답한다 —
+    이 API 로 회원 목록을 훑을 수 없어야 한다.
+    메일 발송이 실패해도 성공으로 답하고 로그에만 남긴다 (같은 이유).
+    """
+    email = payload.email.lower()
+    await throttle_guard("forgot", email, limit=5, window=900)
+
+    user = await session.scalar(select(User).where(func.lower(User.email) == email))
+    if user is not None and user.is_active and user.password_hash:
+        token = password_reset.make_token(user)
+        url = password_reset.reset_url(token)
+        subject, html, text = password_reset.compose(user.name, url)
+        try:
+            await asyncio.to_thread(mailer.send, user.email, subject, html, text)
+        except Exception as exc:  # noqa: BLE001 — 실패해도 가입 여부를 드러내지 않는다
+            log.warning("재설정 메일 발송 실패 user=%s: %s", user.id, exc)
+
+    return Ok()
+
+
+@router.post("/auth/password/reset", response_model=Ok)
+async def reset_password(payload: PasswordResetConfirm, session: DBSession) -> Ok:
+    """링크로 받은 토큰으로 새 비밀번호를 정한다. 링크는 한 번 쓰면 듣지 않는다."""
+    try:
+        user_id = password_reset.read_token(payload.token)
+    except jwt.InvalidTokenError as exc:
+        raise BadRequest("INVALID_RESET_TOKEN", "링크가 만료되었거나 올바르지 않습니다.") from exc
+
+    user = await session.get(User, uuid.UUID(user_id))
+    if user is None or not user.is_active:
+        raise BadRequest("INVALID_RESET_TOKEN", "링크가 만료되었거나 올바르지 않습니다.")
+    # 이미 비밀번호를 바꿨다면 예전 링크는 듣지 않는다 (지문이 달라진다)
+    if not password_reset.token_matches(payload.token, user):
+        raise BadRequest("INVALID_RESET_TOKEN", "이미 사용한 링크입니다.")
+
+    user.password_hash = hash_password(payload.password)
+    await session.flush()
+    await throttle_clear("login", (user.email or "").lower())
+    log.info("비밀번호 재설정 완료 user=%s", user.id)
+    return Ok()
 
 
 @router.get("/me", response_model=MeOut)

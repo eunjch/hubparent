@@ -11,6 +11,7 @@ payload 는 알림(title/body) + 데이터(route/channel) 다. 앱은 data.route
   iOS         채널이 없다 → 알림마다 소리 파일과 interruption-level 을 직접 얹는다
 """
 
+import asyncio
 import hashlib
 import logging
 import uuid
@@ -83,7 +84,9 @@ async def _deliver(tokens: list[str], title: str, body: str, channel: str, route
             ),
         ),
     )
-    result = messaging.send_each_for_multicast(message, app=app)
+    # firebase-admin 은 동기 라이브러리다. 그냥 부르면 이벤트 루프가 통째로 멈춘다 —
+    # API 컨테이너는 워커 하나로 뜨므로 그동안 모든 요청이 대기한다 (2026-09-11 점검).
+    result = await asyncio.to_thread(messaging.send_each_for_multicast, message, app=app)
 
     dead: list[str] = []
     for token, resp in zip(tokens, result.responses, strict=True):
@@ -136,8 +139,16 @@ def fit_key(key: str | None) -> str | None:
 
 
 async def already_sent(session: AsyncSession, dedupe_key: str) -> bool:
+    """같은 키로 **실제로 전달된** 건이 있는가.
+
+    실패·보류로 남은 행은 "보낸 것" 이 아니다. 그것까지 막으면 FCM 일시 장애 한 번에
+    그 약 알림이 영영 사라진다 (2026-09-11 점검). 중복 방지는 두 번 울리는 것을 막는
+    장치이지, 한 번도 못 울린 것을 덮는 장치가 아니다.
+    """
     row = await session.scalar(
-        select(NotificationLog.id).where(NotificationLog.dedupe_key == dedupe_key).limit(1)
+        select(NotificationLog.id)
+        .where(NotificationLog.dedupe_key == dedupe_key, NotificationLog.event == "sent")
+        .limit(1)
     )
     return row is not None
 
@@ -157,12 +168,13 @@ async def send(
     dedupe_key 가 있으면 같은 키로 이미 보낸 건은 다시 보내지 않는다.
     """
     dedupe_key = fit_key(dedupe_key)
-    if dedupe_key and await already_sent(session, dedupe_key):
-        existing = await session.scalar(
+    previous: NotificationLog | None = None
+    if dedupe_key:
+        previous = await session.scalar(
             select(NotificationLog).where(NotificationLog.dedupe_key == dedupe_key).limit(1)
         )
-        assert existing is not None
-        return existing
+        if previous is not None and previous.event == "sent":
+            return previous  # 이미 울렸다. 두 번 울리지 않는다
 
     rows = (
         await session.execute(
@@ -225,6 +237,15 @@ async def send(
         elif any(n.startswith(("FCM:", "APNs:")) for n in notes):
             event = "failed"
         detail = " · ".join(notes)[:200] or None
+
+    if previous is not None:
+        # 지난번 시도가 실패·보류였다. 새 행을 쌓지 않고 그 행을 갱신한다
+        previous.event = event
+        previous.title = title
+        previous.at = datetime.now(UTC)
+        previous.detail = detail
+        await session.flush()
+        return previous
 
     row = NotificationLog(
         user_id=user_id,

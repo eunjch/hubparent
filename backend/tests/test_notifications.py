@@ -21,6 +21,30 @@ async def _plan(client, token, days=14):
     return res.json()
 
 
+async def _enable_push(client, token, monkeypatch, *, ok=True):
+    """단말을 등록하고 발송을 성공(또는 실패)하도록 만든다.
+
+    푸시가 실제로 나갔을 때만 단계가 올라가므로(2026-09-11 수정), 에스컬레이션을
+    검증하려면 전달되는 상황을 만들어야 한다.
+    """
+    from app.services import push as _push
+
+    res = await client.post(
+        "/api/v1/devices",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"platform": "android", "push_token": f"tok-{ok}", "app_version": "0.1.0"},
+    )
+    assert res.status_code == 200, res.text
+
+    async def deliver(tokens, title, body, channel, route):
+        if not ok:
+            raise RuntimeError("FCM 일시 장애")
+        return []
+
+    monkeypatch.setattr(_push, "configured", lambda: True)
+    monkeypatch.setattr(_push, "_deliver", deliver)
+
+
 @pytest.mark.asyncio
 async def test_plan_has_medications_and_schedules(client):
     gt, st, senior_id = await _family(client)
@@ -124,6 +148,7 @@ async def test_medication_escalation(client, session, monkeypatch):
 
     monkeypatch.setattr(_settings, "MED_ESCALATION", True)
     gt, st, senior_id = await _family(client)
+    await _enable_push(client, st, monkeypatch)
     await _add_med(client, gt, senior_id, times=["08:00"])
     today = med_service.today_kst()
     at = med_service.to_utc(today, "08:00")
@@ -138,7 +163,7 @@ async def test_medication_escalation(client, session, monkeypatch):
     assert await medication_reminder.remind(session, now=at + timedelta(minutes=1)) == 1
     assert await medication_reminder.remind(session, now=at + timedelta(minutes=5)) == 0  # 같은 단계 반복 없음
     assert [p.title for p in await pushes()] == ["약 드실 시간이에요"]
-    assert (await pushes())[0].event == "skipped"  # FCM 미설정이어도 이력은 남는다
+    assert (await pushes())[0].event == "sent"
 
     # 어르신 화면에는 여전히 pending 으로 보인다
     doses = await _today(client, st)
@@ -192,9 +217,10 @@ async def test_answer_stops_escalation(client, session, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_changed_time_pushes_at_new_time(client, session):
+async def test_changed_time_pushes_at_new_time(client, session, monkeypatch):
     """복용 시각을 바꾸면 옛 시각엔 안 가고 새 시각에 간다 (worker 가 매 분 현재 규칙을 다시 읽는다)."""
     gt, _st, senior_id = await _family(client)
+    await _enable_push(client, _st, monkeypatch)
     med = await _add_med(client, gt, senior_id, times=["08:00"])
     today = med_service.today_kst()
     old_at = med_service.to_utc(today, "08:00")
@@ -539,3 +565,41 @@ async def test_apns_retries_other_environment_on_bad_device_token(monkeypatch, t
     assert dead == []  # 반대쪽에서 성공했으니 지우면 안 된다
     assert hosts == ["api.push.apple.com", "api.sandbox.push.apple.com"]
 
+
+@pytest.mark.asyncio
+async def test_failed_push_is_retried_next_round(client, session, monkeypatch):
+    """FCM 이 한 번 실패하면 단계를 올리지 않고 다음 주기에 다시 보낸다.
+
+    예전에는 실패해도 단계를 올려서 그 약 알림이 영영 사라졌다 (2026-09-11 점검).
+    """
+    from app.services import push as _push
+
+    gt, st, senior_id = await _family(client)
+    await _enable_push(client, st, monkeypatch, ok=False)  # 발송이 실패하는 상황
+    await _add_med(client, gt, senior_id, times=["08:00"])
+    today = med_service.today_kst()
+    at = med_service.to_utc(today, "08:00")
+
+    # 실패했으니 보낸 건수는 0 이고 이력은 failed 로 남는다
+    assert await medication_reminder.remind(session, now=at + timedelta(minutes=1)) == 0
+    logs = list(await session.scalars(select(NotificationLog).where(NotificationLog.kind == "push")))
+    assert len(logs) == 1
+    assert logs[0].event == "failed"
+
+    # 단계가 올라가지 않았다 — 아직 한 번도 못 울렸다
+    log = await session.scalar(select(MedicationLog))
+    assert log.reminder_level == -1
+
+    # FCM 이 돌아오면 같은 건을 다시 보낸다. 행은 새로 쌓지 않고 갱신한다
+    async def deliver(tokens, title, body, channel, route):
+        return []
+
+    monkeypatch.setattr(_push, "_deliver", deliver)
+    assert await medication_reminder.remind(session, now=at + timedelta(minutes=2)) == 1
+
+    logs = list(await session.scalars(select(NotificationLog).where(NotificationLog.kind == "push")))
+    assert len(logs) == 1, "재시도가 이력을 중복으로 쌓으면 안 된다"
+    assert logs[0].event == "sent"
+
+    # 이제는 울렸으므로 다시 보내지 않는다
+    assert await medication_reminder.remind(session, now=at + timedelta(minutes=3)) == 0

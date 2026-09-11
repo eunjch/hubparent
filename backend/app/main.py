@@ -1,12 +1,18 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import settings
-from app.core.errors import AppError, app_error_handler, http_error_handler
+from app.core.errors import (
+    AppError,
+    app_error_handler,
+    http_error_handler,
+    validation_error_handler,
+)
 
 # Capacitor 웹뷰가 보내는 Origin.
 #  - Android: https://localhost (기본 스킴)
@@ -47,6 +53,8 @@ app.add_middleware(
 
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(HTTPException, http_error_handler)
+# 검증 오류도 공통 규약으로. 없으면 앱이 "연결이 원활하지 않습니다" 로 잘못 안내한다
+app.add_exception_handler(RequestValidationError, validation_error_handler)
 
 app.include_router(api_router)
 

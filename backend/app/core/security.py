@@ -1,5 +1,6 @@
 """JWT 발급 · 검증."""
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -61,9 +62,21 @@ def verify_password(raw: str, hashed: str | None) -> bool:
 
 
 def normalize_phone(value: str) -> str:
-    """저장·조회 모두 숫자만 남긴 형태로 맞춘다.
+    """저장·조회 모두 숫자만 남긴 국내 형태(010…)로 맞춘다.
 
-    부모 로그인이 자녀 전화번호로 계정을 찾으므로, 하이픈 유무 때문에
-    못 찾는 일이 없어야 한다.
+    부모 로그인이 자녀 전화번호로 계정을 찾으므로, 하이픈이나 국가번호 때문에
+    못 찾는 일이 없어야 한다. 자녀가 010-1111-2222 로 가입하고 부모님이
+    +82 10-1111-2222 를 넣으면 서로 다른 값이 되던 것을 막는다 (2026-09-11 점검).
     """
-    return "".join(ch for ch in value if ch.isdigit())
+    digits = "".join(ch for ch in value if ch.isdigit())
+    if digits.startswith("82"):
+        digits = "0" + digits[2:]
+    return digits
+
+
+PHONE_RE = re.compile(r"^01[016789]\d{7,8}$")
+
+
+def valid_phone(value: str) -> bool:
+    """정규화한 뒤 국내 휴대전화 형태인가. '----------' 같은 값이 들어오던 것을 막는다."""
+    return bool(PHONE_RE.match(normalize_phone(value)))

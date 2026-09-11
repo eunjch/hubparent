@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +22,8 @@ class ContactOut(ORMModel):
 
 
 class SettingsIn(BaseModel):
-    font_scale: int | None = Field(default=None, description="100 · 125 · 150")
+    # 값 자체를 셋으로 묶는다. 범위가 없어 99999999999 나 음수가 들어가던 것을 막는다
+    font_scale: Literal[100, 125, 150] | None = None
     voice_guide: bool | None = None
     notify_meal: bool | None = None
     notify_medication: bool | None = None

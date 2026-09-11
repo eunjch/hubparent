@@ -1,9 +1,20 @@
 import uuid
+from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, EmailStr, Field
 
+from app.core.security import valid_phone
 from app.models.enums import UserRole
 from app.schemas.common import ORMModel
+
+
+def _phone(v: str) -> str:
+    if not valid_phone(v):
+        raise ValueError("휴대전화 번호 형식이 아닙니다.")
+    return v
+
+
+Phone = Annotated[str, Field(min_length=10, max_length=20), AfterValidator(_phone)]
 
 
 class GuardianRegister(BaseModel):
@@ -12,7 +23,7 @@ class GuardianRegister(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=72)
     name: str = Field(min_length=1, max_length=50)
-    phone: str = Field(min_length=10, max_length=20, examples=["010-1234-5678"])
+    phone: Phone = Field(examples=["010-1234-5678"])
     # 건강정보 수집·이용 및 가족 간 공유 (필수)
     agree_health_data: bool = False
     # 일일 리포트 메일 수신 (선택)
@@ -95,3 +106,14 @@ class WithdrawResult(BaseModel):
 
     scope: str  # "user" = 본인만 · "family" = 가족 전체
     deleted_users: int
+
+
+class PasswordResetRequest(BaseModel):
+    """비밀번호 재설정 메일 요청. 가입 여부는 응답으로 알려주지 않는다."""
+
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=10, max_length=2048)
+    password: str = Field(min_length=8, max_length=72)

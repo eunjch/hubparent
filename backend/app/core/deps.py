@@ -78,8 +78,15 @@ async def assert_family_access(session: AsyncSession, actor: User, target_user_i
 
 
 def client_ip(request: Request) -> str | None:
-    """아파치 리버스 프록시 뒤에 있으므로 X-Forwarded-For 를 먼저 본다."""
+    """아파치 리버스 프록시 뒤에 있으므로 X-Forwarded-For 를 본다.
+
+    맨 앞 값은 클라이언트가 직접 넣을 수 있어 위조된다. 아파치는 실제 접속 IP 를 뒤에
+    덧붙이므로 **마지막** 값이 우리가 믿을 수 있는 유일한 값이다. 프록시가 한 단이라
+    그렇고, 단이 늘면 이 숫자도 함께 바꿔야 한다. 이 값은 개인정보 열람 이력에 남는다.
+    """
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        hops = [h.strip() for h in forwarded.split(",") if h.strip()]
+        if hops:
+            return hops[-1]
     return request.client.host if request.client else None

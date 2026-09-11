@@ -2,7 +2,11 @@
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 개발용 기본값. 저장소에 적혀 있으므로 운영에서 쓰이면 안 된다 (_guard_secret)
+DEFAULT_SECRET = "dev-only-change-me"
 
 
 class Settings(BaseSettings):
@@ -14,7 +18,7 @@ class Settings(BaseSettings):
     PUBLIC_BASE_URL: str = "http://127.0.0.1:8000"
 
     # 보안
-    SECRET_KEY: str = "dev-only-change-me"
+    SECRET_KEY: str = DEFAULT_SECRET
     ACCESS_TOKEN_MINUTES: int = 30
     # 어르신이 재로그인 화면을 보면 그 시점에 이탈한다 — 계획서 1.4
     REFRESH_TOKEN_DAYS: int = 180
@@ -66,6 +70,21 @@ class Settings(BaseSettings):
     @property
     def is_prod(self) -> bool:
         return self.ENV == "prod"
+
+    @model_validator(mode="after")
+    def _guard_secret(self) -> "Settings":
+        """운영에서 서명 키가 비어 있거나 기본값이면 뜨지 않는다.
+
+        PyJWT 는 빈 키로도 아무 불평 없이 서명·검증한다. 그 상태로 뜨면 누구나
+        토큰을 만들어 남의 건강정보를 읽을 수 있다 (2026-09-11 점검).
+        .env.example 이 빈 값이라 그대로 복사하면 실제로 그렇게 된다.
+        """
+        if self.is_prod and self.SECRET_KEY.strip() in ("", DEFAULT_SECRET):
+            raise ValueError(
+                "SECRET_KEY 를 설정하세요. 운영에서는 빈 값이나 기본값으로 뜰 수 없습니다. "
+                "예: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+            )
+        return self
 
     @property
     def database_url(self) -> str:

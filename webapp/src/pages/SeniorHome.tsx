@@ -10,13 +10,13 @@ import { request } from "../shared/api";
 import { Art } from "../shared/art";
 import { clearTokens } from "../shared/auth";
 import { Glyph } from "../shared/glyphs";
-import { SeniorTabs } from "../shared/tabs";
+import { localDate, SeniorTabs } from "../shared/tabs";
 import type { Me, Member } from "../shared/types";
 import { BigButton, Notice, ScoreRing, Screen, Spinner, Tile, TileGrid } from "../shared/ui";
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+/* 날짜는 기기 로컬(한국) 기준이다. toISOString() 은 UTC 라 오전 9시 이전에 전날이 나온다 —
+ * 아침 기록이 통째로 어제로 들어가던 원인 (2026-09-11 점검). 서버도 읽을 때 KST 를 쓴다. */
+const today = localDate;
 
 export default function SeniorHome() {
   const nav = useNavigate();
