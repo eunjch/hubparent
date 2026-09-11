@@ -170,11 +170,23 @@ async def send(
     dedupe_key = fit_key(dedupe_key)
     previous: NotificationLog | None = None
     if dedupe_key:
-        previous = await session.scalar(
-            select(NotificationLog).where(NotificationLog.dedupe_key == dedupe_key).limit(1)
+        # 먼저 "이미 전달된" 행을 찾는다. 같은 키로 행이 여러 개일 수 있으므로
+        # 조건 없이 limit(1) 을 쓰면 실패한 행을 집어 이미 울린 건을 또 보낸다.
+        delivered = await session.scalar(
+            select(NotificationLog)
+            .where(NotificationLog.dedupe_key == dedupe_key, NotificationLog.event == "sent")
+            .limit(1)
         )
-        if previous is not None and previous.event == "sent":
-            return previous  # 이미 울렸다. 두 번 울리지 않는다
+        if delivered is not None:
+            return delivered  # 이미 울렸다. 두 번 울리지 않는다
+
+        # 전달된 적이 없다면 지난 시도 행을 갱신한다 (가장 오래된 것 = 처음 시도)
+        previous = await session.scalar(
+            select(NotificationLog)
+            .where(NotificationLog.dedupe_key == dedupe_key)
+            .order_by(NotificationLog.at)
+            .limit(1)
+        )
 
     rows = (
         await session.execute(
@@ -239,10 +251,10 @@ async def send(
         detail = " · ".join(notes)[:200] or None
 
     if previous is not None:
-        # 지난번 시도가 실패·보류였다. 새 행을 쌓지 않고 그 행을 갱신한다
+        # 지난번 시도가 실패·보류였다. 새 행을 쌓지 않고 그 행을 갱신한다.
+        # at 은 **처음 보내려 한 시각**이라 건드리지 않는다 — "몇 시에 울렸어야 하나" 의 근거다.
         previous.event = event
         previous.title = title
-        previous.at = datetime.now(UTC)
         previous.detail = detail
         await session.flush()
         return previous

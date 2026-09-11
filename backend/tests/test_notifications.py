@@ -603,3 +603,112 @@ async def test_failed_push_is_retried_next_round(client, session, monkeypatch):
 
     # 이제는 울렸으므로 다시 보내지 않는다
     assert await medication_reminder.remind(session, now=at + timedelta(minutes=3)) == 0
+
+
+@pytest.mark.asyncio
+async def test_dedupe_ignores_failed_rows_when_a_sent_row_exists(client, session):
+    """같은 키로 행이 여러 개여도 "이미 전달된" 건이 있으면 다시 보내지 않는다.
+
+    조건 없이 limit(1) 로 한 행만 집으면, 실패한 행을 골라 이미 울린 약을 또 울린다
+    (2026-09-11 재점검에서 발견).
+    """
+    import uuid as _uuid
+    from datetime import UTC, datetime
+
+    from app.services import push
+
+    _gt, _st, senior_id = await _family(client)
+    uid = _uuid.UUID(senior_id)
+
+    # 실패한 시도 뒤에 성공이 남은 상태 (재시도 중 성공하면 이렇게 된다)
+    for event in ("skipped", "skipped", "sent"):
+        session.add(
+            NotificationLog(
+                user_id=uid,
+                kind="push",
+                event=event,
+                channel="medication",
+                title="지난 시도",
+                dedupe_key="dup-key",
+                at=datetime.now(UTC),
+            )
+        )
+    await session.flush()
+
+    row = await push.send(
+        session, uid, title="또 보내려는 시도", body="b",
+        channel="medication", route="/s/med", dedupe_key="dup-key",
+    )
+    assert row.event == "sent", "이미 전달된 건을 찾지 못하고 다시 보내려 했다"
+    assert row.title == "지난 시도", "기존 행을 그대로 돌려줘야 한다"
+
+    rows = list(await session.scalars(select(NotificationLog).where(NotificationLog.kind == "push")))
+    assert len(rows) == 3, "행이 늘면 안 된다"
+
+
+@pytest.mark.asyncio
+async def test_retry_keeps_the_first_attempt_time(client, session, monkeypatch):
+    """재시도가 이력의 at 을 밀지 않는다 — "몇 시에 울렸어야 하나" 의 근거다."""
+    import uuid as _uuid
+
+    from app.services import push
+
+    _gt, st, senior_id = await _family(client)
+    uid = _uuid.UUID(senior_id)
+
+    first = await push.send(
+        session, uid, title="t", body="b", channel="medication", route="/s/med", dedupe_key="k"
+    )
+    assert first.event == "skipped"  # 단말이 없다
+    at_first = first.at
+
+    await _enable_push(client, st, monkeypatch)
+    second = await push.send(
+        session, uid, title="t", body="b", channel="medication", route="/s/med", dedupe_key="k"
+    )
+    assert second.event == "sent"
+    assert second.at == at_first, "처음 보내려 한 시각이 밀렸다"
+
+
+@pytest.mark.asyncio
+async def test_answering_stops_the_retry(client, session):
+    """재시도 중에 어르신이 답하면 더 보내지 않는다."""
+    _gt, st, senior_id = await _family(client)
+    med = await _add_med(client, _gt, senior_id, times=["08:00"])
+    today = med_service.today_kst()
+    at = med_service.to_utc(today, "08:00")
+
+    # 단말이 없어 실패한다 — 단계가 올라가지 않는다
+    assert await medication_reminder.remind(session, now=at + timedelta(minutes=1)) == 0
+
+    res = await client.post(
+        f"/api/v1/medications/{med['id']}/logs",
+        headers={"Authorization": f"Bearer {st}"},
+        json={"scheduled_at": at.isoformat(), "status": "taken"},
+    )
+    assert res.status_code == 200, res.text
+
+    assert await medication_reminder.remind(session, now=at + timedelta(minutes=2)) == 0
+
+
+@pytest.mark.asyncio
+async def test_guardian_gets_l2_even_when_the_senior_push_fails(client, session, monkeypatch):
+    """어르신 폰에 못 닿아도 보호자에게는 알린다.
+
+    단말이 없거나 FCM 이 죽은 상황이야말로 자녀가 알아야 할 때다. 발송 성공 여부에
+    묶어 두면 그런 어르신의 보호자는 영영 알림을 못 받는다 (2026-09-11 재점검).
+    """
+    from app.core.config import settings as _settings
+
+    monkeypatch.setattr(_settings, "MED_ESCALATION", True)
+    gt, _st, senior_id = await _family(client)
+    await _add_med(client, gt, senior_id, times=["08:00"])   # 어르신 단말 등록 안 함
+    at = med_service.to_utc(med_service.today_kst(), "08:00")
+
+    sent = await medication_reminder.remind(session, now=at + timedelta(hours=2, minutes=1))
+    assert sent == 0, "어르신 쪽은 못 보냈다"
+
+    rows = list(await session.scalars(select(NotificationLog)))
+    guardian = [r for r in rows if r.dedupe_key and r.dedupe_key.startswith("med-guardian")]
+    assert guardian, "보호자 L2 알림이 생기지 않았다"
+    assert guardian[0].title == "부모님이 아직 약을 안 드셨어요"

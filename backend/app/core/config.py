@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     MED_ESCALATION: bool = False
     NO_RESPONSE_HOURS: int = 24
     ALERT_SCAN_INTERVAL_MINUTES: int = 15
+    # "오늘 아무 기록이 없다" 는 하루가 충분히 지난 뒤에만 판정한다 (KST 기준 시각).
+    # 자정 직후에는 누구나 0건이라 그때 재면 매일 새벽 오탐이 난다 (2026-09-11 재점검).
+    NO_CHECKS_FROM_HOUR: int = 19
     DAILY_REPORT_HOUR: int = 21
 
     # 메일 — 네이버웍스 SMTP (M4 리포트 메일)

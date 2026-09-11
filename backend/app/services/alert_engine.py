@@ -44,9 +44,9 @@ async def _family_of(session: AsyncSession, user_id: uuid.UUID) -> uuid.UUID | N
     )
 
 
-async def scan(session: AsyncSession) -> list[Alert]:
+async def scan(session: AsyncSession, now: datetime | None = None) -> list[Alert]:
     """worker 가 ALERT_SCAN_INTERVAL_MINUTES 주기로 호출한다."""
-    now = datetime.now(UTC)
+    now = now or datetime.now(UTC)
     created: list[Alert] = []
 
     seniors = await session.execute(
@@ -81,7 +81,12 @@ async def scan(session: AsyncSession) -> list[Alert]:
         # ── MEDIUM: 하루 체크 전무 + 활동 신호 없음 ────────────
         # 체크는 KST 날짜로 저장된다(checks.py). UTC 로 세면 09:00 에 날짜가 넘어가
         # 새벽 기록을 못 보고, 아침엔 멀쩡한 어르신에게 오탐이 난다 (2026-09-11 점검).
-        today = now.astimezone(med_service.KST).date()
+        now_kst = now.astimezone(med_service.KST)
+        # 그리고 "하루 종일 기록이 없다" 는 하루가 충분히 지난 뒤에만 말할 수 있다.
+        # 자정 직후엔 누구나 0건이라, 날짜만 고치면 오탐이 새벽으로 옮겨갈 뿐이다.
+        if now_kst.hour < settings.NO_CHECKS_FROM_HOUR:
+            continue
+        today = now_kst.date()
         meal_count = await session.scalar(
             select(func.count())
             .select_from(MealCheck)

@@ -100,15 +100,11 @@ async def remind(session: AsyncSession, now: datetime | None = None) -> int:
                 route="/s/med",
                 dedupe_key=f"med:{med.id}:{occ.scheduled_at.isoformat()}:L{due}",
             )
-            # 실제로 나갔을 때만 단계를 올린다. 무조건 올리면 FCM 일시 장애나 단말 미등록으로
-            # 실패한 약 알림이 영영 다시 시도되지 않는다 (2026-09-11 점검).
-            # 이미 보낸 건은 dedupe 로 걸러지므로 재시도가 중복 발송이 되지 않는다.
-            if row.event != "sent":
-                continue
-            log.reminder_level = due
-            sent += 1
-
             if due == 2:
+                # 보호자 알림은 어르신 쪽 발송 성공과 무관하게 보낸다.
+                # 어르신 폰에 못 닿는 상황이야말로 자녀가 알아야 할 때다
+                # (2026-09-11 재점검: 여기를 어르신 발송에 묶었다가 단말 없는 어르신은
+                #  보호자 알림까지 영영 안 가게 만들 뻔했다). 키가 달라 중복되지 않는다.
                 await push.send_to_guardians(
                     session,
                     family_id,
@@ -118,6 +114,14 @@ async def remind(session: AsyncSession, now: datetime | None = None) -> int:
                     route="/g/alerts",
                     dedupe_key=f"med-guardian:{med.id}:{occ.scheduled_at.isoformat()}",
                 )
+
+            # 실제로 나갔을 때만 단계를 올린다. 무조건 올리면 FCM 일시 장애나 단말 미등록으로
+            # 실패한 약 알림이 영영 다시 시도되지 않는다 (2026-09-11 점검).
+            # 이미 보낸 건은 dedupe 로 걸러지므로 재시도가 중복 발송이 되지 않는다.
+            if row.event != "sent":
+                continue
+            log.reminder_level = due
+            sent += 1
 
     await session.flush()
     return sent

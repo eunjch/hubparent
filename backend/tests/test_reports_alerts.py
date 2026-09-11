@@ -152,3 +152,32 @@ async def test_alerts_are_family_scoped(client, session):
     assert (await client.get("/api/v1/alerts", headers=h)).json() == {"items": [], "unread": 0}
     res = await client.post(f"/api/v1/alerts/{high.id}/ack", headers=h)
     assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_quiet_day_alert_waits_until_evening(client, session):
+    """"오늘 아무 기록이 없다" 는 하루가 충분히 지난 뒤에만 판정한다.
+
+    자정 직후에는 누구나 0건이다. 그때 재면 매일 새벽 모든 어르신에게 오탐이 난다
+    (2026-09-11 재점검 — 날짜만 KST 로 고쳤더니 오탐이 아침에서 새벽으로 옮겨갔다).
+    """
+    from datetime import UTC, datetime
+
+    from app.services import alert_engine
+    from app.services import medication as med_service
+
+    _gt, _st, _senior_id = await _family(client)
+    day = med_service.today_kst()
+
+    def at_kst(hour: int) -> datetime:
+        return datetime(day.year, day.month, day.day, hour, 30, tzinfo=med_service.KST).astimezone(UTC)
+
+    # 새벽 1시 30분 — 아직 판정하지 않는다
+    assert await alert_engine.scan(session, now=at_kst(1)) == []
+    # 낮 12시 30분 — 아직 이르다
+    assert await alert_engine.scan(session, now=at_kst(12)) == []
+
+    # 저녁 7시 30분 — 하루가 다 지났다. 이제 알린다
+    created = await alert_engine.scan(session, now=at_kst(19))
+    assert len(created) == 1
+    assert created[0].type is AlertType.NO_CHECKS

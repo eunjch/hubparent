@@ -42,7 +42,7 @@ export default function SeniorList() {
     const ok = window.confirm(
       `${senior.name} 님을 가족에서 빼시겠어요?\n\n` +
         "지금까지 기록한 식사 · 약 · 기분과 사진, 등록한 약과 병원 일정이 모두 지워집니다.\n" +
-        "되돌릴 수 없고, 같은 번호로 다시 등록할 수 없습니다.",
+        "되돌릴 수 없습니다. 같은 번호로 다시 등록하시면 기록 없이 새로 시작합니다.",
     );
     if (!ok) return;
     try {
